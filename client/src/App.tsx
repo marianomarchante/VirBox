@@ -15,6 +15,7 @@ import Reports from "@/pages/Reports";
 import IncomeCategories from "@/pages/IncomeCategories";
 import ExpenseCategories from "@/pages/ExpenseCategories";
 import DocumentManagement from "@/pages/DocumentManagement";
+import Companies from "@/pages/Companies";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/categorias-ingresos" component={IncomeCategories} />
       <Route path="/categorias-gastos" component={ExpenseCategories} />
       <Route path="/gestion-documental" component={DocumentManagement} />
+      <Route path="/empresas" component={Companies} />
       <Route component={NotFound} />
     </Switch>
   );

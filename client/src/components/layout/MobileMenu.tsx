@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { X, Sprout, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files } from "lucide-react";
+import { X, Sprout, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileMenuProps {
@@ -24,6 +24,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { name: "Categorías de Ingresos", href: "/categorias-ingresos", icon: Tags },
     { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
     { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
+    { name: "Empresas", href: "/empresas", icon: Building2 },
   ];
 
   if (!isOpen) return null;
