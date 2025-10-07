@@ -8,16 +8,76 @@ import {
   insertSupplierSchema,
   insertCategorySchema,
   insertDocumentSchema,
+  insertCompanySchema,
   transactionFilterSchema 
 } from "@shared/schema";
 import { z } from "zod";
 
+// Helper to get companyId from request or use default
+function getCompanyId(req: any): string {
+  return (req.query.companyId as string) || storage.getDefaultCompanyId();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Company routes
+  app.get("/api/companies", async (req, res) => {
+    const companies = await storage.getCompanies();
+    res.json(companies);
+  });
+
+  app.get("/api/companies/:id", async (req, res) => {
+    const company = await storage.getCompany(req.params.id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    res.json(company);
+  });
+
+  app.post("/api/companies", async (req, res) => {
+    try {
+      const validatedData = insertCompanySchema.parse(req.body);
+      const company = await storage.createCompany(validatedData);
+      res.status(201).json(company);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid company data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.put("/api/companies/:id", async (req, res) => {
+    try {
+      const validatedData = insertCompanySchema.partial().parse(req.body);
+      const company = await storage.updateCompany(req.params.id, validatedData);
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+      res.json(company);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid company data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.delete("/api/companies/:id", async (req, res) => {
+    const success = await storage.deleteCompany(req.params.id);
+    if (!success) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    res.status(204).send();
+  });
+
   // Transaction routes
   app.get("/api/transactions", async (req, res) => {
     try {
+      const companyId = getCompanyId(req);
       const filter = transactionFilterSchema.parse(req.query);
-      const transactions = await storage.getTransactions({
+      const transactions = await storage.getTransactions(companyId, {
         type: filter.type === 'all' ? undefined : filter.type,
         category: filter.category || undefined,
         dateFrom: filter.dateFrom,
@@ -79,7 +139,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Inventory routes
   app.get("/api/inventory", async (req, res) => {
-    const inventory = await storage.getInventory();
+    const companyId = getCompanyId(req);
+    const inventory = await storage.getInventory(companyId);
     res.json(inventory);
   });
 
@@ -132,7 +193,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Client routes
   app.get("/api/clients", async (req, res) => {
-    const clients = await storage.getClients();
+    const companyId = getCompanyId(req);
+    const clients = await storage.getClients(companyId);
     res.json(clients);
   });
 
@@ -185,7 +247,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Supplier routes
   app.get("/api/suppliers", async (req, res) => {
-    const suppliers = await storage.getSuppliers();
+    const companyId = getCompanyId(req);
+    const suppliers = await storage.getSuppliers(companyId);
     res.json(suppliers);
   });
 
@@ -238,8 +301,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Category routes
   app.get("/api/categories", async (req, res) => {
+    const companyId = getCompanyId(req);
     const type = req.query.type as 'income' | 'expense' | undefined;
-    const categories = await storage.getCategories(type);
+    const categories = await storage.getCategories(companyId, type);
     res.json(categories);
   });
 
@@ -292,7 +356,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Document routes
   app.get("/api/documents", async (req, res) => {
-    const documents = await storage.getDocuments();
+    const companyId = getCompanyId(req);
+    const documents = await storage.getDocuments(companyId);
     res.json(documents);
   });
 
@@ -345,12 +410,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Dashboard routes
   app.get("/api/dashboard/metrics", async (req, res) => {
-    const metrics = await storage.getMetrics();
+    const companyId = getCompanyId(req);
+    const metrics = await storage.getMetrics(companyId);
     res.json(metrics);
   });
 
   app.get("/api/dashboard/monthly-data", async (req, res) => {
-    const data = await storage.getMonthlyData();
+    const companyId = getCompanyId(req);
+    const data = await storage.getMonthlyData(companyId);
     res.json(data);
   });
 
