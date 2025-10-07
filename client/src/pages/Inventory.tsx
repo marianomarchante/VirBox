@@ -29,11 +29,12 @@ export default function Inventory() {
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
-      'vegetables': '🥬',
-      'grains': '🌾',
-      'fruits': '🍎',
-      'seeds': '🌱',
-      'equipment': '🚜',
+      'materials': '🧱',
+      'supplies': '📦',
+      'equipment': '🔧',
+      'products': '📦',
+      'tools': '🛠️',
+      'services': '⚙️',
     };
     return icons[category] || '📦';
   };
