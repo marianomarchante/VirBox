@@ -1,5 +1,6 @@
 import { Menu, Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import CompanySelector from "./CompanySelector";
 
 interface TopBarProps {
   title: string;
@@ -39,6 +40,7 @@ export default function TopBar({ title, subtitle, onOpenMobileMenu, onOpenTransa
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium capitalize">{currentMonth}</span>
           </div>
+          <CompanySelector />
           {onOpenTransactionModal && (
             <>
               <Button 
