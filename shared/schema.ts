@@ -13,6 +13,8 @@ export const transactions = pgTable("transactions", {
   quantity: text("quantity"), // Optional, e.g. "2500 kg"
   clientSupplierId: varchar("client_supplier_id"), // Reference to client or supplier
   notes: text("notes"),
+  pdfDocument: text("pdf_document"), // Optional PDF document stored as base64
+  pdfFileName: text("pdf_file_name"), // Original filename of the PDF
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
