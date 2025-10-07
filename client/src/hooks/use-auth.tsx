@@ -18,17 +18,16 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      window.location.href = '/api/auth/login';
+      window.location.href = '/api/login';
     },
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest('POST', '/api/auth/logout');
-    },
-    onSuccess: () => {
       queryClient.setQueryData(['/api/auth/user'], null);
-      window.location.href = '/';
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/companies'] });
+      window.location.href = '/api/logout';
     },
   });
 
