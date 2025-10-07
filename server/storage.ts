@@ -461,6 +461,8 @@ export class MemStorage implements IStorage {
 
   // Categories
   async getCategories(companyId: string, type?: 'income' | 'expense'): Promise<Category[]> {
+    console.log("Getting categories for companyId:", companyId);
+    console.log("All company IDs in categories:", Array.from(new Set(Array.from(this.categories.values()).map(c => c.companyId))));
     let categories = Array.from(this.categories.values())
       .filter(c => c.companyId === companyId);
     if (type) {
@@ -482,6 +484,9 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.categories.set(id, category);
+    console.log("Category created with companyId:", category.companyId);
+    console.log("Total categories in storage:", this.categories.size);
+    console.log("All categories:", Array.from(this.categories.values()).map(c => ({ id: c.id, name: c.name, companyId: c.companyId })));
     return category;
   }
 
