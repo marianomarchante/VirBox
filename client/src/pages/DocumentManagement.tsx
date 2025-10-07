@@ -14,6 +14,7 @@ import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { insertDocumentSchema, type Document, type InsertDocument } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useCompany } from "@/contexts/CompanyContext";
 import { z } from "zod";
 import { format } from "date-fns";
 
@@ -29,18 +30,25 @@ export default function DocumentManagement() {
   const [editingDocument, setEditingDocument] = useState<string | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const { toast } = useToast();
+  const { currentCompanyId } = useCompany();
 
   const { data: documents, isLoading } = useQuery<Document[]>({
-    queryKey: ['/api/documents'],
+    queryKey: ['/api/documents', currentCompanyId],
+    queryFn: async () => {
+      const response = await fetch(`/api/documents?companyId=${currentCompanyId}`);
+      if (!response.ok) throw new Error('Failed to fetch documents');
+      return response.json();
+    },
+    enabled: !!currentCompanyId,
   });
 
   const createDocument = useMutation({
     mutationFn: async (data: InsertDocument) => {
-      const response = await apiRequest('POST', '/api/documents', data);
+      const response = await apiRequest('POST', `/api/documents?companyId=${currentCompanyId}`, data);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/documents', currentCompanyId] });
       toast({ title: "Documento creado exitosamente" });
     },
     onError: () => {
@@ -50,11 +58,11 @@ export default function DocumentManagement() {
 
   const updateDocument = useMutation({
     mutationFn: async ({ id, document }: { id: string; document: Partial<InsertDocument> }) => {
-      const response = await apiRequest('PUT', `/api/documents/${id}`, document);
+      const response = await apiRequest('PUT', `/api/documents/${id}?companyId=${currentCompanyId}`, document);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/documents', currentCompanyId] });
       toast({ title: "Documento actualizado exitosamente" });
     },
     onError: () => {
@@ -64,10 +72,10 @@ export default function DocumentManagement() {
 
   const deleteDocument = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/documents/${id}`);
+      await apiRequest('DELETE', `/api/documents/${id}?companyId=${currentCompanyId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/documents', currentCompanyId] });
       toast({ title: "Documento eliminado exitosamente" });
     },
     onError: () => {
