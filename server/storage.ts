@@ -120,6 +120,8 @@ export class MemStorage implements IStorage {
       quantity: insertTransaction.quantity || null,
       clientSupplierId: insertTransaction.clientSupplierId || null,
       notes: insertTransaction.notes || null,
+      pdfDocument: insertTransaction.pdfDocument || null,
+      pdfFileName: insertTransaction.pdfFileName || null,
       id,
       createdAt: new Date(),
     };
