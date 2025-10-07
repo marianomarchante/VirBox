@@ -142,6 +142,8 @@ export const insertInventoryMovementSchema = createInsertSchema(inventoryMovemen
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
   createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
 });
 
 export const insertDocumentSchema = createInsertSchema(documents).omit({

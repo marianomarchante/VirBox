@@ -317,8 +317,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/categories", async (req, res) => {
     try {
+      const companyId = getCompanyId(req);
       const validatedData = insertCategorySchema.parse(req.body);
-      const category = await storage.createCategory(validatedData);
+      const category = await storage.createCategory({
+        ...validatedData,
+        companyId,
+      });
       res.status(201).json(category);
     } catch (error) {
       if (error instanceof z.ZodError) {
