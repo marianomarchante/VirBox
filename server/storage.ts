@@ -25,7 +25,7 @@ export interface IStorage {
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company | undefined>;
   deleteCompany(id: string): Promise<boolean>;
-  getDefaultCompanyId(): string;
+  getDefaultCompanyId(): Promise<string>;
 
   // Transactions
   getTransactions(companyId: string, filter?: {
@@ -461,8 +461,6 @@ export class MemStorage implements IStorage {
 
   // Categories
   async getCategories(companyId: string, type?: 'income' | 'expense'): Promise<Category[]> {
-    console.log("Getting categories for companyId:", companyId);
-    console.log("All company IDs in categories:", Array.from(new Set(Array.from(this.categories.values()).map(c => c.companyId))));
     let categories = Array.from(this.categories.values())
       .filter(c => c.companyId === companyId);
     if (type) {
@@ -484,9 +482,6 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.categories.set(id, category);
-    console.log("Category created with companyId:", category.companyId);
-    console.log("Total categories in storage:", this.categories.size);
-    console.log("All categories:", Array.from(this.categories.values()).map(c => ({ id: c.id, name: c.name, companyId: c.companyId })));
     return category;
   }
 
@@ -616,4 +611,6 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { PostgresStorage } from './pg-storage';
+
+export const storage = new PostgresStorage();

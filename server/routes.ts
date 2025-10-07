@@ -14,8 +14,8 @@ import {
 import { z } from "zod";
 
 // Helper to get companyId from request or use default
-function getCompanyId(req: any): string {
-  return (req.query.companyId as string) || storage.getDefaultCompanyId();
+async function getCompanyId(req: any): Promise<string> {
+  return (req.query.companyId as string) || await storage.getDefaultCompanyId();
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
   app.get("/api/transactions", async (req, res) => {
     try {
-      const companyId = getCompanyId(req);
+      const companyId = await getCompanyId(req);
       const filter = transactionFilterSchema.parse(req.query);
       const transactions = await storage.getTransactions(companyId, {
         type: filter.type === 'all' ? undefined : filter.type,
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Inventory routes
   app.get("/api/inventory", async (req, res) => {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     const inventory = await storage.getInventory(companyId);
     res.json(inventory);
   });
@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Client routes
   app.get("/api/clients", async (req, res) => {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     const clients = await storage.getClients(companyId);
     res.json(clients);
   });
@@ -247,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Supplier routes
   app.get("/api/suppliers", async (req, res) => {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     const suppliers = await storage.getSuppliers(companyId);
     res.json(suppliers);
   });
@@ -301,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Category routes
   app.get("/api/categories", async (req, res) => {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     const type = req.query.type as 'income' | 'expense' | undefined;
     const categories = await storage.getCategories(companyId, type);
     res.json(categories);
@@ -317,7 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/categories", async (req, res) => {
     try {
-      const companyId = getCompanyId(req);
+      const companyId = await getCompanyId(req);
       const validatedData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory({
         ...validatedData,
@@ -360,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Document routes
   app.get("/api/documents", async (req, res) => {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     const documents = await storage.getDocuments(companyId);
     res.json(documents);
   });
@@ -414,13 +414,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Dashboard routes
   app.get("/api/dashboard/metrics", async (req, res) => {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     const metrics = await storage.getMetrics(companyId);
     res.json(metrics);
   });
 
   app.get("/api/dashboard/monthly-data", async (req, res) => {
-    const companyId = getCompanyId(req);
+    const companyId = await getCompanyId(req);
     const data = await storage.getMonthlyData(companyId);
     res.json(data);
   });
