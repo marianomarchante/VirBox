@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { X, Sprout, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText } from "lucide-react";
+import { X, Sprout, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileMenuProps {
@@ -18,6 +18,11 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { name: "Clientes", href: "/clientes", icon: Users },
     { name: "Proveedores", href: "/proveedores", icon: Truck },
     { name: "Reportes", href: "/reportes", icon: FileText },
+  ];
+
+  const secondaryNav = [
+    { name: "Categorías de Ingresos", href: "/categorias-ingresos", icon: Tags },
+    { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
   ];
 
   if (!isOpen) return null;
@@ -56,6 +61,24 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   className={cn("sidebar-link", isActive && "active")}
                   onClick={onClose}
                   data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="mt-8 pt-8 border-t border-border space-y-1">
+            {secondaryNav.map((item) => {
+              const isActive = location === item.href;
+              return (
+                <Link 
+                  key={item.name} 
+                  href={item.href}
+                  className={cn("sidebar-link", isActive && "active")}
+                  onClick={onClose}
+                  data-testid={`mobile-nav-${item.name.toLowerCase().replace(/ /g, '-')}`}
                 >
                   <item.icon className="w-5 h-5" />
                   <span>{item.name}</span>
