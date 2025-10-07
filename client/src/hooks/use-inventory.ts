@@ -26,7 +26,7 @@ export function useInventory() {
 
   const createInventoryItem = useMutation({
     mutationFn: async (item: InsertInventory) => {
-      const response = await apiRequest('POST', '/api/inventory', item);
+      const response = await apiRequest('POST', `/api/inventory?companyId=${currentCompanyId}`, item);
       return response.json();
     },
     onSuccess: () => {
@@ -47,7 +47,7 @@ export function useInventory() {
 
   const updateInventoryItem = useMutation({
     mutationFn: async ({ id, item }: { id: string; item: Partial<InsertInventory> }) => {
-      const response = await apiRequest('PUT', `/api/inventory/${id}`, item);
+      const response = await apiRequest('PUT', `/api/inventory/${id}?companyId=${currentCompanyId}`, item);
       return response.json();
     },
     onSuccess: () => {
@@ -68,7 +68,7 @@ export function useInventory() {
 
   const deleteInventoryItem = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/inventory/${id}`);
+      await apiRequest('DELETE', `/api/inventory/${id}?companyId=${currentCompanyId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
