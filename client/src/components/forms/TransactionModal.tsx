@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { insertTransactionSchema, type InsertTransaction } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useCategories } from "@/hooks/use-categories";
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -29,6 +30,9 @@ export default function TransactionModal({
   const { toast } = useToast();
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('income');
   const [selectedPdf, setSelectedPdf] = useState<{ name: string; data: string } | null>(null);
+  
+  const { categories: incomeCategories } = useCategories('income');
+  const { categories: expenseCategories } = useCategories('expense');
 
   const form = useForm<InsertTransaction>({
     resolver: zodResolver(insertTransactionSchema),
@@ -97,23 +101,12 @@ export default function TransactionModal({
   const handleTypeChange = (type: string) => {
     setTransactionType(type as 'income' | 'expense');
     form.setValue('type', type as 'income' | 'expense');
+    form.setValue('category', '');
   };
 
-  const incomeCategories = [
-    'Ventas - Productos',
-    'Servicios',
-    'Otros Ingresos',
-  ];
-
-  const expenseCategories = [
-    'Semillas',
-    'Fertilizantes',
-    'Mano de Obra',
-    'Maquinaria',
-    'Infraestructura',
-    'Servicios',
-    'Otros Gastos',
-  ];
+  const activeIncomeCategories = incomeCategories?.filter(cat => cat.isActive) || [];
+  const activeExpenseCategories = expenseCategories?.filter(cat => cat.isActive) || [];
+  const currentCategories = transactionType === 'income' ? activeIncomeCategories : activeExpenseCategories;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -169,9 +162,9 @@ export default function TransactionModal({
                   <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(transactionType === 'income' ? incomeCategories : expenseCategories).map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  {currentCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -5,9 +5,17 @@ import { useToast } from "@/hooks/use-toast";
 
 export function useCategories(type?: 'income' | 'expense') {
   const { toast } = useToast();
-
+  
   const { data: categories, isLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories', type],
+    queryKey: ['/api/categories', { type }],
+    queryFn: async () => {
+      const url = type ? `/api/categories?type=${type}` : '/api/categories';
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
     enabled: true,
   });
 
