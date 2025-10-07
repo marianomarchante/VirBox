@@ -1,8 +1,8 @@
-# AgroContable - Agricultural Management System
+# MiContable - Business Management System
 
 ## Overview
 
-AgroContable is a comprehensive agricultural business management application designed to help farmers and agricultural businesses track their financial transactions, manage inventory, maintain client and supplier relationships, and generate reports. The system provides a complete solution for monitoring income, expenses, stock levels, and business metrics through an intuitive dashboard interface.
+MiContable is a comprehensive business management application designed to help organizations, businesses, and associations track their financial transactions, manage inventory, maintain client and supplier relationships, and generate reports. The system provides a complete solution for monitoring income, expenses, stock levels, and business metrics through an intuitive dashboard interface.
 
 ## User Preferences
 
@@ -23,9 +23,9 @@ Preferred communication style: Simple, everyday language.
 - **Charts**: Recharts for data visualization
 
 **Design System:**
-The application uses a custom agricultural-themed design system with earth tones:
-- Primary colors based on green/olive shades representing agriculture
-- Secondary colors using warm yellows and browns
+The application uses a professional business-themed design system:
+- Primary colors based on professional blue/green shades
+- Secondary colors using complementary tones
 - Consistent spacing and typography using the Inter font family
 - Dark mode support through CSS variable theming
 - Responsive design with mobile-first approach
@@ -77,11 +77,11 @@ The application uses PostgreSQL with the following core tables:
    - Supports filtering by date range, type, category, and search
 
 2. **Inventory Table**
-   - Manages agricultural products and materials
+   - Manages products and materials
    - Tracks current stock levels with units of measurement
    - Minimum stock thresholds for alerts
    - Price per unit tracking
-   - Categorized by product type (vegetables, grains, fruits, etc.)
+   - Categorized by product type
 
 3. **Clients Table**
    - Customer relationship management
@@ -93,7 +93,7 @@ The application uses PostgreSQL with the following core tables:
    - Vendor management
    - Contact details and categorization
    - Total purchases and payment tracking
-   - Category classification (seeds, fertilizers, machinery, etc.)
+   - Category classification
 
 5. **Inventory Movements Table**
    - Tracks stock changes over time
