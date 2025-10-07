@@ -38,7 +38,6 @@ export default function Sidebar() {
     { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
     { name: "Empresas", href: "/empresas", icon: Building2 },
     ...(user?.isAdmin ? [{ name: "Usuarios", href: "/usuarios", icon: UserCog }] : []),
-    { name: "Configuración", href: "/configuracion", icon: Settings },
     { name: "Ayuda", href: "/ayuda", icon: HelpCircle },
   ];
 
