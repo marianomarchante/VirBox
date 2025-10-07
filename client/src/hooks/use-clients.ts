@@ -2,16 +2,26 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Client, InsertClient } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function useClients() {
   const { toast } = useToast();
+  const { currentCompanyId } = useCompany();
 
   const {
     data: clients,
     isLoading,
     error,
   } = useQuery<Client[]>({
-    queryKey: ['/api/clients'],
+    queryKey: ['/api/clients', { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const res = await fetch(`/api/clients?companyId=${currentCompanyId}`, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    enabled: !!currentCompanyId,
   });
 
   const createClient = useMutation({
@@ -76,13 +86,6 @@ export function useClients() {
     },
   });
 
-  const getClientById = (id: string) => {
-    return useQuery<Client>({
-      queryKey: ['/api/clients', id],
-      enabled: !!id,
-    });
-  };
-
   return {
     clients,
     isLoading,
@@ -90,6 +93,23 @@ export function useClients() {
     createClient,
     updateClient,
     deleteClient,
-    getClientById,
   };
+}
+
+export function useClient(id: string | undefined) {
+  const { currentCompanyId } = useCompany();
+  
+  return useQuery<Client>({
+    queryKey: ['/api/clients', id, { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const res = await fetch(`/api/clients/${id}?companyId=${currentCompanyId}`, { 
+        credentials: "include" 
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    enabled: !!id && !!currentCompanyId,
+  });
 }

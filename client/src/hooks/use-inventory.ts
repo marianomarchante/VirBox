@@ -2,16 +2,26 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Inventory, InsertInventory } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function useInventory() {
   const { toast } = useToast();
+  const { currentCompanyId } = useCompany();
 
   const {
     data: inventory,
     isLoading,
     error,
   } = useQuery<Inventory[]>({
-    queryKey: ['/api/inventory'],
+    queryKey: ['/api/inventory', { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const res = await fetch(`/api/inventory?companyId=${currentCompanyId}`, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    enabled: !!currentCompanyId,
   });
 
   const createInventoryItem = useMutation({
@@ -76,13 +86,6 @@ export function useInventory() {
     },
   });
 
-  const getInventoryById = (id: string) => {
-    return useQuery<Inventory>({
-      queryKey: ['/api/inventory', id],
-      enabled: !!id,
-    });
-  };
-
   return {
     inventory,
     isLoading,
@@ -90,6 +93,23 @@ export function useInventory() {
     createInventoryItem,
     updateInventoryItem,
     deleteInventoryItem,
-    getInventoryById,
   };
+}
+
+export function useInventoryItem(id: string | undefined) {
+  const { currentCompanyId } = useCompany();
+  
+  return useQuery<Inventory>({
+    queryKey: ['/api/inventory', id, { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const res = await fetch(`/api/inventory/${id}?companyId=${currentCompanyId}`, { 
+        credentials: "include" 
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    enabled: !!id && !!currentCompanyId,
+  });
 }

@@ -2,16 +2,26 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Supplier, InsertSupplier } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function useSuppliers() {
   const { toast } = useToast();
+  const { currentCompanyId } = useCompany();
 
   const {
     data: suppliers,
     isLoading,
     error,
   } = useQuery<Supplier[]>({
-    queryKey: ['/api/suppliers'],
+    queryKey: ['/api/suppliers', { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const res = await fetch(`/api/suppliers?companyId=${currentCompanyId}`, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    enabled: !!currentCompanyId,
   });
 
   const createSupplier = useMutation({
@@ -76,13 +86,6 @@ export function useSuppliers() {
     },
   });
 
-  const getSupplierById = (id: string) => {
-    return useQuery<Supplier>({
-      queryKey: ['/api/suppliers', id],
-      enabled: !!id,
-    });
-  };
-
   return {
     suppliers,
     isLoading,
@@ -90,6 +93,23 @@ export function useSuppliers() {
     createSupplier,
     updateSupplier,
     deleteSupplier,
-    getSupplierById,
   };
+}
+
+export function useSupplier(id: string | undefined) {
+  const { currentCompanyId } = useCompany();
+  
+  return useQuery<Supplier>({
+    queryKey: ['/api/suppliers', id, { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const res = await fetch(`/api/suppliers/${id}?companyId=${currentCompanyId}`, { 
+        credentials: "include" 
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    enabled: !!id && !!currentCompanyId,
+  });
 }

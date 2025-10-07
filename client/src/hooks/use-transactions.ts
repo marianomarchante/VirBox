@@ -3,28 +3,41 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Transaction, InsertTransaction, TransactionFilter } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useMemo } from "react";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function useTransactions(filter?: TransactionFilter) {
   const { toast } = useToast();
+  const { currentCompanyId } = useCompany();
 
   // Build query string from filter
   const queryString = useMemo(() => {
-    if (!filter) return '';
     const params = new URLSearchParams();
-    Object.entries(filter).forEach(([key, value]) => {
-      if (value && value !== 'all') {
-        params.append(key, value);
-      }
-    });
+    if (currentCompanyId) params.append('companyId', currentCompanyId);
+    
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value && value !== 'all') {
+          params.append(key, value);
+        }
+      });
+    }
     return params.toString() ? `?${params.toString()}` : '';
-  }, [filter]);
+  }, [filter, currentCompanyId]);
 
   const {
     data: transactions,
     isLoading,
     error,
   } = useQuery<Transaction[]>({
-    queryKey: ['/api/transactions', queryString],
+    queryKey: ['/api/transactions', { companyId: currentCompanyId, filter }],
+    queryFn: async () => {
+      const res = await fetch(`/api/transactions${queryString}`, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    enabled: !!currentCompanyId,
   });
 
   const createTransaction = useMutation({

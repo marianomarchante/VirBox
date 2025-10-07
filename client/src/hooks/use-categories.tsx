@@ -2,21 +2,23 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Category, type InsertCategory } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function useCategories(type?: 'income' | 'expense') {
   const { toast } = useToast();
+  const { currentCompanyId } = useCompany();
   
   const { data: categories, isLoading } = useQuery<Category[]>({
-    queryKey: ['/api/categories', { type }],
+    queryKey: ['/api/categories', { companyId: currentCompanyId, type }],
     queryFn: async () => {
-      const url = type ? `/api/categories?type=${type}` : '/api/categories';
+      const url = `/api/categories?companyId=${currentCompanyId}${type ? `&type=${type}` : ''}`;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
       return await res.json();
     },
-    enabled: true,
+    enabled: !!currentCompanyId,
   });
 
   const createCategory = useMutation({
