@@ -42,9 +42,9 @@ export default function Reports() {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
@@ -344,8 +344,9 @@ export default function Reports() {
                   <p className="text-2xl font-bold text-primary">
                     {monthlyData.reduce((sum: number, month: any) => sum + month.income, 0).toLocaleString('es-ES', { 
                       style: 'currency', 
-                      currency: 'USD',
-                      minimumFractionDigits: 0 
+                      currency: 'EUR',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
                     })}
                   </p>
                   <p className="text-sm text-muted-foreground">Ingresos Anuales</p>
@@ -354,8 +355,9 @@ export default function Reports() {
                   <p className="text-2xl font-bold text-destructive">
                     {monthlyData.reduce((sum: number, month: any) => sum + month.expenses, 0).toLocaleString('es-ES', { 
                       style: 'currency', 
-                      currency: 'USD',
-                      minimumFractionDigits: 0 
+                      currency: 'EUR',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
                     })}
                   </p>
                   <p className="text-sm text-muted-foreground">Gastos Anuales</p>
@@ -364,8 +366,9 @@ export default function Reports() {
                   <p className="text-2xl font-bold text-secondary">
                     {monthlyData.reduce((sum: number, month: any) => sum + (month.income - month.expenses), 0).toLocaleString('es-ES', { 
                       style: 'currency', 
-                      currency: 'USD',
-                      minimumFractionDigits: 0 
+                      currency: 'EUR',
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
                     })}
                   </p>
                   <p className="text-sm text-muted-foreground">Ganancia Anual</p>

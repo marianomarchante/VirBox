@@ -13,7 +13,9 @@ export default function MetricsGrid({ metrics }: MetricsGridProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 

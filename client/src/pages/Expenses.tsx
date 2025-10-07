@@ -33,7 +33,9 @@ export default function Expenses() {
     const num = parseFloat(amount);
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(num);
   };
 

@@ -72,9 +72,9 @@ export default function Clients() {
     const num = parseFloat(amount);
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(num);
   };
 
