@@ -6,12 +6,14 @@ import TransactionModal from "@/components/forms/TransactionModal";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useClients } from "@/hooks/use-clients";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useCompanyPermission } from "@/hooks/use-company-permission";
 import type { InsertTransaction } from "@shared/schema";
 
 export default function Income() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const { currentCompanyId } = useCompany();
+  const { canWrite } = useCompanyPermission();
 
   const { transactions, createTransaction } = useTransactions({
     type: 'income',
@@ -57,7 +59,7 @@ export default function Income() {
           title="Ingresos"
           subtitle="Gestión de ingresos por ventas"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-          onOpenTransactionModal={() => setIsTransactionModalOpen(true)}
+          onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
         />
         
         <div className="p-4 lg:p-8">

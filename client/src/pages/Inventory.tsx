@@ -27,6 +27,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useInventory } from "@/hooks/use-inventory";
+import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertInventorySchema, type InsertInventory } from "@shared/schema";
@@ -35,6 +36,7 @@ export default function Inventory() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { inventory, createInventoryItem } = useInventory();
+  const { canWrite } = useCompanyPermission();
 
   const form = useForm<InsertInventory>({
     resolver: zodResolver(insertInventorySchema),
@@ -112,6 +114,7 @@ export default function Inventory() {
               <Button 
                 data-testid="button-add-product"
                 onClick={() => setIsAddModalOpen(true)}
+                disabled={!canWrite}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Producto
@@ -147,13 +150,15 @@ export default function Inventory() {
                     <tr>
                       <td colSpan={6} className="py-8 text-center text-muted-foreground">
                         No hay productos en inventario. 
-                        <button 
-                          className="text-primary hover:underline ml-1"
-                          onClick={() => setIsAddModalOpen(true)}
-                          data-testid="link-add-first-product"
-                        >
-                          Agregar el primero
-                        </button>
+                        {canWrite && (
+                          <button 
+                            className="text-primary hover:underline ml-1"
+                            onClick={() => setIsAddModalOpen(true)}
+                            data-testid="link-add-first-product"
+                          >
+                            Agregar el primero
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : (

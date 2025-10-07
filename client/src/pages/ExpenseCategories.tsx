@@ -12,6 +12,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useCategories } from "@/hooks/use-categories";
+import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { insertCategorySchema, type InsertCategory } from "@shared/schema";
 import { z } from "zod";
 
@@ -27,6 +28,7 @@ export default function ExpenseCategories() {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
 
   const { categories, createCategory, updateCategory, deleteCategory, isLoading } = useCategories('expense');
+  const { canWrite } = useCompanyPermission();
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
@@ -110,6 +112,7 @@ export default function ExpenseCategories() {
               <Button 
                 onClick={() => setIsModalOpen(true)}
                 data-testid="button-add-category"
+                disabled={!canWrite}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Categoría
@@ -145,6 +148,7 @@ export default function ExpenseCategories() {
                       size="sm" 
                       onClick={() => handleEdit(category.id)}
                       data-testid={`button-edit-${category.id}`}
+                      disabled={!canWrite}
                     >
                       <Edit className="w-4 h-4 mr-1" />
                       Editar
@@ -154,6 +158,7 @@ export default function ExpenseCategories() {
                       size="sm" 
                       onClick={() => handleDelete(category.id)}
                       data-testid={`button-delete-${category.id}`}
+                      disabled={!canWrite}
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
                       Eliminar

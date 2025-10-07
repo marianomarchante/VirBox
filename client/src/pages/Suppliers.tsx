@@ -11,6 +11,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useSuppliers } from "@/hooks/use-suppliers";
+import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { insertSupplierSchema, type InsertSupplier } from "@shared/schema";
 
 export default function Suppliers() {
@@ -19,6 +20,7 @@ export default function Suppliers() {
   const [editingSupplier, setEditingSupplier] = useState<string | null>(null);
 
   const { suppliers, createSupplier, updateSupplier, deleteSupplier, isLoading } = useSuppliers();
+  const { canWrite } = useCompanyPermission();
 
   const form = useForm<InsertSupplier>({
     resolver: zodResolver(insertSupplierSchema),
@@ -142,6 +144,7 @@ export default function Suppliers() {
               <Button 
                 onClick={() => setIsModalOpen(true)}
                 data-testid="button-add-supplier"
+                disabled={!canWrite}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Proveedor
@@ -183,12 +186,14 @@ export default function Suppliers() {
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-muted-foreground">
                         No hay proveedores registrados. 
-                        <button 
-                          onClick={() => setIsModalOpen(true)}
-                          className="text-primary hover:underline ml-1"
-                        >
-                          Agregar el primero
-                        </button>
+                        {canWrite && (
+                          <button 
+                            onClick={() => setIsModalOpen(true)}
+                            className="text-primary hover:underline ml-1"
+                          >
+                            Agregar el primero
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : (
@@ -285,6 +290,7 @@ export default function Suppliers() {
                                 variant="ghost"
                                 onClick={() => handleEdit(supplier.id)}
                                 data-testid={`edit-supplier-${supplier.id}`}
+                                disabled={!canWrite}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -293,6 +299,7 @@ export default function Suppliers() {
                                 variant="ghost"
                                 onClick={() => handleDelete(supplier.id)}
                                 data-testid={`delete-supplier-${supplier.id}`}
+                                disabled={!canWrite}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>

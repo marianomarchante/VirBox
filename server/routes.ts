@@ -83,6 +83,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/auth/permissions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const permissions = await storage.getUserPermissions(userId);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Error fetching permissions:", error);
+      res.status(500).json({ message: "Failed to fetch permissions" });
+    }
+  });
+
   // Admin-only routes for user management
   app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
     try {

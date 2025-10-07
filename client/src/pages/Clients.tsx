@@ -10,6 +10,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useClients } from "@/hooks/use-clients";
+import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { insertClientSchema, type InsertClient } from "@shared/schema";
 
 export default function Clients() {
@@ -18,6 +19,7 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<string | null>(null);
 
   const { clients, createClient, updateClient, deleteClient, isLoading } = useClients();
+  const { canWrite } = useCompanyPermission();
 
   const form = useForm<InsertClient>({
     resolver: zodResolver(insertClientSchema),
@@ -113,6 +115,7 @@ export default function Clients() {
               <Button 
                 onClick={() => setIsModalOpen(true)}
                 data-testid="button-add-client"
+                disabled={!canWrite}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Cliente
@@ -151,12 +154,14 @@ export default function Clients() {
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-muted-foreground">
                         No hay clientes registrados. 
-                        <button 
-                          onClick={() => setIsModalOpen(true)}
-                          className="text-primary hover:underline ml-1"
-                        >
-                          Agregar el primero
-                        </button>
+                        {canWrite && (
+                          <button 
+                            onClick={() => setIsModalOpen(true)}
+                            className="text-primary hover:underline ml-1"
+                          >
+                            Agregar el primero
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : (
@@ -235,6 +240,7 @@ export default function Clients() {
                               variant="ghost"
                               onClick={() => handleEdit(client.id)}
                               data-testid={`edit-client-${client.id}`}
+                              disabled={!canWrite}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -243,6 +249,7 @@ export default function Clients() {
                               variant="ghost"
                               onClick={() => handleDelete(client.id)}
                               data-testid={`delete-client-${client.id}`}
+                              disabled={!canWrite}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>

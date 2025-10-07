@@ -15,6 +15,7 @@ import TopBar from "@/components/layout/TopBar";
 import { insertDocumentSchema, type Document, type InsertDocument } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { z } from "zod";
 import { format } from "date-fns";
 
@@ -31,6 +32,7 @@ export default function DocumentManagement() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { currentCompanyId } = useCompany();
+  const { canWrite } = useCompanyPermission();
 
   const { data: documents, isLoading } = useQuery<Document[]>({
     queryKey: ['/api/documents', currentCompanyId],
@@ -203,6 +205,7 @@ export default function DocumentManagement() {
               <Button 
                 onClick={() => setIsModalOpen(true)}
                 data-testid="button-add-document"
+                disabled={!canWrite}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Documento
@@ -263,6 +266,7 @@ export default function DocumentManagement() {
                             size="sm" 
                             onClick={() => handleEdit(document.id)}
                             data-testid={`button-edit-${document.id}`}
+                            disabled={!canWrite}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -271,6 +275,7 @@ export default function DocumentManagement() {
                             size="sm" 
                             onClick={() => handleDelete(document.id)}
                             data-testid={`button-delete-${document.id}`}
+                            disabled={!canWrite}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

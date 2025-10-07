@@ -6,12 +6,14 @@ import TransactionModal from "@/components/forms/TransactionModal";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useSuppliers } from "@/hooks/use-suppliers";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useCompanyPermission } from "@/hooks/use-company-permission";
 import type { InsertTransaction } from "@shared/schema";
 
 export default function Expenses() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const { currentCompanyId } = useCompany();
+  const { canWrite } = useCompanyPermission();
 
   const { transactions, createTransaction } = useTransactions({
     type: 'expense',
@@ -69,7 +71,7 @@ export default function Expenses() {
           title="Gastos"
           subtitle="Gestión de gastos operativos"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-          onOpenTransactionModal={() => setIsTransactionModalOpen(true)}
+          onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
         />
         
         <div className="p-4 lg:p-8">

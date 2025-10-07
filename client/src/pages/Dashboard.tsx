@@ -16,6 +16,7 @@ import { useInventory } from "@/hooks/use-inventory";
 import { useClients } from "@/hooks/use-clients";
 import { useSuppliers } from "@/hooks/use-suppliers";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useCompanyPermission } from "@/hooks/use-company-permission";
 import type { TransactionFilter, InsertTransaction } from "@shared/schema";
 
 export default function Dashboard() {
@@ -30,6 +31,7 @@ export default function Dashboard() {
   });
 
   const { currentCompanyId } = useCompany();
+  const { canWrite } = useCompanyPermission();
 
   // Data fetching
   const { data: metrics } = useQuery({
@@ -81,7 +83,7 @@ export default function Dashboard() {
           title="Dashboard"
           subtitle="Resumen financiero del mes"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-          onOpenTransactionModal={() => setIsTransactionModalOpen(true)}
+          onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
         />
         
         <div className="p-4 lg:p-8 space-y-6">
