@@ -111,6 +111,8 @@ export const insertCompanySchema = createInsertSchema(companies).omit({
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
 });
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
