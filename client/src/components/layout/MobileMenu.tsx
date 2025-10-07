@@ -50,15 +50,15 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             {navigation.map((item) => {
               const isActive = location === item.href;
               return (
-                <Link key={item.name} href={item.href}>
-                  <a 
-                    className={cn("sidebar-link", isActive && "active")}
-                    onClick={onClose}
-                    data-testid={`mobile-nav-${item.name.toLowerCase()}`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.name}</span>
-                  </a>
+                <Link 
+                  key={item.name} 
+                  href={item.href}
+                  className={cn("sidebar-link", isActive && "active")}
+                  onClick={onClose}
+                  data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.name}</span>
                 </Link>
               );
             })}

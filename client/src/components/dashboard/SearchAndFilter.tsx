@@ -99,12 +99,12 @@ export default function SearchAndFilter({ transactions, onFilterChange }: Search
         
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Categoría</label>
-          <Select value={filter.category || ''} onValueChange={(value) => handleFilterChange('category', value)}>
+          <Select value={filter.category || 'all'} onValueChange={(value) => handleFilterChange('category', value)}>
             <SelectTrigger data-testid="category-select">
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas</SelectItem>
+              <SelectItem value="all">Todas</SelectItem>
               <SelectItem value="Ventas">Ventas</SelectItem>
               <SelectItem value="Semillas">Semillas</SelectItem>
               <SelectItem value="Fertilizantes">Fertilizantes</SelectItem>
