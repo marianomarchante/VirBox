@@ -114,7 +114,7 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const defaultCompany: Company = {
       id,
-      name: 'Mi Empresa Agrícola',
+      name: 'Mi Organización',
       taxId: null,
       address: null,
       phone: null,
@@ -129,17 +129,20 @@ export class MemStorage implements IStorage {
   private initializeDefaultCategories(companyId: string) {
     const defaultIncomeCategories = [
       'Ventas - Productos',
-      'Servicios',
+      'Ventas - Servicios',
+      'Donaciones',
+      'Subvenciones',
       'Otros Ingresos',
     ];
 
     const defaultExpenseCategories = [
-      'Semillas',
-      'Fertilizantes',
+      'Materiales',
+      'Suministros',
       'Mano de Obra',
-      'Maquinaria',
+      'Equipamiento',
       'Infraestructura',
       'Servicios',
+      'Administrativos',
       'Otros Gastos',
     ];
 
