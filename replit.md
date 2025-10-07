@@ -66,6 +66,20 @@ RESTful API architecture with the following resource endpoints:
 
 ### Data Storage
 
+**Multi-Company Data Isolation:**
+
+The application supports multiple companies with complete data isolation:
+- All data tables include a `companyId` field to segregate data by company
+- Storage layer enforces companyId verification on all GET, UPDATE, and DELETE operations
+- API layer automatically injects the companyId for all CREATE operations
+- Each company can only access its own data (transactions, inventory, clients, suppliers, categories, documents)
+
+**IMPORTANT SECURITY NOTE:**
+- Current implementation uses `companyId` from query parameter for demonstration purposes
+- In production, `companyId` MUST be derived from authenticated user session/JWT token
+- Without authentication, any client can access any company's data by modifying the query parameter
+- See `server/routes.ts` getCompanyId() function for implementation details
+
 **Database Schema:**
 
 The application uses PostgreSQL with the following core tables:

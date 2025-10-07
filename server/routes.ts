@@ -14,6 +14,8 @@ import {
 import { z } from "zod";
 
 // Helper to get companyId from request or use default
+// WARNING: In production, companyId should be derived from authenticated user session, not query parameters
+// This implementation allows query parameter for demonstration purposes only
 async function getCompanyId(req: any): Promise<string> {
   return (req.query.companyId as string) || await storage.getDefaultCompanyId();
 }
@@ -101,8 +103,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transactions", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertTransactionSchema.parse(req.body);
-      const transaction = await storage.createTransaction(validatedData);
+      const transaction = await storage.createTransaction({
+        ...validatedData,
+        companyId
+      });
       res.status(201).json(transaction);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -158,8 +164,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/inventory", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertInventorySchema.parse(req.body);
-      const item = await storage.createInventoryItem(validatedData);
+      const item = await storage.createInventoryItem({
+        ...validatedData,
+        companyId
+      });
       res.status(201).json(item);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -215,8 +225,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertClientSchema.parse(req.body);
-      const client = await storage.createClient(validatedData);
+      const client = await storage.createClient({
+        ...validatedData,
+        companyId
+      });
       res.status(201).json(client);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -272,8 +286,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/suppliers", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertSupplierSchema.parse(req.body);
-      const supplier = await storage.createSupplier(validatedData);
+      const supplier = await storage.createSupplier({
+        ...validatedData,
+        companyId
+      });
       res.status(201).json(supplier);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -391,8 +409,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/documents", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertDocumentSchema.parse(req.body);
-      const document = await storage.createDocument(validatedData);
+      const document = await storage.createDocument({
+        ...validatedData,
+        companyId
+      });
       res.status(201).json(document);
     } catch (error) {
       if (error instanceof z.ZodError) {
