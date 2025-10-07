@@ -87,7 +87,7 @@ export default function Dashboard() {
         />
         
         <div className="p-4 lg:p-8 space-y-6">
-          <MetricsGrid metrics={metrics as { totalIncome: number; totalExpenses: number; balance: number; pendingPayments: number }} />
+          <MetricsGrid metrics={metrics as { totalIncome: number; totalExpenses: number; balance: number }} />
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <IncomeVsExpensesChart data={monthlyData as any} />

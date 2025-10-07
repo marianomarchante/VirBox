@@ -1,11 +1,10 @@
-import { TrendingUp, TrendingDown, Wallet, Clock } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 
 interface MetricsGridProps {
   metrics: {
     totalIncome: number;
     totalExpenses: number;
     balance: number;
-    pendingPayments: number;
   };
 }
 
@@ -23,7 +22,6 @@ export default function MetricsGrid({ metrics }: MetricsGridProps) {
     {
       title: "Total Ingresos",
       amount: metrics.totalIncome,
-      change: "+12.5%",
       icon: TrendingUp,
       color: "primary",
       testId: "metric-total-income"
@@ -31,7 +29,6 @@ export default function MetricsGrid({ metrics }: MetricsGridProps) {
     {
       title: "Total Gastos",
       amount: metrics.totalExpenses,
-      change: "-8.3%",
       icon: TrendingDown,
       color: "destructive",
       testId: "metric-total-expenses"
@@ -39,18 +36,9 @@ export default function MetricsGrid({ metrics }: MetricsGridProps) {
     {
       title: "Balance Mes",
       amount: metrics.balance,
-      change: "+38.2%",
       icon: Wallet,
       color: "secondary",
       testId: "metric-balance"
-    },
-    {
-      title: "Pagos Pendientes",
-      amount: metrics.pendingPayments,
-      change: "5 items",
-      icon: Clock,
-      color: "accent",
-      testId: "metric-pending-payments"
     }
   ];
 
@@ -65,7 +53,7 @@ export default function MetricsGrid({ metrics }: MetricsGridProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
       {cards.map((card) => {
         const Icon = card.icon;
         const colors = getColorClasses(card.color);
@@ -75,15 +63,11 @@ export default function MetricsGrid({ metrics }: MetricsGridProps) {
               <div className={`w-12 h-12 ${colors.bg} rounded-lg flex items-center justify-center`}>
                 <Icon className={colors.text} size={20} />
               </div>
-              <span className={`text-xs font-medium ${colors.text} ${colors.badgeBg} px-2 py-1 rounded`}>
-                {card.change}
-              </span>
             </div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">{card.title}</h3>
             <p className="text-2xl font-bold text-foreground" data-testid={`${card.testId}-amount`}>
               {formatCurrency(card.amount)}
             </p>
-            <p className="text-xs text-muted-foreground mt-2">vs mes anterior</p>
           </div>
         );
       })}
