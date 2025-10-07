@@ -6,6 +6,7 @@ import {
   insertInventorySchema, 
   insertClientSchema, 
   insertSupplierSchema,
+  insertCategorySchema,
   transactionFilterSchema 
 } from "@shared/schema";
 import { z } from "zod";
@@ -230,6 +231,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const success = await storage.deleteSupplier(req.params.id);
     if (!success) {
       return res.status(404).json({ message: "Supplier not found" });
+    }
+    res.status(204).send();
+  });
+
+  // Category routes
+  app.get("/api/categories", async (req, res) => {
+    const type = req.query.type as 'income' | 'expense' | undefined;
+    const categories = await storage.getCategories(type);
+    res.json(categories);
+  });
+
+  app.get("/api/categories/:id", async (req, res) => {
+    const category = await storage.getCategory(req.params.id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.json(category);
+  });
+
+  app.post("/api/categories", async (req, res) => {
+    try {
+      const validatedData = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(validatedData);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid category data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.put("/api/categories/:id", async (req, res) => {
+    try {
+      const validatedData = insertCategorySchema.partial().parse(req.body);
+      const category = await storage.updateCategory(req.params.id, validatedData);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid category data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.delete("/api/categories/:id", async (req, res) => {
+    const success = await storage.deleteCategory(req.params.id);
+    if (!success) {
+      return res.status(404).json({ message: "Category not found" });
     }
     res.status(204).send();
   });
