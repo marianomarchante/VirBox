@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCompany } from "@/contexts/CompanyContext";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface MobileMenuProps {
 
 export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const [location] = useLocation();
+  const { currentCompany } = useCompany();
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -39,7 +41,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               <Calculator className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">MiContable</h1>
+              <h1 className="text-xl font-bold text-primary">{currentCompany?.name || 'MiContable'}</h1>
               <p className="text-xs text-muted-foreground">Gestión Empresarial</p>
             </div>
           </div>

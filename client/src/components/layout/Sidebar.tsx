@@ -17,10 +17,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuthContext();
+  const { currentCompany } = useCompany();
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -51,7 +53,7 @@ export default function Sidebar() {
             <Calculator className="text-primary-foreground" size={20} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-primary">MiContable</h1>
+            <h1 className="text-xl font-bold text-primary">{currentCompany?.name || 'MiContable'}</h1>
             <p className="text-xs text-muted-foreground">Gestión Empresarial</p>
           </div>
         </div>
