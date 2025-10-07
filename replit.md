@@ -64,6 +64,80 @@ RESTful API architecture with the following resource endpoints:
 - Production: Static file serving from built assets
 - Environment-aware configuration through NODE_ENV
 
+### Authentication & Authorization System
+
+**Authentication Implementation:**
+
+The application uses **Replit Auth** (OpenID Connect / OAuth 2.0) for user authentication:
+
+1. **Backend Authentication (server/replitAuth.ts):**
+   - Passport.js integration with OpenID Client strategy
+   - Session management using PostgreSQL session store (connect-pg-simple)
+   - Automatic token refresh for expired sessions
+   - Session TTL: 7 days with secure, httpOnly cookies
+
+2. **Authentication Endpoints:**
+   - `GET /api/login` - Initiates Replit OIDC flow with consent prompt
+   - `GET /api/callback` - OIDC callback that creates/updates user session
+   - `GET /api/logout` - Terminates session and redirects to OIDC end-session URL
+   - `GET /api/auth/user` - Returns currently authenticated user profile
+
+3. **Frontend Authentication (client/src/hooks/use-auth.tsx):**
+   - React Query-based authentication state management
+   - Automatic cache invalidation on logout
+   - Landing page for non-authenticated users
+   - Protected routes require authentication
+
+4. **User Profile Management:**
+   - Users automatically created/updated on first login via OIDC claims
+   - Profile includes: id, email, firstName, lastName, profileImageUrl
+   - Admin flag stored in database (users.isAdmin)
+
+**Authorization & Permission System:**
+
+The application implements a **role-based access control (RBAC)** system with two levels:
+
+1. **Global Admin Role:**
+   - Set via `users.isAdmin` database field
+   - Bypasses all company-level permission checks
+   - Exclusive access to User Management page (/usuarios)
+   - Can manage all users, companies, and permissions across the system
+   - Can create/edit/delete companies
+
+2. **Company-Level Permissions:**
+   - Stored in `userCompanyPermissions` table
+   - Two roles per company:
+     - **'consulta'** (read-only): Can view all company data but cannot create, edit, or delete
+     - **'administración'** (full access): Can view and modify all company data
+
+3. **Permission Verification:**
+
+   **Backend (server/routes.ts):**
+   - `isAuthenticated` middleware: Validates session and refreshes expired tokens
+   - `isAdmin` middleware: Verifies global admin status
+   - `checkPermission()` helper: Validates company-level permissions for specific operations
+   - All GET routes: Require any permission (consulta or administración)
+   - All mutations (POST/PUT/DELETE): Require 'administración' role
+
+   **Frontend (client/src/hooks/use-company-permission.tsx):**
+   - `useCompanyPermission` hook queries user permissions for current company
+   - Returns: `{ canRead, canWrite, isAdmin, role, isLoading }`
+   - Write operations conditionally disabled when `canWrite=false`
+   - Applied to all pages: Dashboard, Income, Expenses, Inventory, Clients, Suppliers, Categories, Documents
+
+4. **Company Access Filtering:**
+   - `CompanyContext` automatically filters companies based on user permissions
+   - Users only see companies they have been granted access to
+   - Switching companies triggers permission re-validation
+
+**Security Notes:**
+- ✅ All API routes protected by `isAuthenticated` middleware
+- ✅ Company data isolated by userId + companyId permission checks
+- ✅ Write operations verified at both UI and API levels
+- ✅ Session cookies secured with httpOnly, secure flags
+- ✅ Automatic token refresh prevents session expiration during active use
+- ✅ Proper cache invalidation on authentication state changes
+
 ### Data Storage
 
 **Multi-Company Data Isolation:**
@@ -73,16 +147,37 @@ The application supports multiple companies with complete data isolation:
 - Storage layer enforces companyId verification on all GET, UPDATE, and DELETE operations
 - API layer automatically injects the companyId for all CREATE operations
 - Each company can only access its own data (transactions, inventory, clients, suppliers, categories, documents)
-
-**IMPORTANT SECURITY NOTE:**
-- Current implementation uses `companyId` from query parameter for demonstration purposes
-- In production, `companyId` MUST be derived from authenticated user session/JWT token
-- Without authentication, any client can access any company's data by modifying the query parameter
-- See `server/routes.ts` getCompanyId() function for implementation details
+- **Permission-based access**: Users can only access companies they have explicit permissions for
 
 **Database Schema:**
 
 The application uses PostgreSQL with the following core tables:
+
+**Authentication & Authorization Tables:**
+
+1. **Sessions Table**
+   - Stores Passport.js session data for Replit Auth
+   - Fields: sid (session ID), sess (session data), expire (expiration timestamp)
+   - Managed automatically by connect-pg-simple
+
+2. **Users Table**
+   - Stores user profiles from Replit Auth
+   - Fields: id, email, firstName, lastName, profileImageUrl, isAdmin
+   - Auto-created/updated on login via OIDC claims
+   - isAdmin flag grants global administrator privileges
+
+3. **User Company Permissions Table**
+   - Maps users to companies with specific roles
+   - Fields: id, userId, companyId, role ('consulta' | 'administración')
+   - Unique constraint on (userId, companyId) pair
+   - Defines what users can access and their permission level
+
+4. **Companies Table**
+   - Stores company/organization information
+   - Fields: id, name, taxId, address, phone, email, isActive
+   - Each company has isolated data and user access controls
+
+**Business Data Tables:**
 
 1. **Transactions Table**
    - Tracks all financial movements (income and expenses)
