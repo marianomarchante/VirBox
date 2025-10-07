@@ -91,9 +91,15 @@ export default function DocumentManagement() {
       setPdfFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64String = reader.result as string;
-        form.setValue('pdfData', base64String);
-        form.setValue('pdfFileName', file.name);
+        const dataUrl = reader.result as string;
+        const parts = dataUrl.split(',');
+        if (parts.length >= 2) {
+          const base64String = parts[1];
+          form.setValue('pdfData', base64String);
+          form.setValue('pdfFileName', file.name);
+        } else {
+          toast({ title: "Error al procesar el archivo PDF", variant: "destructive" });
+        }
       };
       reader.readAsDataURL(file);
     } else {
@@ -145,7 +151,10 @@ export default function DocumentManagement() {
   const handleDownload = (document: Document) => {
     if (document.pdfData && document.pdfFileName) {
       const link = window.document.createElement('a');
-      link.href = document.pdfData;
+      const dataUrl = document.pdfData.startsWith('data:')
+        ? document.pdfData
+        : `data:application/pdf;base64,${document.pdfData}`;
+      link.href = dataUrl;
       link.download = document.pdfFileName;
       link.click();
     }
