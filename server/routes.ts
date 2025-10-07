@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { 
   insertTransactionSchema, 
   insertInventorySchema, 
@@ -9,25 +10,154 @@ import {
   insertCategorySchema,
   insertDocumentSchema,
   insertCompanySchema,
+  insertUserCompanyPermissionSchema,
   transactionFilterSchema 
 } from "@shared/schema";
 import { z } from "zod";
 
-// Helper to get companyId from request or use default
-// WARNING: In production, companyId should be derived from authenticated user session, not query parameters
-// This implementation allows query parameter for demonstration purposes only
-async function getCompanyId(req: any): Promise<string> {
-  return (req.query.companyId as string) || await storage.getDefaultCompanyId();
+// Middleware to check if user is admin
+function isAdmin(req: any, res: any, next: any) {
+  const userId = req.user?.claims?.sub;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  storage.getUser(userId).then(user => {
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Forbidden: Admin access required" });
+    }
+    next();
+  }).catch(() => {
+    res.status(500).json({ message: "Internal server error" });
+  });
+}
+
+// Middleware to check user permissions for a company
+async function checkCompanyPermission(req: any, companyId: string, requiredRole?: 'administracion'): Promise<boolean> {
+  const userId = req.user?.claims?.sub;
+  if (!userId) {
+    return false;
+  }
+
+  const user = await storage.getUser(userId);
+  
+  // Admins have access to all companies
+  if (user?.isAdmin) {
+    return true;
+  }
+
+  // Check user permissions for this company
+  const permission = await storage.getUserPermissionForCompany(userId, companyId);
+  if (!permission) {
+    return false;
+  }
+
+  // If specific role required, check it
+  if (requiredRole && permission.role !== requiredRole) {
+    return false;
+  }
+
+  return true;
+}
+
+// Helper to get companyId from request with permission check
+async function getCompanyIdWithPermission(req: any, requiredRole?: 'administracion'): Promise<{ companyId: string; hasPermission: boolean }> {
+  const companyId = (req.query.companyId as string) || await storage.getDefaultCompanyId();
+  const hasPermission = await checkCompanyPermission(req, companyId, requiredRole);
+  return { companyId, hasPermission };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Company routes
-  app.get("/api/companies", async (req, res) => {
-    const companies = await storage.getCompanies();
-    res.json(companies);
+  // Setup authentication
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
   });
 
-  app.get("/api/companies/:id", async (req, res) => {
+  // Admin-only routes for user management
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.put("/api/admin/users/:userId/admin", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { isAdmin: adminStatus } = req.body;
+      const user = await storage.updateUserAdmin(req.params.userId, adminStatus);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.get("/api/admin/companies/:companyId/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getUsersForCompany(req.params.companyId);
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch company users" });
+    }
+  });
+
+  app.post("/api/admin/permissions", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const validatedData = insertUserCompanyPermissionSchema.parse(req.body);
+      const permission = await storage.setUserPermission(validatedData);
+      res.status(201).json(permission);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid permission data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to set permission" });
+      }
+    }
+  });
+
+  app.delete("/api/admin/permissions/:userId/:companyId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const success = await storage.deleteUserPermission(req.params.userId, req.params.companyId);
+      if (!success) {
+        return res.status(404).json({ message: "Permission not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete permission" });
+    }
+  });
+
+  // Company routes (protected)
+  app.get("/api/companies", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const companies = await storage.getCompaniesForUser(userId);
+      res.json(companies);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch companies" });
+    }
+  });
+
+  app.get("/api/companies/:id", isAuthenticated, async (req: any, res) => {
+    const hasPermission = await checkCompanyPermission(req, req.params.id);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const company = await storage.getCompany(req.params.id);
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
@@ -35,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(company);
   });
 
-  app.post("/api/companies", async (req, res) => {
+  app.post("/api/companies", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const validatedData = insertCompanySchema.parse(req.body);
       const company = await storage.createCompany(validatedData);
@@ -49,7 +179,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/companies/:id", async (req, res) => {
+  app.put("/api/companies/:id", isAuthenticated, async (req: any, res) => {
+    const hasPermission = await checkCompanyPermission(req, req.params.id, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
     try {
       const validatedData = insertCompanySchema.partial().parse(req.body);
       const company = await storage.updateCompany(req.params.id, validatedData);
@@ -66,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/companies/:id", async (req, res) => {
+  app.delete("/api/companies/:id", isAuthenticated, isAdmin, async (req, res) => {
     const success = await storage.deleteCompany(req.params.id);
     if (!success) {
       return res.status(404).json({ message: "Company not found" });
@@ -74,10 +209,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Transaction routes
-  app.get("/api/transactions", async (req, res) => {
+  // Transaction routes (protected)
+  app.get("/api/transactions", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: No access to this company" });
+      }
+
       const filter = transactionFilterSchema.parse(req.query);
       const transactions = await storage.getTransactions(companyId, {
         type: filter.type === 'all' ? undefined : filter.type,
@@ -92,8 +231,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/transactions/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.get("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const transaction = await storage.getTransaction(req.params.id, companyId);
     if (!transaction) {
       return res.status(404).json({ message: "Transaction not found" });
@@ -101,9 +244,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(transaction);
   });
 
-  app.post("/api/transactions", async (req, res) => {
+  app.post("/api/transactions", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertTransactionSchema.parse(req.body);
       const transaction = await storage.createTransaction({
         ...validatedData,
@@ -121,9 +268,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/transactions/:id", async (req, res) => {
+  app.put("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertTransactionSchema.partial().parse(req.body);
       const transaction = await storage.updateTransaction(req.params.id, companyId, validatedData);
       if (!transaction) {
@@ -139,8 +290,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/transactions/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.delete("/api/transactions/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
     const success = await storage.deleteTransaction(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Transaction not found" });
@@ -148,15 +303,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Inventory routes
-  app.get("/api/inventory", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  // Inventory routes (protected)
+  app.get("/api/inventory", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const inventory = await storage.getInventory(companyId);
     res.json(inventory);
   });
 
-  app.get("/api/inventory/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.get("/api/inventory/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const item = await storage.getInventoryItem(req.params.id, companyId);
     if (!item) {
       return res.status(404).json({ message: "Inventory item not found" });
@@ -164,9 +327,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(item);
   });
 
-  app.post("/api/inventory", async (req, res) => {
+  app.post("/api/inventory", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertInventorySchema.parse(req.body);
       const item = await storage.createInventoryItem({
         ...validatedData,
@@ -182,9 +349,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/inventory/:id", async (req, res) => {
+  app.put("/api/inventory/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertInventorySchema.partial().parse(req.body);
       const item = await storage.updateInventoryItem(req.params.id, companyId, validatedData);
       if (!item) {
@@ -200,8 +371,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/inventory/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.delete("/api/inventory/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
     const success = await storage.deleteInventoryItem(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Inventory item not found" });
@@ -209,15 +384,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Client routes
-  app.get("/api/clients", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  // Client routes (protected)
+  app.get("/api/clients", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const clients = await storage.getClients(companyId);
     res.json(clients);
   });
 
-  app.get("/api/clients/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.get("/api/clients/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const client = await storage.getClient(req.params.id, companyId);
     if (!client) {
       return res.status(404).json({ message: "Client not found" });
@@ -225,9 +408,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(client);
   });
 
-  app.post("/api/clients", async (req, res) => {
+  app.post("/api/clients", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertClientSchema.parse(req.body);
       const client = await storage.createClient({
         ...validatedData,
@@ -243,9 +430,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/clients/:id", async (req, res) => {
+  app.put("/api/clients/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertClientSchema.partial().parse(req.body);
       const client = await storage.updateClient(req.params.id, companyId, validatedData);
       if (!client) {
@@ -261,8 +452,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/clients/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.delete("/api/clients/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
     const success = await storage.deleteClient(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Client not found" });
@@ -270,15 +465,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Supplier routes
-  app.get("/api/suppliers", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  // Supplier routes (protected)
+  app.get("/api/suppliers", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const suppliers = await storage.getSuppliers(companyId);
     res.json(suppliers);
   });
 
-  app.get("/api/suppliers/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.get("/api/suppliers/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const supplier = await storage.getSupplier(req.params.id, companyId);
     if (!supplier) {
       return res.status(404).json({ message: "Supplier not found" });
@@ -286,9 +489,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(supplier);
   });
 
-  app.post("/api/suppliers", async (req, res) => {
+  app.post("/api/suppliers", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertSupplierSchema.parse(req.body);
       const supplier = await storage.createSupplier({
         ...validatedData,
@@ -304,9 +511,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/suppliers/:id", async (req, res) => {
+  app.put("/api/suppliers/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertSupplierSchema.partial().parse(req.body);
       const supplier = await storage.updateSupplier(req.params.id, companyId, validatedData);
       if (!supplier) {
@@ -322,8 +533,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/suppliers/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.delete("/api/suppliers/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
     const success = await storage.deleteSupplier(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Supplier not found" });
@@ -331,16 +546,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Category routes
-  app.get("/api/categories", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  // Category routes (protected)
+  app.get("/api/categories", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const type = req.query.type as 'income' | 'expense' | undefined;
     const categories = await storage.getCategories(companyId, type);
     res.json(categories);
   });
 
-  app.get("/api/categories/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.get("/api/categories/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const category = await storage.getCategory(req.params.id, companyId);
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
@@ -348,9 +571,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(category);
   });
 
-  app.post("/api/categories", async (req, res) => {
+  app.post("/api/categories", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory({
         ...validatedData,
@@ -366,9 +593,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/categories/:id", async (req, res) => {
+  app.put("/api/categories/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertCategorySchema.partial().parse(req.body);
       const category = await storage.updateCategory(req.params.id, companyId, validatedData);
       if (!category) {
@@ -384,8 +615,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/categories/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.delete("/api/categories/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
     const success = await storage.deleteCategory(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Category not found" });
@@ -393,15 +628,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Document routes
-  app.get("/api/documents", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  // Document routes (protected)
+  app.get("/api/documents", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const documents = await storage.getDocuments(companyId);
     res.json(documents);
   });
 
-  app.get("/api/documents/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.get("/api/documents/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const document = await storage.getDocument(req.params.id, companyId);
     if (!document) {
       return res.status(404).json({ message: "Document not found" });
@@ -409,9 +652,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(document);
   });
 
-  app.post("/api/documents", async (req, res) => {
+  app.post("/api/documents", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertDocumentSchema.parse(req.body);
       const document = await storage.createDocument({
         ...validatedData,
@@ -427,9 +674,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/documents/:id", async (req, res) => {
+  app.put("/api/documents/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const companyId = await getCompanyId(req);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
       const validatedData = insertDocumentSchema.partial().parse(req.body);
       const document = await storage.updateDocument(req.params.id, companyId, validatedData);
       if (!document) {
@@ -445,8 +696,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/documents/:id", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.delete("/api/documents/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
     const success = await storage.deleteDocument(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Document not found" });
@@ -454,15 +709,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(204).send();
   });
 
-  // Dashboard routes
-  app.get("/api/dashboard/metrics", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  // Dashboard routes (protected)
+  app.get("/api/dashboard/metrics", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const metrics = await storage.getMetrics(companyId);
     res.json(metrics);
   });
 
-  app.get("/api/dashboard/monthly-data", async (req, res) => {
-    const companyId = await getCompanyId(req);
+  app.get("/api/dashboard/monthly-data", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
     const data = await storage.getMonthlyData(companyId);
     res.json(data);
   });
