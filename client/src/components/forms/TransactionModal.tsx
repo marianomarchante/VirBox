@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X, Save } from "lucide-react";
+import { X, Save, Upload, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ export default function TransactionModal({
 }: TransactionModalProps) {
   const { toast } = useToast();
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('income');
+  const [selectedPdf, setSelectedPdf] = useState<{ name: string; data: string } | null>(null);
 
   const form = useForm<InsertTransaction>({
     resolver: zodResolver(insertTransactionSchema),
@@ -40,13 +41,45 @@ export default function TransactionModal({
       quantity: '',
       clientSupplierId: '',
       notes: '',
+      pdfDocument: '',
+      pdfFileName: '',
     },
   });
+
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast({
+          title: "Error",
+          description: "Solo se permiten archivos PDF.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setSelectedPdf({ name: file.name, data: base64 });
+        form.setValue('pdfDocument', base64);
+        form.setValue('pdfFileName', file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePdf = () => {
+    setSelectedPdf(null);
+    form.setValue('pdfDocument', '');
+    form.setValue('pdfFileName', '');
+  };
 
   const handleSubmit = (data: InsertTransaction) => {
     try {
       onSubmit(data);
       form.reset();
+      setSelectedPdf(null);
       onClose();
       toast({
         title: "Transacción creada",
@@ -209,6 +242,50 @@ export default function TransactionModal({
               {...form.register("notes")}
               data-testid="textarea-notes"
             />
+          </div>
+          
+          <div>
+            <Label htmlFor="pdf">Documento PDF (opcional)</Label>
+            <div className="mt-2">
+              {!selectedPdf ? (
+                <div className="flex items-center gap-3">
+                  <Input
+                    id="pdf"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handlePdfChange}
+                    className="hidden"
+                    data-testid="input-pdf-file"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('pdf')?.click()}
+                    className="w-full"
+                    data-testid="button-upload-pdf"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Seleccionar archivo PDF
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-muted rounded-md" data-testid="pdf-preview">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <span className="flex-1 text-sm truncate" data-testid="text-pdf-name">
+                    {selectedPdf.name}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemovePdf}
+                    data-testid="button-remove-pdf"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-3 pt-6 border-t border-border">
