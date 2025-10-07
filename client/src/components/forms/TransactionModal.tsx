@@ -81,7 +81,14 @@ export default function TransactionModal({
 
   const handleSubmit = (data: InsertTransaction) => {
     try {
-      onSubmit(data);
+      // Ensure amount is a string and date is properly formatted
+      const formattedData = {
+        ...data,
+        amount: String(data.amount),
+        date: data.date instanceof Date ? data.date : new Date(data.date),
+        clientSupplierId: data.clientSupplierId || undefined,
+      };
+      onSubmit(formattedData);
       form.reset();
       setSelectedPdf(null);
       onClose();
