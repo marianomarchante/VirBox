@@ -27,7 +27,10 @@ export function useCategories(type?: 'income' | 'expense') {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/categories'],
+        refetchType: 'all'
+      });
       toast({
         title: "Categoría creada",
         description: "La categoría se ha creado correctamente",
@@ -48,7 +51,10 @@ export function useCategories(type?: 'income' | 'expense') {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/categories'],
+        refetchType: 'all'
+      });
       toast({
         title: "Categoría actualizada",
         description: "La categoría se ha actualizado correctamente",
@@ -68,7 +74,10 @@ export function useCategories(type?: 'income' | 'expense') {
       await apiRequest('DELETE', `/api/categories/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/categories'],
+        refetchType: 'all'
+      });
       toast({
         title: "Categoría eliminada",
         description: "La categoría se ha eliminado correctamente",

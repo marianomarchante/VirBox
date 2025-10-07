@@ -318,8 +318,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/categories", async (req, res) => {
     try {
       const companyId = getCompanyId(req);
-      console.log("Category request body:", req.body);
-      console.log("Company ID:", companyId);
       const validatedData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory({
         ...validatedData,
@@ -328,10 +326,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(category);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error("Category validation errors:", JSON.stringify(error.errors, null, 2));
         res.status(400).json({ message: "Invalid category data", errors: error.errors });
       } else {
-        console.error("Server error:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
