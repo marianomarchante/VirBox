@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { X, Save, Upload, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,11 @@ export default function TransactionModal({
   const { categories: expenseCategories } = useCategories('expense');
 
   const form = useForm<InsertTransaction>({
-    resolver: zodResolver(insertTransactionSchema),
+    resolver: zodResolver(insertTransactionSchema.extend({
+      concept: z.string().min(1, "El concepto es obligatorio"),
+      category: z.string().min(1, "La categoría es obligatoria"),
+      amount: z.string().min(1, "El monto es obligatorio").refine(val => parseFloat(val) > 0, "El monto debe ser mayor a 0"),
+    })),
     defaultValues: {
       type: 'income',
       date: new Date(),
@@ -81,7 +86,6 @@ export default function TransactionModal({
 
   const handleSubmit = (data: InsertTransaction) => {
     try {
-      console.log("Form data before formatting:", data);
       // Ensure amount is a string and date is properly formatted
       const formattedData = {
         ...data,
@@ -89,7 +93,6 @@ export default function TransactionModal({
         date: data.date instanceof Date ? data.date : new Date(data.date),
         clientSupplierId: data.clientSupplierId || undefined,
       };
-      console.log("Form data after formatting:", formattedData);
       onSubmit(formattedData);
       form.reset();
       setSelectedPdf(null);
@@ -99,7 +102,6 @@ export default function TransactionModal({
         description: "La transacción se ha registrado correctamente.",
       });
     } catch (error) {
-      console.error("Error creating transaction:", error);
       toast({
         title: "Error",
         description: "No se pudo crear la transacción. Intenta nuevamente.",

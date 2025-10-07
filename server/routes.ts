@@ -100,17 +100,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/transactions", async (req, res) => {
     try {
-      console.log("Received transaction data:", req.body);
       const validatedData = insertTransactionSchema.parse(req.body);
-      console.log("Validated transaction data:", validatedData);
       const transaction = await storage.createTransaction(validatedData);
       res.status(201).json(transaction);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error("Validation errors:", error.errors);
         res.status(400).json({ message: "Invalid transaction data", errors: error.errors });
       } else {
-        console.error("Server error:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
