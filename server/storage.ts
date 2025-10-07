@@ -35,31 +35,31 @@ export interface IStorage {
     dateTo?: string;
     search?: string;
   }): Promise<Transaction[]>;
-  getTransaction(id: string): Promise<Transaction | undefined>;
+  getTransaction(id: string, companyId: string): Promise<Transaction | undefined>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
-  updateTransaction(id: string, transaction: Partial<InsertTransaction>): Promise<Transaction | undefined>;
-  deleteTransaction(id: string): Promise<boolean>;
+  updateTransaction(id: string, companyId: string, transaction: Partial<InsertTransaction>): Promise<Transaction | undefined>;
+  deleteTransaction(id: string, companyId: string): Promise<boolean>;
 
   // Inventory
   getInventory(companyId: string): Promise<Inventory[]>;
-  getInventoryItem(id: string): Promise<Inventory | undefined>;
+  getInventoryItem(id: string, companyId: string): Promise<Inventory | undefined>;
   createInventoryItem(item: InsertInventory): Promise<Inventory>;
-  updateInventoryItem(id: string, item: Partial<InsertInventory>): Promise<Inventory | undefined>;
-  deleteInventoryItem(id: string): Promise<boolean>;
+  updateInventoryItem(id: string, companyId: string, item: Partial<InsertInventory>): Promise<Inventory | undefined>;
+  deleteInventoryItem(id: string, companyId: string): Promise<boolean>;
 
   // Clients
   getClients(companyId: string): Promise<Client[]>;
-  getClient(id: string): Promise<Client | undefined>;
+  getClient(id: string, companyId: string): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
-  updateClient(id: string, client: Partial<InsertClient>): Promise<Client | undefined>;
-  deleteClient(id: string): Promise<boolean>;
+  updateClient(id: string, companyId: string, client: Partial<InsertClient>): Promise<Client | undefined>;
+  deleteClient(id: string, companyId: string): Promise<boolean>;
 
   // Suppliers
   getSuppliers(companyId: string): Promise<Supplier[]>;
-  getSupplier(id: string): Promise<Supplier | undefined>;
+  getSupplier(id: string, companyId: string): Promise<Supplier | undefined>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
-  updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
-  deleteSupplier(id: string): Promise<boolean>;
+  updateSupplier(id: string, companyId: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
+  deleteSupplier(id: string, companyId: string): Promise<boolean>;
 
   // Inventory movements
   getInventoryMovements(companyId: string, inventoryId?: string): Promise<InventoryMovement[]>;
@@ -67,17 +67,17 @@ export interface IStorage {
 
   // Categories
   getCategories(companyId: string, type?: 'income' | 'expense'): Promise<Category[]>;
-  getCategory(id: string): Promise<Category | undefined>;
+  getCategory(id: string, companyId: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
-  updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
-  deleteCategory(id: string): Promise<boolean>;
+  updateCategory(id: string, companyId: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
+  deleteCategory(id: string, companyId: string): Promise<boolean>;
 
   // Documents
   getDocuments(companyId: string): Promise<Document[]>;
-  getDocument(id: string): Promise<Document | undefined>;
+  getDocument(id: string, companyId: string): Promise<Document | undefined>;
   createDocument(document: InsertDocument): Promise<Document>;
-  updateDocument(id: string, document: Partial<InsertDocument>): Promise<Document | undefined>;
-  deleteDocument(id: string): Promise<boolean>;
+  updateDocument(id: string, companyId: string, document: Partial<InsertDocument>): Promise<Document | undefined>;
+  deleteDocument(id: string, companyId: string): Promise<boolean>;
 
   // Dashboard metrics
   getMetrics(companyId: string): Promise<{
@@ -250,8 +250,12 @@ export class MemStorage implements IStorage {
     return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
-  async getTransaction(id: string): Promise<Transaction | undefined> {
-    return this.transactions.get(id);
+  async getTransaction(id: string, companyId: string): Promise<Transaction | undefined> {
+    const transaction = this.transactions.get(id);
+    if (transaction && transaction.companyId === companyId) {
+      return transaction;
+    }
+    return undefined;
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
@@ -290,17 +294,21 @@ export class MemStorage implements IStorage {
     return transaction;
   }
 
-  async updateTransaction(id: string, update: Partial<InsertTransaction>): Promise<Transaction | undefined> {
+  async updateTransaction(id: string, companyId: string, update: Partial<InsertTransaction>): Promise<Transaction | undefined> {
     const transaction = this.transactions.get(id);
-    if (!transaction) return undefined;
+    if (!transaction || transaction.companyId !== companyId) return undefined;
     
     const updated = { ...transaction, ...update };
     this.transactions.set(id, updated);
     return updated;
   }
 
-  async deleteTransaction(id: string): Promise<boolean> {
-    return this.transactions.delete(id);
+  async deleteTransaction(id: string, companyId: string): Promise<boolean> {
+    const transaction = this.transactions.get(id);
+    if (transaction && transaction.companyId === companyId) {
+      return this.transactions.delete(id);
+    }
+    return false;
   }
 
   // Inventory
@@ -310,8 +318,12 @@ export class MemStorage implements IStorage {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  async getInventoryItem(id: string): Promise<Inventory | undefined> {
-    return this.inventory.get(id);
+  async getInventoryItem(id: string, companyId: string): Promise<Inventory | undefined> {
+    const item = this.inventory.get(id);
+    if (item && item.companyId === companyId) {
+      return item;
+    }
+    return undefined;
   }
 
   async createInventoryItem(insertItem: InsertInventory): Promise<Inventory> {
@@ -327,17 +339,21 @@ export class MemStorage implements IStorage {
     return item;
   }
 
-  async updateInventoryItem(id: string, update: Partial<InsertInventory>): Promise<Inventory | undefined> {
+  async updateInventoryItem(id: string, companyId: string, update: Partial<InsertInventory>): Promise<Inventory | undefined> {
     const item = this.inventory.get(id);
-    if (!item) return undefined;
+    if (!item || item.companyId !== companyId) return undefined;
     
     const updated = { ...item, ...update, lastUpdated: new Date() };
     this.inventory.set(id, updated);
     return updated;
   }
 
-  async deleteInventoryItem(id: string): Promise<boolean> {
-    return this.inventory.delete(id);
+  async deleteInventoryItem(id: string, companyId: string): Promise<boolean> {
+    const item = this.inventory.get(id);
+    if (item && item.companyId === companyId) {
+      return this.inventory.delete(id);
+    }
+    return false;
   }
 
   // Clients
@@ -347,8 +363,12 @@ export class MemStorage implements IStorage {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  async getClient(id: string): Promise<Client | undefined> {
-    return this.clients.get(id);
+  async getClient(id: string, companyId: string): Promise<Client | undefined> {
+    const client = this.clients.get(id);
+    if (client && client.companyId === companyId) {
+      return client;
+    }
+    return undefined;
   }
 
   async createClient(insertClient: InsertClient): Promise<Client> {
@@ -369,17 +389,21 @@ export class MemStorage implements IStorage {
     return client;
   }
 
-  async updateClient(id: string, update: Partial<InsertClient>): Promise<Client | undefined> {
+  async updateClient(id: string, companyId: string, update: Partial<InsertClient>): Promise<Client | undefined> {
     const client = this.clients.get(id);
-    if (!client) return undefined;
+    if (!client || client.companyId !== companyId) return undefined;
     
     const updated = { ...client, ...update };
     this.clients.set(id, updated);
     return updated;
   }
 
-  async deleteClient(id: string): Promise<boolean> {
-    return this.clients.delete(id);
+  async deleteClient(id: string, companyId: string): Promise<boolean> {
+    const client = this.clients.get(id);
+    if (client && client.companyId === companyId) {
+      return this.clients.delete(id);
+    }
+    return false;
   }
 
   // Suppliers
@@ -389,8 +413,12 @@ export class MemStorage implements IStorage {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  async getSupplier(id: string): Promise<Supplier | undefined> {
-    return this.suppliers.get(id);
+  async getSupplier(id: string, companyId: string): Promise<Supplier | undefined> {
+    const supplier = this.suppliers.get(id);
+    if (supplier && supplier.companyId === companyId) {
+      return supplier;
+    }
+    return undefined;
   }
 
   async createSupplier(insertSupplier: InsertSupplier): Promise<Supplier> {
@@ -411,17 +439,21 @@ export class MemStorage implements IStorage {
     return supplier;
   }
 
-  async updateSupplier(id: string, update: Partial<InsertSupplier>): Promise<Supplier | undefined> {
+  async updateSupplier(id: string, companyId: string, update: Partial<InsertSupplier>): Promise<Supplier | undefined> {
     const supplier = this.suppliers.get(id);
-    if (!supplier) return undefined;
+    if (!supplier || supplier.companyId !== companyId) return undefined;
     
     const updated = { ...supplier, ...update };
     this.suppliers.set(id, updated);
     return updated;
   }
 
-  async deleteSupplier(id: string): Promise<boolean> {
-    return this.suppliers.delete(id);
+  async deleteSupplier(id: string, companyId: string): Promise<boolean> {
+    const supplier = this.suppliers.get(id);
+    if (supplier && supplier.companyId === companyId) {
+      return this.suppliers.delete(id);
+    }
+    return false;
   }
 
   // Inventory movements
@@ -469,8 +501,12 @@ export class MemStorage implements IStorage {
     return categories.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  async getCategory(id: string): Promise<Category | undefined> {
-    return this.categories.get(id);
+  async getCategory(id: string, companyId: string): Promise<Category | undefined> {
+    const category = this.categories.get(id);
+    if (category && category.companyId === companyId) {
+      return category;
+    }
+    return undefined;
   }
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
@@ -485,17 +521,21 @@ export class MemStorage implements IStorage {
     return category;
   }
 
-  async updateCategory(id: string, update: Partial<InsertCategory>): Promise<Category | undefined> {
+  async updateCategory(id: string, companyId: string, update: Partial<InsertCategory>): Promise<Category | undefined> {
     const category = this.categories.get(id);
-    if (!category) return undefined;
+    if (!category || category.companyId !== companyId) return undefined;
     
     const updated = { ...category, ...update };
     this.categories.set(id, updated);
     return updated;
   }
 
-  async deleteCategory(id: string): Promise<boolean> {
-    return this.categories.delete(id);
+  async deleteCategory(id: string, companyId: string): Promise<boolean> {
+    const category = this.categories.get(id);
+    if (category && category.companyId === companyId) {
+      return this.categories.delete(id);
+    }
+    return false;
   }
 
   // Documents
@@ -507,8 +547,12 @@ export class MemStorage implements IStorage {
       );
   }
 
-  async getDocument(id: string): Promise<Document | undefined> {
-    return this.documents.get(id);
+  async getDocument(id: string, companyId: string): Promise<Document | undefined> {
+    const document = this.documents.get(id);
+    if (document && document.companyId === companyId) {
+      return document;
+    }
+    return undefined;
   }
 
   async createDocument(insertDocument: InsertDocument): Promise<Document> {
@@ -525,17 +569,21 @@ export class MemStorage implements IStorage {
     return document;
   }
 
-  async updateDocument(id: string, update: Partial<InsertDocument>): Promise<Document | undefined> {
+  async updateDocument(id: string, companyId: string, update: Partial<InsertDocument>): Promise<Document | undefined> {
     const document = this.documents.get(id);
-    if (!document) return undefined;
+    if (!document || document.companyId !== companyId) return undefined;
     
     const updated = { ...document, ...update };
     this.documents.set(id, updated);
     return updated;
   }
 
-  async deleteDocument(id: string): Promise<boolean> {
-    return this.documents.delete(id);
+  async deleteDocument(id: string, companyId: string): Promise<boolean> {
+    const document = this.documents.get(id);
+    if (document && document.companyId === companyId) {
+      return this.documents.delete(id);
+    }
+    return false;
   }
 
   // Dashboard metrics
