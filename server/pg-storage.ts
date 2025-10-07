@@ -1,6 +1,8 @@
-import { eq, and, gte, lte, sql, ilike, or } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, ilike, or, inArray } from 'drizzle-orm';
 import { db } from './db';
 import {
+  users,
+  userCompanyPermissions,
   companies,
   transactions,
   inventory,
@@ -9,6 +11,10 @@ import {
   inventoryMovements,
   categories,
   documents,
+  type User,
+  type UpsertUser,
+  type UserCompanyPermission,
+  type InsertUserCompanyPermission,
   type Company,
   type InsertCompany,
   type Transaction,
@@ -94,6 +100,123 @@ export class PostgresStorage implements IStorage {
     }));
 
     await db.insert(categories).values([...incomeInserts, ...expenseInserts]);
+  }
+
+  // Users
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const result = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result[0];
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.email);
+  }
+
+  async updateUserAdmin(userId: string, isAdmin: boolean): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ isAdmin, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  // User-Company Permissions
+  async getUserPermissions(userId: string): Promise<UserCompanyPermission[]> {
+    return await db
+      .select()
+      .from(userCompanyPermissions)
+      .where(eq(userCompanyPermissions.userId, userId));
+  }
+
+  async getUserPermissionForCompany(userId: string, companyId: string): Promise<UserCompanyPermission | undefined> {
+    const result = await db
+      .select()
+      .from(userCompanyPermissions)
+      .where(
+        and(
+          eq(userCompanyPermissions.userId, userId),
+          eq(userCompanyPermissions.companyId, companyId)
+        )
+      )
+      .limit(1);
+    return result[0];
+  }
+
+  async setUserPermission(permission: InsertUserCompanyPermission): Promise<UserCompanyPermission> {
+    const result = await db
+      .insert(userCompanyPermissions)
+      .values(permission)
+      .onConflictDoUpdate({
+        target: [userCompanyPermissions.userId, userCompanyPermissions.companyId],
+        set: { role: permission.role },
+      })
+      .returning();
+    return result[0];
+  }
+
+  async deleteUserPermission(userId: string, companyId: string): Promise<boolean> {
+    const result = await db
+      .delete(userCompanyPermissions)
+      .where(
+        and(
+          eq(userCompanyPermissions.userId, userId),
+          eq(userCompanyPermissions.companyId, companyId)
+        )
+      );
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getUsersForCompany(companyId: string): Promise<Array<{ user: User; permission: UserCompanyPermission }>> {
+    const permissions = await db
+      .select()
+      .from(userCompanyPermissions)
+      .where(eq(userCompanyPermissions.companyId, companyId));
+
+    const result = [];
+    for (const permission of permissions) {
+      const user = await this.getUser(permission.userId);
+      if (user) {
+        result.push({ user, permission });
+      }
+    }
+    return result;
+  }
+
+  // Companies
+  async getCompaniesForUser(userId: string): Promise<Company[]> {
+    const user = await this.getUser(userId);
+    if (user?.isAdmin) {
+      return this.getCompanies();
+    }
+
+    const permissions = await this.getUserPermissions(userId);
+    const companyIds = permissions.map(p => p.companyId);
+
+    if (companyIds.length === 0) {
+      return [];
+    }
+
+    return await db
+      .select()
+      .from(companies)
+      .where(inArray(companies.id, companyIds))
+      .orderBy(companies.name);
   }
 
   async getCompanies(): Promise<Company[]> {

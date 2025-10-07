@@ -14,13 +14,31 @@ import {
   type Category,
   type InsertCategory,
   type Document,
-  type InsertDocument
+  type InsertDocument,
+  type User,
+  type UpsertUser,
+  type UserCompanyPermission,
+  type InsertUserCompanyPermission
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // Users
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUserAdmin(userId: string, isAdmin: boolean): Promise<User | undefined>;
+
+  // User-Company Permissions
+  getUserPermissions(userId: string): Promise<UserCompanyPermission[]>;
+  getUserPermissionForCompany(userId: string, companyId: string): Promise<UserCompanyPermission | undefined>;
+  setUserPermission(permission: InsertUserCompanyPermission): Promise<UserCompanyPermission>;
+  deleteUserPermission(userId: string, companyId: string): Promise<boolean>;
+  getUsersForCompany(companyId: string): Promise<Array<{ user: User; permission: UserCompanyPermission }>>;
+
   // Companies
   getCompanies(): Promise<Company[]>;
+  getCompaniesForUser(userId: string): Promise<Company[]>;
   getCompany(id: string): Promise<Company | undefined>;
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company | undefined>;
@@ -95,6 +113,8 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private users: Map<string, User> = new Map();
+  private userPermissions: Map<string, UserCompanyPermission> = new Map();
   private companies: Map<string, Company> = new Map();
   private transactions: Map<string, Transaction> = new Map();
   private inventory: Map<string, Inventory> = new Map();
@@ -171,6 +191,117 @@ export class MemStorage implements IStorage {
     });
   }
 
+  // Users
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const existing = this.users.get(userData.id!);
+    const user: User = {
+      id: userData.id!,
+      email: userData.email ?? null,
+      firstName: userData.firstName ?? null,
+      lastName: userData.lastName ?? null,
+      profileImageUrl: userData.profileImageUrl ?? null,
+      isAdmin: existing?.isAdmin ?? false,
+      createdAt: existing?.createdAt ?? new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).sort((a, b) => {
+      const nameA = `${a.firstName || ''} ${a.lastName || ''}`.trim() || a.email || a.id;
+      const nameB = `${b.firstName || ''} ${b.lastName || ''}`.trim() || b.email || b.id;
+      return nameA.localeCompare(nameB);
+    });
+  }
+
+  async updateUserAdmin(userId: string, isAdmin: boolean): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    user.isAdmin = isAdmin;
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+    return user;
+  }
+
+  // User-Company Permissions
+  async getUserPermissions(userId: string): Promise<UserCompanyPermission[]> {
+    return Array.from(this.userPermissions.values())
+      .filter(p => p.userId === userId);
+  }
+
+  async getUserPermissionForCompany(userId: string, companyId: string): Promise<UserCompanyPermission | undefined> {
+    return Array.from(this.userPermissions.values())
+      .find(p => p.userId === userId && p.companyId === companyId);
+  }
+
+  async setUserPermission(permission: InsertUserCompanyPermission): Promise<UserCompanyPermission> {
+    const existing = await this.getUserPermissionForCompany(permission.userId, permission.companyId);
+    
+    if (existing) {
+      const updated: UserCompanyPermission = {
+        ...existing,
+        role: permission.role,
+      };
+      this.userPermissions.set(existing.id, updated);
+      return updated;
+    }
+    
+    const id = randomUUID();
+    const newPermission: UserCompanyPermission = {
+      id,
+      userId: permission.userId,
+      companyId: permission.companyId,
+      role: permission.role,
+      createdAt: new Date(),
+    };
+    this.userPermissions.set(id, newPermission);
+    return newPermission;
+  }
+
+  async deleteUserPermission(userId: string, companyId: string): Promise<boolean> {
+    const permission = await this.getUserPermissionForCompany(userId, companyId);
+    if (permission) {
+      return this.userPermissions.delete(permission.id);
+    }
+    return false;
+  }
+
+  async getUsersForCompany(companyId: string): Promise<Array<{ user: User; permission: UserCompanyPermission }>> {
+    const permissions = Array.from(this.userPermissions.values())
+      .filter(p => p.companyId === companyId);
+    
+    const result = [];
+    for (const permission of permissions) {
+      const user = this.users.get(permission.userId);
+      if (user) {
+        result.push({ user, permission });
+      }
+    }
+    return result;
+  }
+
+  // Companies
+  async getCompaniesForUser(userId: string): Promise<Company[]> {
+    const user = this.users.get(userId);
+    if (user?.isAdmin) {
+      return this.getCompanies();
+    }
+    
+    const permissions = await this.getUserPermissions(userId);
+    const companyIds = permissions.map(p => p.companyId);
+    
+    return Array.from(this.companies.values())
+      .filter(c => companyIds.includes(c.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   // Companies
   async getCompanies(): Promise<Company[]> {
     return Array.from(this.companies.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -209,7 +340,7 @@ export class MemStorage implements IStorage {
     return this.companies.delete(id);
   }
 
-  getDefaultCompanyId(): string {
+  async getDefaultCompanyId(): Promise<string> {
     return this.defaultCompanyId;
   }
 
@@ -260,8 +391,10 @@ export class MemStorage implements IStorage {
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     const id = randomUUID();
+    const companyId = insertTransaction.companyId || this.defaultCompanyId;
     const transaction: Transaction = {
       ...insertTransaction,
+      companyId,
       quantity: insertTransaction.quantity || null,
       clientSupplierId: insertTransaction.clientSupplierId || null,
       notes: insertTransaction.notes || null,
@@ -328,8 +461,10 @@ export class MemStorage implements IStorage {
 
   async createInventoryItem(insertItem: InsertInventory): Promise<Inventory> {
     const id = randomUUID();
+    const companyId = insertItem.companyId || this.defaultCompanyId;
     const item: Inventory = {
       ...insertItem,
+      companyId,
       minStock: insertItem.minStock || null,
       pricePerUnit: insertItem.pricePerUnit || null,
       id,
@@ -373,8 +508,10 @@ export class MemStorage implements IStorage {
 
   async createClient(insertClient: InsertClient): Promise<Client> {
     const id = randomUUID();
+    const companyId = insertClient.companyId || this.defaultCompanyId;
     const client: Client = {
       ...insertClient,
+      companyId,
       address: insertClient.address || null,
       email: insertClient.email || null,
       phone: insertClient.phone || null,
@@ -423,8 +560,10 @@ export class MemStorage implements IStorage {
 
   async createSupplier(insertSupplier: InsertSupplier): Promise<Supplier> {
     const id = randomUUID();
+    const companyId = insertSupplier.companyId || this.defaultCompanyId;
     const supplier: Supplier = {
       ...insertSupplier,
+      companyId,
       address: insertSupplier.address || null,
       email: insertSupplier.email || null,
       phone: insertSupplier.phone || null,
@@ -468,8 +607,10 @@ export class MemStorage implements IStorage {
 
   async createInventoryMovement(insertMovement: InsertInventoryMovement): Promise<InventoryMovement> {
     const id = randomUUID();
+    const companyId = insertMovement.companyId || this.defaultCompanyId;
     const movement: InventoryMovement = {
       ...insertMovement,
+      companyId,
       notes: insertMovement.notes || null,
       transactionId: insertMovement.transactionId || null,
       id,
@@ -511,8 +652,10 @@ export class MemStorage implements IStorage {
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
     const id = randomUUID();
+    const companyId = insertCategory.companyId || this.defaultCompanyId;
     const category: Category = {
       ...insertCategory,
+      companyId,
       isActive: insertCategory.isActive ?? true,
       id,
       createdAt: new Date(),
@@ -557,8 +700,10 @@ export class MemStorage implements IStorage {
 
   async createDocument(insertDocument: InsertDocument): Promise<Document> {
     const id = randomUUID();
+    const companyId = insertDocument.companyId || this.defaultCompanyId;
     const document: Document = {
       ...insertDocument,
+      companyId,
       description: insertDocument.description || null,
       pdfData: insertDocument.pdfData || null,
       pdfFileName: insertDocument.pdfFileName || null,
