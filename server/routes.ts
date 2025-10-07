@@ -91,7 +91,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/transactions/:id", async (req, res) => {
-    const transaction = await storage.getTransaction(req.params.id);
+    const companyId = await getCompanyId(req);
+    const transaction = await storage.getTransaction(req.params.id, companyId);
     if (!transaction) {
       return res.status(404).json({ message: "Transaction not found" });
     }
@@ -114,8 +115,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/transactions/:id", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertTransactionSchema.partial().parse(req.body);
-      const transaction = await storage.updateTransaction(req.params.id, validatedData);
+      const transaction = await storage.updateTransaction(req.params.id, companyId, validatedData);
       if (!transaction) {
         return res.status(404).json({ message: "Transaction not found" });
       }
@@ -130,7 +132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/transactions/:id", async (req, res) => {
-    const success = await storage.deleteTransaction(req.params.id);
+    const companyId = await getCompanyId(req);
+    const success = await storage.deleteTransaction(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Transaction not found" });
     }
@@ -145,7 +148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/inventory/:id", async (req, res) => {
-    const item = await storage.getInventoryItem(req.params.id);
+    const companyId = await getCompanyId(req);
+    const item = await storage.getInventoryItem(req.params.id, companyId);
     if (!item) {
       return res.status(404).json({ message: "Inventory item not found" });
     }
@@ -168,8 +172,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/inventory/:id", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertInventorySchema.partial().parse(req.body);
-      const item = await storage.updateInventoryItem(req.params.id, validatedData);
+      const item = await storage.updateInventoryItem(req.params.id, companyId, validatedData);
       if (!item) {
         return res.status(404).json({ message: "Inventory item not found" });
       }
@@ -184,7 +189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/inventory/:id", async (req, res) => {
-    const success = await storage.deleteInventoryItem(req.params.id);
+    const companyId = await getCompanyId(req);
+    const success = await storage.deleteInventoryItem(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Inventory item not found" });
     }
@@ -199,7 +205,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/clients/:id", async (req, res) => {
-    const client = await storage.getClient(req.params.id);
+    const companyId = await getCompanyId(req);
+    const client = await storage.getClient(req.params.id, companyId);
     if (!client) {
       return res.status(404).json({ message: "Client not found" });
     }
@@ -208,16 +215,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", async (req, res) => {
     try {
-      console.log("Client request body:", JSON.stringify(req.body, null, 2));
       const validatedData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(validatedData);
       res.status(201).json(client);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.log("Client validation error:", JSON.stringify(error.errors, null, 2));
         res.status(400).json({ message: "Invalid client data", errors: error.errors });
       } else {
-        console.log("Client creation error:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
@@ -225,8 +229,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/clients/:id", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertClientSchema.partial().parse(req.body);
-      const client = await storage.updateClient(req.params.id, validatedData);
+      const client = await storage.updateClient(req.params.id, companyId, validatedData);
       if (!client) {
         return res.status(404).json({ message: "Client not found" });
       }
@@ -241,7 +246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/clients/:id", async (req, res) => {
-    const success = await storage.deleteClient(req.params.id);
+    const companyId = await getCompanyId(req);
+    const success = await storage.deleteClient(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Client not found" });
     }
@@ -256,7 +262,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/suppliers/:id", async (req, res) => {
-    const supplier = await storage.getSupplier(req.params.id);
+    const companyId = await getCompanyId(req);
+    const supplier = await storage.getSupplier(req.params.id, companyId);
     if (!supplier) {
       return res.status(404).json({ message: "Supplier not found" });
     }
@@ -265,16 +272,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/suppliers", async (req, res) => {
     try {
-      console.log("Supplier request body:", JSON.stringify(req.body, null, 2));
       const validatedData = insertSupplierSchema.parse(req.body);
       const supplier = await storage.createSupplier(validatedData);
       res.status(201).json(supplier);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.log("Supplier validation error:", JSON.stringify(error.errors, null, 2));
         res.status(400).json({ message: "Invalid supplier data", errors: error.errors });
       } else {
-        console.log("Supplier creation error:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
@@ -282,8 +286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/suppliers/:id", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertSupplierSchema.partial().parse(req.body);
-      const supplier = await storage.updateSupplier(req.params.id, validatedData);
+      const supplier = await storage.updateSupplier(req.params.id, companyId, validatedData);
       if (!supplier) {
         return res.status(404).json({ message: "Supplier not found" });
       }
@@ -298,7 +303,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/suppliers/:id", async (req, res) => {
-    const success = await storage.deleteSupplier(req.params.id);
+    const companyId = await getCompanyId(req);
+    const success = await storage.deleteSupplier(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Supplier not found" });
     }
@@ -314,7 +320,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/categories/:id", async (req, res) => {
-    const category = await storage.getCategory(req.params.id);
+    const companyId = await getCompanyId(req);
+    const category = await storage.getCategory(req.params.id, companyId);
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
@@ -341,8 +348,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/categories/:id", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertCategorySchema.partial().parse(req.body);
-      const category = await storage.updateCategory(req.params.id, validatedData);
+      const category = await storage.updateCategory(req.params.id, companyId, validatedData);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
       }
@@ -357,7 +365,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/categories/:id", async (req, res) => {
-    const success = await storage.deleteCategory(req.params.id);
+    const companyId = await getCompanyId(req);
+    const success = await storage.deleteCategory(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Category not found" });
     }
@@ -372,7 +381,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/documents/:id", async (req, res) => {
-    const document = await storage.getDocument(req.params.id);
+    const companyId = await getCompanyId(req);
+    const document = await storage.getDocument(req.params.id, companyId);
     if (!document) {
       return res.status(404).json({ message: "Document not found" });
     }
@@ -395,8 +405,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/documents/:id", async (req, res) => {
     try {
+      const companyId = await getCompanyId(req);
       const validatedData = insertDocumentSchema.partial().parse(req.body);
-      const document = await storage.updateDocument(req.params.id, validatedData);
+      const document = await storage.updateDocument(req.params.id, companyId, validatedData);
       if (!document) {
         return res.status(404).json({ message: "Document not found" });
       }
@@ -411,7 +422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/documents/:id", async (req, res) => {
-    const success = await storage.deleteDocument(req.params.id);
+    const companyId = await getCompanyId(req);
+    const success = await storage.deleteDocument(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Document not found" });
     }
