@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(40, 30%, 98%);
+  --foreground: hsl(100, 20%, 15%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(100, 20%, 15%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(100, 20%, 15%);
+  --primary: hsl(95, 55%, 25%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(68, 45%, 35%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(120, 10%, 55%);
+  --muted-foreground: hsl(100, 20%, 20%);
+  --accent: hsl(30, 45%, 65%);
+  --accent-foreground: hsl(100, 20%, 15%);
+  --destructive: hsl(15, 75%, 45%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(120, 15%, 85%);
+  --input: hsl(120, 15%, 85%);
+  --ring: hsl(95, 55%, 25%);
+  --chart-1: hsl(95, 55%, 35%);
+  --chart-2: hsl(68, 45%, 45%);
+  --chart-3: hsl(30, 45%, 65%);
+  --chart-4: hsl(120, 10%, 55%);
+  --chart-5: hsl(15, 75%, 45%);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: hsl(100, 20%, 8%);
+  --foreground: hsl(40, 30%, 95%);
+  --card: hsl(100, 15%, 12%);
+  --card-foreground: hsl(40, 30%, 95%);
+  --popover: hsl(100, 15%, 12%);
+  --popover-foreground: hsl(40, 30%, 95%);
+  --primary: hsl(95, 55%, 35%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(68, 45%, 45%);
+  --secondary-foreground: hsl(100, 20%, 8%);
+  --muted: hsl(120, 10%, 25%);
+  --muted-foreground: hsl(100, 15%, 60%);
+  --accent: hsl(30, 45%, 35%);
+  --accent-foreground: hsl(40, 30%, 95%);
+  --destructive: hsl(15, 75%, 50%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(120, 15%, 20%);
+  --input: hsl(120, 15%, 20%);
+  --ring: hsl(95, 55%, 35%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: hsl(var(--muted) / 0.2);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted) / 0.8);
+  }
+}
+
+@layer components {
+  .chart-bar {
+    @apply transition-all duration-300 hover:opacity-80;
+  }
+  
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-colors;
+  }
+  
+  .sidebar-link.active {
+    @apply text-primary font-medium;
+    background-color: hsl(var(--primary) / 0.1);
+  }
+  
+  .sidebar-link:not(.active) {
+    @apply text-foreground;
+  }
+  
+  .sidebar-link:not(.active):hover {
+    background-color: hsl(var(--muted) / 0.2);
+  }
+  
+  .metric-card {
+    @apply bg-card rounded-lg border border-border p-6 hover:shadow-md transition-shadow;
+  }
+  
+  .transaction-row {
+    @apply border-b transition-colors;
+    border-color: hsl(var(--border) / 0.5);
+  }
+  
+  .transaction-row:hover {
+    background-color: hsl(var(--muted) / 0.05);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
