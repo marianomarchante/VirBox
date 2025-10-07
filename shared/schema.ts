@@ -113,7 +113,7 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   createdAt: true,
 }).extend({
   companyId: z.string().optional(),
-  date: z.union([z.date(), z.string(), z.coerce.date()]),
+  date: z.union([z.date(), z.string().transform(val => new Date(val))]),
 });
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
