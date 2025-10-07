@@ -1,7 +1,41 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, decimal, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, decimal, integer, timestamp, boolean, index, jsonb, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Users table for Replit Auth
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User-Company permissions table
+export const userCompanyPermissions = pgTable("user_company_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  companyId: varchar("company_id").notNull(),
+  role: text("role").notNull(), // 'consulta' | 'administracion'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  unique("unique_user_company").on(table.userId, table.companyId),
+]);
 
 export const companies = pgTable("companies", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -186,6 +220,21 @@ export type InsertCategory = z.infer<typeof insertCategorySchema>;
 
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+
+// User schemas
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
+
+// Permission schemas
+export const insertUserCompanyPermissionSchema = createInsertSchema(userCompanyPermissions).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  role: z.enum(['consulta', 'administracion']),
+});
+
+export type UserCompanyPermission = typeof userCompanyPermissions.$inferSelect;
+export type InsertUserCompanyPermission = z.infer<typeof insertUserCompanyPermissionSchema>;
 
 // Additional schemas for forms
 export const transactionFilterSchema = z.object({
