@@ -125,10 +125,14 @@ The application implements a **role-based access control (RBAC)** system with tw
    - Write operations conditionally disabled when `canWrite=false`
    - Applied to all pages: Dashboard, Income, Expenses, Inventory, Clients, Suppliers, Categories, Documents
 
-4. **Company Access Filtering:**
+4. **Company Access Filtering & Dynamic UI Updates:**
    - `CompanyContext` automatically filters companies based on user permissions
    - Users only see companies they have been granted access to
-   - Switching companies triggers permission re-validation
+   - Switching companies triggers:
+     - Permission re-validation
+     - Automatic query invalidation and data refresh for all dashboard metrics, transactions, inventory, clients, and suppliers
+     - UI update to display the selected company name in Sidebar and MobileMenu (replaces "MiContable" placeholder)
+   - All data views (Dashboard, Income, Expenses, etc.) instantly reflect the selected company's data
 
 **Security Notes:**
 - ✅ All API routes protected by `isAuthenticated` middleware
