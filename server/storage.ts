@@ -10,7 +10,9 @@ import {
   type InventoryMovement,
   type InsertInventoryMovement,
   type Category,
-  type InsertCategory
+  type InsertCategory,
+  type Document,
+  type InsertDocument
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -60,6 +62,13 @@ export interface IStorage {
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
 
+  // Documents
+  getDocuments(): Promise<Document[]>;
+  getDocument(id: string): Promise<Document | undefined>;
+  createDocument(document: InsertDocument): Promise<Document>;
+  updateDocument(id: string, document: Partial<InsertDocument>): Promise<Document | undefined>;
+  deleteDocument(id: string): Promise<boolean>;
+
   // Dashboard metrics
   getMetrics(): Promise<{
     totalIncome: number;
@@ -82,6 +91,7 @@ export class MemStorage implements IStorage {
   private suppliers: Map<string, Supplier> = new Map();
   private inventoryMovements: Map<string, InventoryMovement> = new Map();
   private categories: Map<string, Category> = new Map();
+  private documents: Map<string, Document> = new Map();
 
   constructor() {
     this.initializeDefaultCategories();
@@ -401,6 +411,44 @@ export class MemStorage implements IStorage {
 
   async deleteCategory(id: string): Promise<boolean> {
     return this.categories.delete(id);
+  }
+
+  // Documents
+  async getDocuments(): Promise<Document[]> {
+    return Array.from(this.documents.values()).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async getDocument(id: string): Promise<Document | undefined> {
+    return this.documents.get(id);
+  }
+
+  async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    const id = randomUUID();
+    const document: Document = {
+      ...insertDocument,
+      description: insertDocument.description || null,
+      pdfData: insertDocument.pdfData || null,
+      pdfFileName: insertDocument.pdfFileName || null,
+      id,
+      createdAt: new Date(),
+    };
+    this.documents.set(id, document);
+    return document;
+  }
+
+  async updateDocument(id: string, update: Partial<InsertDocument>): Promise<Document | undefined> {
+    const document = this.documents.get(id);
+    if (!document) return undefined;
+    
+    const updated = { ...document, ...update };
+    this.documents.set(id, updated);
+    return updated;
+  }
+
+  async deleteDocument(id: string): Promise<boolean> {
+    return this.documents.delete(id);
   }
 
   // Dashboard metrics
