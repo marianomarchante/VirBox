@@ -19,9 +19,12 @@ export default function InventoryStatus({ inventory }: InventoryStatusProps) {
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, string> = {
-      'vegetables': '🥬',
-      'grains': '🌾',
-      'fruits': '🍎',
+      'materials': '🧱',
+      'supplies': '📦',
+      'equipment': '🔧',
+      'products': '📦',
+      'tools': '🛠️',
+      'services': '⚙️',
     };
     return icons[category] || '📦';
   };

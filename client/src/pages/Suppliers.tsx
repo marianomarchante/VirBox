@@ -28,17 +28,17 @@ export default function Suppliers() {
       phone: '',
       address: '',
       contactPerson: '',
-      category: 'seeds',
+      category: 'materials',
       isActive: true,
     },
   });
 
   const categories = [
-    { value: 'seeds', label: 'Semillas' },
-    { value: 'fertilizers', label: 'Fertilizantes' },
-    { value: 'machinery', label: 'Maquinaria' },
+    { value: 'materials', label: 'Materiales' },
+    { value: 'supplies', label: 'Suministros' },
+    { value: 'equipment', label: 'Equipamiento' },
     { value: 'tools', label: 'Herramientas' },
-    { value: 'chemicals', label: 'Químicos' },
+    { value: 'technology', label: 'Tecnología' },
     { value: 'services', label: 'Servicios' },
     { value: 'other', label: 'Otros' },
   ];
@@ -97,12 +97,12 @@ export default function Suppliers() {
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      'seeds': 'primary',
-      'fertilizers': 'destructive',
-      'machinery': 'muted',
+      'materials': 'primary',
+      'supplies': 'accent',
+      'equipment': 'muted',
       'tools': 'accent',
-      'chemicals': 'secondary',
-      'services': 'accent',
+      'technology': 'secondary',
+      'services': 'primary',
     };
     return colors[category] || 'muted';
   };
@@ -324,7 +324,7 @@ export default function Suppliers() {
                 <Label htmlFor="name">Nombre de la empresa *</Label>
                 <Input
                   {...form.register("name")}
-                  placeholder="Ej: AgroVerde Suministros"
+                  placeholder="Ej: Suministros Generales S.A."
                   data-testid="input-supplier-name"
                 />
                 {form.formState.errors.name && (

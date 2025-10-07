@@ -34,7 +34,7 @@ export const inventory = pgTable("inventory", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
-  category: text("category").notNull(), // e.g. 'vegetables', 'grains', 'fruits'
+  category: text("category").notNull(), // e.g. 'materials', 'supplies', 'equipment'
   currentStock: decimal("current_stock", { precision: 10, scale: 2 }).notNull(),
   unit: text("unit").notNull(), // e.g. 'kg', 'units', 'tons'
   minStock: decimal("min_stock", { precision: 10, scale: 2 }).default("0"),
@@ -64,7 +64,7 @@ export const suppliers = pgTable("suppliers", {
   phone: text("phone"),
   address: text("address"),
   contactPerson: text("contact_person"),
-  category: text("category").notNull(), // e.g. 'seeds', 'fertilizers', 'machinery'
+  category: text("category").notNull(), // e.g. 'materials', 'supplies', 'equipment'
   totalPurchases: decimal("total_purchases", { precision: 10, scale: 2 }).default("0"),
   orderCount: integer("order_count").default(0),
   isActive: boolean("is_active").default(true),
