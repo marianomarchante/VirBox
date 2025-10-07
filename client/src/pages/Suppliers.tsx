@@ -336,7 +336,10 @@ export default function Suppliers() {
               
               <div>
                 <Label htmlFor="category">Categoría *</Label>
-                <Select onValueChange={(value) => form.setValue('category', value)}>
+                <Select 
+                  value={form.watch('category')} 
+                  onValueChange={(value) => form.setValue('category', value)}
+                >
                   <SelectTrigger data-testid="select-supplier-category">
                     <SelectValue placeholder="Seleccionar categoría" />
                   </SelectTrigger>

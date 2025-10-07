@@ -208,13 +208,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clients", async (req, res) => {
     try {
+      console.log("Client request body:", JSON.stringify(req.body, null, 2));
       const validatedData = insertClientSchema.parse(req.body);
       const client = await storage.createClient(validatedData);
       res.status(201).json(client);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log("Client validation error:", JSON.stringify(error.errors, null, 2));
         res.status(400).json({ message: "Invalid client data", errors: error.errors });
       } else {
+        console.log("Client creation error:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
@@ -262,13 +265,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/suppliers", async (req, res) => {
     try {
+      console.log("Supplier request body:", JSON.stringify(req.body, null, 2));
       const validatedData = insertSupplierSchema.parse(req.body);
       const supplier = await storage.createSupplier(validatedData);
       res.status(201).json(supplier);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log("Supplier validation error:", JSON.stringify(error.errors, null, 2));
         res.status(400).json({ message: "Invalid supplier data", errors: error.errors });
       } else {
+        console.log("Supplier creation error:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
