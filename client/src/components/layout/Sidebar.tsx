@@ -12,12 +12,15 @@ import {
   BarChart3,
   Tags,
   Files,
-  Building2
+  Building2,
+  UserCog
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 export default function Sidebar() {
   const [location] = useLocation();
+  const { user } = useAuthContext();
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -34,6 +37,7 @@ export default function Sidebar() {
     { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
     { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
     { name: "Empresas", href: "/empresas", icon: Building2 },
+    ...(user?.isAdmin ? [{ name: "Usuarios", href: "/usuarios", icon: UserCog }] : []),
     { name: "Configuración", href: "/configuracion", icon: Settings },
     { name: "Ayuda", href: "/ayuda", icon: HelpCircle },
   ];
