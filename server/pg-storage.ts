@@ -157,8 +157,10 @@ export class PostgresStorage implements IStorage {
       .orderBy(sql`${transactions.date} DESC`);
   }
 
-  async getTransaction(id: string): Promise<Transaction | undefined> {
-    const result = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1);
+  async getTransaction(id: string, companyId: string): Promise<Transaction | undefined> {
+    const result = await db.select().from(transactions)
+      .where(and(eq(transactions.id, id), eq(transactions.companyId, companyId)))
+      .limit(1);
     return result[0];
   }
 
@@ -190,13 +192,16 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  async updateTransaction(id: string, update: Partial<InsertTransaction>): Promise<Transaction | undefined> {
-    const result = await db.update(transactions).set(update).where(eq(transactions.id, id)).returning();
+  async updateTransaction(id: string, companyId: string, update: Partial<InsertTransaction>): Promise<Transaction | undefined> {
+    const result = await db.update(transactions).set(update)
+      .where(and(eq(transactions.id, id), eq(transactions.companyId, companyId)))
+      .returning();
     return result[0];
   }
 
-  async deleteTransaction(id: string): Promise<boolean> {
-    const result = await db.delete(transactions).where(eq(transactions.id, id));
+  async deleteTransaction(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(transactions)
+      .where(and(eq(transactions.id, id), eq(transactions.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
@@ -206,8 +211,10 @@ export class PostgresStorage implements IStorage {
       .orderBy(inventory.name);
   }
 
-  async getInventoryItem(id: string): Promise<Inventory | undefined> {
-    const result = await db.select().from(inventory).where(eq(inventory.id, id)).limit(1);
+  async getInventoryItem(id: string, companyId: string): Promise<Inventory | undefined> {
+    const result = await db.select().from(inventory)
+      .where(and(eq(inventory.id, id), eq(inventory.companyId, companyId)))
+      .limit(1);
     return result[0];
   }
 
@@ -220,13 +227,16 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  async updateInventoryItem(id: string, update: Partial<InsertInventory>): Promise<Inventory | undefined> {
-    const result = await db.update(inventory).set(update).where(eq(inventory.id, id)).returning();
+  async updateInventoryItem(id: string, companyId: string, update: Partial<InsertInventory>): Promise<Inventory | undefined> {
+    const result = await db.update(inventory).set(update)
+      .where(and(eq(inventory.id, id), eq(inventory.companyId, companyId)))
+      .returning();
     return result[0];
   }
 
-  async deleteInventoryItem(id: string): Promise<boolean> {
-    const result = await db.delete(inventory).where(eq(inventory.id, id));
+  async deleteInventoryItem(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(inventory)
+      .where(and(eq(inventory.id, id), eq(inventory.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
@@ -236,8 +246,10 @@ export class PostgresStorage implements IStorage {
       .orderBy(clients.name);
   }
 
-  async getClient(id: string): Promise<Client | undefined> {
-    const result = await db.select().from(clients).where(eq(clients.id, id)).limit(1);
+  async getClient(id: string, companyId: string): Promise<Client | undefined> {
+    const result = await db.select().from(clients)
+      .where(and(eq(clients.id, id), eq(clients.companyId, companyId)))
+      .limit(1);
     return result[0];
   }
 
@@ -250,13 +262,16 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  async updateClient(id: string, update: Partial<InsertClient>): Promise<Client | undefined> {
-    const result = await db.update(clients).set(update).where(eq(clients.id, id)).returning();
+  async updateClient(id: string, companyId: string, update: Partial<InsertClient>): Promise<Client | undefined> {
+    const result = await db.update(clients).set(update)
+      .where(and(eq(clients.id, id), eq(clients.companyId, companyId)))
+      .returning();
     return result[0];
   }
 
-  async deleteClient(id: string): Promise<boolean> {
-    const result = await db.delete(clients).where(eq(clients.id, id));
+  async deleteClient(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(clients)
+      .where(and(eq(clients.id, id), eq(clients.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
@@ -266,8 +281,10 @@ export class PostgresStorage implements IStorage {
       .orderBy(suppliers.name);
   }
 
-  async getSupplier(id: string): Promise<Supplier | undefined> {
-    const result = await db.select().from(suppliers).where(eq(suppliers.id, id)).limit(1);
+  async getSupplier(id: string, companyId: string): Promise<Supplier | undefined> {
+    const result = await db.select().from(suppliers)
+      .where(and(eq(suppliers.id, id), eq(suppliers.companyId, companyId)))
+      .limit(1);
     return result[0];
   }
 
@@ -280,13 +297,16 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  async updateSupplier(id: string, update: Partial<InsertSupplier>): Promise<Supplier | undefined> {
-    const result = await db.update(suppliers).set(update).where(eq(suppliers.id, id)).returning();
+  async updateSupplier(id: string, companyId: string, update: Partial<InsertSupplier>): Promise<Supplier | undefined> {
+    const result = await db.update(suppliers).set(update)
+      .where(and(eq(suppliers.id, id), eq(suppliers.companyId, companyId)))
+      .returning();
     return result[0];
   }
 
-  async deleteSupplier(id: string): Promise<boolean> {
-    const result = await db.delete(suppliers).where(eq(suppliers.id, id));
+  async deleteSupplier(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(suppliers)
+      .where(and(eq(suppliers.id, id), eq(suppliers.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
@@ -331,8 +351,10 @@ export class PostgresStorage implements IStorage {
       .orderBy(categories.name);
   }
 
-  async getCategory(id: string): Promise<Category | undefined> {
-    const result = await db.select().from(categories).where(eq(categories.id, id)).limit(1);
+  async getCategory(id: string, companyId: string): Promise<Category | undefined> {
+    const result = await db.select().from(categories)
+      .where(and(eq(categories.id, id), eq(categories.companyId, companyId)))
+      .limit(1);
     return result[0];
   }
 
@@ -345,13 +367,16 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  async updateCategory(id: string, update: Partial<InsertCategory>): Promise<Category | undefined> {
-    const result = await db.update(categories).set(update).where(eq(categories.id, id)).returning();
+  async updateCategory(id: string, companyId: string, update: Partial<InsertCategory>): Promise<Category | undefined> {
+    const result = await db.update(categories).set(update)
+      .where(and(eq(categories.id, id), eq(categories.companyId, companyId)))
+      .returning();
     return result[0];
   }
 
-  async deleteCategory(id: string): Promise<boolean> {
-    const result = await db.delete(categories).where(eq(categories.id, id));
+  async deleteCategory(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(categories)
+      .where(and(eq(categories.id, id), eq(categories.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
@@ -361,8 +386,10 @@ export class PostgresStorage implements IStorage {
       .orderBy(sql`${documents.createdAt} DESC`);
   }
 
-  async getDocument(id: string): Promise<Document | undefined> {
-    const result = await db.select().from(documents).where(eq(documents.id, id)).limit(1);
+  async getDocument(id: string, companyId: string): Promise<Document | undefined> {
+    const result = await db.select().from(documents)
+      .where(and(eq(documents.id, id), eq(documents.companyId, companyId)))
+      .limit(1);
     return result[0];
   }
 
@@ -375,13 +402,16 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
-  async updateDocument(id: string, update: Partial<InsertDocument>): Promise<Document | undefined> {
-    const result = await db.update(documents).set(update).where(eq(documents.id, id)).returning();
+  async updateDocument(id: string, companyId: string, update: Partial<InsertDocument>): Promise<Document | undefined> {
+    const result = await db.update(documents).set(update)
+      .where(and(eq(documents.id, id), eq(documents.companyId, companyId)))
+      .returning();
     return result[0];
   }
 
-  async deleteDocument(id: string): Promise<boolean> {
-    const result = await db.delete(documents).where(eq(documents.id, id));
+  async deleteDocument(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(documents)
+      .where(and(eq(documents.id, id), eq(documents.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
