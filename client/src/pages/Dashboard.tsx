@@ -15,6 +15,7 @@ import { useTransactions } from "@/hooks/use-transactions";
 import { useInventory } from "@/hooks/use-inventory";
 import { useClients } from "@/hooks/use-clients";
 import { useSuppliers } from "@/hooks/use-suppliers";
+import { useCompany } from "@/contexts/CompanyContext";
 import type { TransactionFilter, InsertTransaction } from "@shared/schema";
 
 export default function Dashboard() {
@@ -27,6 +28,8 @@ export default function Dashboard() {
     dateFrom: '',
     dateTo: '',
   });
+
+  const { currentCompanyId } = useCompany();
 
   // Data fetching
   const { data: metrics } = useQuery({
@@ -49,7 +52,8 @@ export default function Dashboard() {
 
   // Event handlers
   const handleCreateTransaction = (transaction: InsertTransaction) => {
-    createTransaction.mutate(transaction);
+    if (!currentCompanyId) return;
+    createTransaction.mutate({ ...transaction, companyId: currentCompanyId });
     setIsTransactionModalOpen(false);
   };
 
