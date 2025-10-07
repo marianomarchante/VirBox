@@ -118,6 +118,8 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
 export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
   lastUpdated: true,
+}).extend({
+  companyId: z.string().optional(),
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({
@@ -125,6 +127,8 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   totalPurchases: true,
   orderCount: true,
   createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({
@@ -132,11 +136,15 @@ export const insertSupplierSchema = createInsertSchema(suppliers).omit({
   totalPurchases: true,
   orderCount: true,
   createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
 });
 
 export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements).omit({
   id: true,
   date: true,
+}).extend({
+  companyId: z.string().optional(),
 });
 
 export const insertCategorySchema = createInsertSchema(categories).omit({
@@ -149,6 +157,8 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 export const insertDocumentSchema = createInsertSchema(documents).omit({
   id: true,
   createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
 });
 
 // Types
