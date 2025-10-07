@@ -18,8 +18,8 @@ export default function RecentTransactions({ transactions, title, type }: Recent
 
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric'
     });
   };
