@@ -46,7 +46,7 @@ export default function Inventory() {
       <main className="flex-1 overflow-y-auto">
         <TopBar
           title="Inventario"
-          subtitle="Control de productos agrícolas"
+          subtitle="Control de productos y materiales"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
         

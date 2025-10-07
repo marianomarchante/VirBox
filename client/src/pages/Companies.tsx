@@ -318,7 +318,7 @@ export default function Companies() {
                 <Input
                   id="name"
                   {...form.register('name')}
-                  placeholder="Mi Empresa Agrícola"
+                  placeholder="Mi Empresa"
                   data-testid="input-company-name"
                 />
                 {form.formState.errors.name && (
