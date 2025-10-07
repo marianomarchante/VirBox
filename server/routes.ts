@@ -7,6 +7,7 @@ import {
   insertClientSchema, 
   insertSupplierSchema,
   insertCategorySchema,
+  insertDocumentSchema,
   transactionFilterSchema 
 } from "@shared/schema";
 import { z } from "zod";
@@ -285,6 +286,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const success = await storage.deleteCategory(req.params.id);
     if (!success) {
       return res.status(404).json({ message: "Category not found" });
+    }
+    res.status(204).send();
+  });
+
+  // Document routes
+  app.get("/api/documents", async (req, res) => {
+    const documents = await storage.getDocuments();
+    res.json(documents);
+  });
+
+  app.get("/api/documents/:id", async (req, res) => {
+    const document = await storage.getDocument(req.params.id);
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+    res.json(document);
+  });
+
+  app.post("/api/documents", async (req, res) => {
+    try {
+      const validatedData = insertDocumentSchema.parse(req.body);
+      const document = await storage.createDocument(validatedData);
+      res.status(201).json(document);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid document data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.put("/api/documents/:id", async (req, res) => {
+    try {
+      const validatedData = insertDocumentSchema.partial().parse(req.body);
+      const document = await storage.updateDocument(req.params.id, validatedData);
+      if (!document) {
+        return res.status(404).json({ message: "Document not found" });
+      }
+      res.json(document);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid document data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.delete("/api/documents/:id", async (req, res) => {
+    const success = await storage.deleteDocument(req.params.id);
+    if (!success) {
+      return res.status(404).json({ message: "Document not found" });
     }
     res.status(204).send();
   });
