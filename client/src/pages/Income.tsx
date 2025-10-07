@@ -5,11 +5,13 @@ import TopBar from "@/components/layout/TopBar";
 import TransactionModal from "@/components/forms/TransactionModal";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useClients } from "@/hooks/use-clients";
+import { useCompany } from "@/contexts/CompanyContext";
 import type { InsertTransaction } from "@shared/schema";
 
 export default function Income() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const { currentCompanyId } = useCompany();
 
   const { transactions, createTransaction } = useTransactions({
     type: 'income',
@@ -22,7 +24,8 @@ export default function Income() {
   const { clients } = useClients();
 
   const handleCreateTransaction = (transaction: InsertTransaction) => {
-    createTransaction.mutate({ ...transaction, type: 'income' });
+    if (!currentCompanyId) return;
+    createTransaction.mutate({ ...transaction, type: 'income', companyId: currentCompanyId });
     setIsTransactionModalOpen(false);
   };
 
