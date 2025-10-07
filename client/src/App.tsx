@@ -11,6 +11,8 @@ import Inventory from "@/pages/Inventory";
 import Clients from "@/pages/Clients";
 import Suppliers from "@/pages/Suppliers";
 import Reports from "@/pages/Reports";
+import IncomeCategories from "@/pages/IncomeCategories";
+import ExpenseCategories from "@/pages/ExpenseCategories";
 
 function Router() {
   return (
@@ -22,6 +24,8 @@ function Router() {
       <Route path="/clientes" component={Clients} />
       <Route path="/proveedores" component={Suppliers} />
       <Route path="/reportes" component={Reports} />
+      <Route path="/categorias-ingresos" component={IncomeCategories} />
+      <Route path="/categorias-gastos" component={ExpenseCategories} />
       <Route component={NotFound} />
     </Switch>
   );

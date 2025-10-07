@@ -13,11 +13,8 @@ export function useCategories(type?: 'income' | 'expense') {
 
   const createCategory = useMutation({
     mutationFn: async (category: InsertCategory) => {
-      return await apiRequest('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(category),
-      });
+      const response = await apiRequest('POST', '/api/categories', category);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
@@ -37,11 +34,8 @@ export function useCategories(type?: 'income' | 'expense') {
 
   const updateCategory = useMutation({
     mutationFn: async ({ id, category }: { id: string; category: Partial<InsertCategory> }) => {
-      return await apiRequest(`/api/categories/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(category),
-      });
+      const response = await apiRequest('PUT', `/api/categories/${id}`, category);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
@@ -61,9 +55,7 @@ export function useCategories(type?: 'income' | 'expense') {
 
   const deleteCategory = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/categories/${id}`, {
-        method: 'DELETE',
-      });
+      await apiRequest('DELETE', `/api/categories/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/categories'] });

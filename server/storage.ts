@@ -382,6 +382,7 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const category: Category = {
       ...insertCategory,
+      isActive: insertCategory.isActive ?? true,
       id,
       createdAt: new Date(),
     };
