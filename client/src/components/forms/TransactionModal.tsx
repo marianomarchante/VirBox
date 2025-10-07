@@ -81,6 +81,7 @@ export default function TransactionModal({
 
   const handleSubmit = (data: InsertTransaction) => {
     try {
+      console.log("Form data before formatting:", data);
       // Ensure amount is a string and date is properly formatted
       const formattedData = {
         ...data,
@@ -88,6 +89,7 @@ export default function TransactionModal({
         date: data.date instanceof Date ? data.date : new Date(data.date),
         clientSupplierId: data.clientSupplierId || undefined,
       };
+      console.log("Form data after formatting:", formattedData);
       onSubmit(formattedData);
       form.reset();
       setSelectedPdf(null);
@@ -97,6 +99,7 @@ export default function TransactionModal({
         description: "La transacción se ha registrado correctamente.",
       });
     } catch (error) {
+      console.error("Error creating transaction:", error);
       toast({
         title: "Error",
         description: "No se pudo crear la transacción. Intenta nuevamente.",
