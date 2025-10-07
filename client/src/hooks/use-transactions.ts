@@ -42,7 +42,7 @@ export function useTransactions(filter?: TransactionFilter) {
 
   const createTransaction = useMutation({
     mutationFn: async (transaction: InsertTransaction) => {
-      const response = await apiRequest('POST', '/api/transactions', transaction);
+      const response = await apiRequest('POST', `/api/transactions?companyId=${currentCompanyId}`, transaction);
       return response.json();
     },
     onSuccess: () => {
@@ -64,7 +64,7 @@ export function useTransactions(filter?: TransactionFilter) {
 
   const updateTransaction = useMutation({
     mutationFn: async ({ id, transaction }: { id: string; transaction: Partial<InsertTransaction> }) => {
-      const response = await apiRequest('PUT', `/api/transactions/${id}`, transaction);
+      const response = await apiRequest('PUT', `/api/transactions/${id}?companyId=${currentCompanyId}`, transaction);
       return response.json();
     },
     onSuccess: () => {
@@ -86,7 +86,7 @@ export function useTransactions(filter?: TransactionFilter) {
 
   const deleteTransaction = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/transactions/${id}`);
+      await apiRequest('DELETE', `/api/transactions/${id}?companyId=${currentCompanyId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });

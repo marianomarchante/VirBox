@@ -112,9 +112,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(transaction);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ message: "Invalid transaction data", errors: error.errors });
+        res.status(400).json({ 
+          message: "Invalid transaction data", 
+          errors: error.errors,
+          body: req.body 
+        });
       } else {
-        res.status(500).json({ message: "Internal server error" });
+        console.error("Transaction error:", error);
+        res.status(500).json({ message: "Internal server error", error: String(error) });
       }
     }
   });
