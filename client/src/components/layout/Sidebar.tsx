@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { 
-  Sprout, 
+  Calculator,
   TrendingUp, 
   TrendingDown, 
   Package, 
@@ -43,11 +43,11 @@ export default function Sidebar() {
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Sprout className="text-primary-foreground" size={20} />
+            <Calculator className="text-primary-foreground" size={20} />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-primary">AgroContable</h1>
-            <p className="text-xs text-muted-foreground">Gestión Agrícola</p>
+            <h1 className="text-xl font-bold text-primary">MiContable</h1>
+            <p className="text-xs text-muted-foreground">Gestión Empresarial</p>
           </div>
         </div>
       </div>

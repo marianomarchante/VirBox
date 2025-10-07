@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { X, Sprout, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2 } from "lucide-react";
+import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileMenuProps {
@@ -36,11 +36,11 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Sprout className="text-primary-foreground" size={20} />
+              <Calculator className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">AgroContable</h1>
-              <p className="text-xs text-muted-foreground">Gestión Agrícola</p>
+              <h1 className="text-xl font-bold text-primary">MiContable</h1>
+              <p className="text-xs text-muted-foreground">Gestión Empresarial</p>
             </div>
           </div>
           <button 
