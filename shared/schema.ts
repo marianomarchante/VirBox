@@ -3,8 +3,20 @@ import { pgTable, text, varchar, decimal, integer, timestamp, boolean } from "dr
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const companies = pgTable("companies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  taxId: text("tax_id"), // NIT, RUT, Tax ID, etc.
+  address: text("address"),
+  phone: text("phone"),
+  email: text("email"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
   type: text("type").notNull(), // 'income' | 'expense'
   date: timestamp("date").notNull(),
   concept: text("concept").notNull(),
@@ -20,6 +32,7 @@ export const transactions = pgTable("transactions", {
 
 export const inventory = pgTable("inventory", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
   category: text("category").notNull(), // e.g. 'vegetables', 'grains', 'fruits'
   currentStock: decimal("current_stock", { precision: 10, scale: 2 }).notNull(),
@@ -31,6 +44,7 @@ export const inventory = pgTable("inventory", {
 
 export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
@@ -44,6 +58,7 @@ export const clients = pgTable("clients", {
 
 export const suppliers = pgTable("suppliers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
@@ -58,6 +73,7 @@ export const suppliers = pgTable("suppliers", {
 
 export const inventoryMovements = pgTable("inventory_movements", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
   inventoryId: varchar("inventory_id").notNull(),
   type: text("type").notNull(), // 'in' | 'out'
   quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
@@ -69,6 +85,7 @@ export const inventoryMovements = pgTable("inventory_movements", {
 
 export const categories = pgTable("categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'income' | 'expense'
   isActive: boolean("is_active").default(true).notNull(),
@@ -77,6 +94,7 @@ export const categories = pgTable("categories", {
 
 export const documents = pgTable("documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   pdfData: text("pdf_data"), // PDF file stored as base64
@@ -85,6 +103,11 @@ export const documents = pgTable("documents", {
 });
 
 // Insert schemas
+export const insertCompanySchema = createInsertSchema(companies).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   createdAt: true,
@@ -125,6 +148,9 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
 });
 
 // Types
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = z.infer<typeof insertCompanySchema>;
+
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
