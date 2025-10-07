@@ -8,7 +8,9 @@ import {
   type Supplier,
   type InsertSupplier,
   type InventoryMovement,
-  type InsertInventoryMovement
+  type InsertInventoryMovement,
+  type Category,
+  type InsertCategory
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -51,6 +53,13 @@ export interface IStorage {
   getInventoryMovements(inventoryId?: string): Promise<InventoryMovement[]>;
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
 
+  // Categories
+  getCategories(type?: 'income' | 'expense'): Promise<Category[]>;
+  getCategory(id: string): Promise<Category | undefined>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
+  deleteCategory(id: string): Promise<boolean>;
+
   // Dashboard metrics
   getMetrics(): Promise<{
     totalIncome: number;
@@ -72,6 +81,51 @@ export class MemStorage implements IStorage {
   private clients: Map<string, Client> = new Map();
   private suppliers: Map<string, Supplier> = new Map();
   private inventoryMovements: Map<string, InventoryMovement> = new Map();
+  private categories: Map<string, Category> = new Map();
+
+  constructor() {
+    this.initializeDefaultCategories();
+  }
+
+  private initializeDefaultCategories() {
+    const defaultIncomeCategories = [
+      'Ventas - Productos',
+      'Servicios',
+      'Otros Ingresos',
+    ];
+
+    const defaultExpenseCategories = [
+      'Semillas',
+      'Fertilizantes',
+      'Mano de Obra',
+      'Maquinaria',
+      'Infraestructura',
+      'Servicios',
+      'Otros Gastos',
+    ];
+
+    defaultIncomeCategories.forEach(name => {
+      const id = randomUUID();
+      this.categories.set(id, {
+        id,
+        name,
+        type: 'income',
+        isActive: true,
+        createdAt: new Date(),
+      });
+    });
+
+    defaultExpenseCategories.forEach(name => {
+      const id = randomUUID();
+      this.categories.set(id, {
+        id,
+        name,
+        type: 'expense',
+        isActive: true,
+        createdAt: new Date(),
+      });
+    });
+  }
 
   // Transactions
   async getTransactions(filter?: {
@@ -309,6 +363,43 @@ export class MemStorage implements IStorage {
     }
     
     return movement;
+  }
+
+  // Categories
+  async getCategories(type?: 'income' | 'expense'): Promise<Category[]> {
+    let categories = Array.from(this.categories.values());
+    if (type) {
+      categories = categories.filter(c => c.type === type);
+    }
+    return categories.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getCategory(id: string): Promise<Category | undefined> {
+    return this.categories.get(id);
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const id = randomUUID();
+    const category: Category = {
+      ...insertCategory,
+      id,
+      createdAt: new Date(),
+    };
+    this.categories.set(id, category);
+    return category;
+  }
+
+  async updateCategory(id: string, update: Partial<InsertCategory>): Promise<Category | undefined> {
+    const category = this.categories.get(id);
+    if (!category) return undefined;
+    
+    const updated = { ...category, ...update };
+    this.categories.set(id, updated);
+    return updated;
+  }
+
+  async deleteCategory(id: string): Promise<boolean> {
+    return this.categories.delete(id);
   }
 
   // Dashboard metrics
