@@ -10,7 +10,8 @@ import {
   Settings, 
   HelpCircle,
   BarChart3,
-  Tags
+  Tags,
+  Files
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ export default function Sidebar() {
   const secondaryNav = [
     { name: "Categorías de Ingresos", href: "/categorias-ingresos", icon: Tags },
     { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
+    { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
     { name: "Configuración", href: "/configuracion", icon: Settings },
     { name: "Ayuda", href: "/ayuda", icon: HelpCircle },
   ];

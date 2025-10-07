@@ -36,10 +36,8 @@ export default function DocumentManagement() {
 
   const createDocument = useMutation({
     mutationFn: async (data: InsertDocument) => {
-      return await apiRequest('/api/documents', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest('POST', '/api/documents', data);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
@@ -52,10 +50,8 @@ export default function DocumentManagement() {
 
   const updateDocument = useMutation({
     mutationFn: async ({ id, document }: { id: string; document: Partial<InsertDocument> }) => {
-      return await apiRequest(`/api/documents/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(document),
-      });
+      const response = await apiRequest('PUT', `/api/documents/${id}`, document);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
@@ -68,9 +64,7 @@ export default function DocumentManagement() {
 
   const deleteDocument = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/documents/${id}`, {
-        method: 'DELETE',
-      });
+      await apiRequest('DELETE', `/api/documents/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
@@ -318,6 +312,7 @@ export default function DocumentManagement() {
                     <FormControl>
                       <Textarea
                         {...field}
+                        value={field.value || ''}
                         placeholder="Descripción del documento (opcional)"
                         rows={3}
                         data-testid="input-document-description"
