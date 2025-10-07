@@ -1,4 +1,6 @@
 import { 
+  type Company,
+  type InsertCompany,
   type Transaction, 
   type InsertTransaction,
   type Inventory,
@@ -17,8 +19,16 @@ import {
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // Companies
+  getCompanies(): Promise<Company[]>;
+  getCompany(id: string): Promise<Company | undefined>;
+  createCompany(company: InsertCompany): Promise<Company>;
+  updateCompany(id: string, company: Partial<InsertCompany>): Promise<Company | undefined>;
+  deleteCompany(id: string): Promise<boolean>;
+  getDefaultCompanyId(): string;
+
   // Transactions
-  getTransactions(filter?: {
+  getTransactions(companyId: string, filter?: {
     type?: string;
     category?: string;
     dateFrom?: string;
@@ -31,53 +41,53 @@ export interface IStorage {
   deleteTransaction(id: string): Promise<boolean>;
 
   // Inventory
-  getInventory(): Promise<Inventory[]>;
+  getInventory(companyId: string): Promise<Inventory[]>;
   getInventoryItem(id: string): Promise<Inventory | undefined>;
   createInventoryItem(item: InsertInventory): Promise<Inventory>;
   updateInventoryItem(id: string, item: Partial<InsertInventory>): Promise<Inventory | undefined>;
   deleteInventoryItem(id: string): Promise<boolean>;
 
   // Clients
-  getClients(): Promise<Client[]>;
+  getClients(companyId: string): Promise<Client[]>;
   getClient(id: string): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: string, client: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: string): Promise<boolean>;
 
   // Suppliers
-  getSuppliers(): Promise<Supplier[]>;
+  getSuppliers(companyId: string): Promise<Supplier[]>;
   getSupplier(id: string): Promise<Supplier | undefined>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
   updateSupplier(id: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
   deleteSupplier(id: string): Promise<boolean>;
 
   // Inventory movements
-  getInventoryMovements(inventoryId?: string): Promise<InventoryMovement[]>;
+  getInventoryMovements(companyId: string, inventoryId?: string): Promise<InventoryMovement[]>;
   createInventoryMovement(movement: InsertInventoryMovement): Promise<InventoryMovement>;
 
   // Categories
-  getCategories(type?: 'income' | 'expense'): Promise<Category[]>;
+  getCategories(companyId: string, type?: 'income' | 'expense'): Promise<Category[]>;
   getCategory(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
 
   // Documents
-  getDocuments(): Promise<Document[]>;
+  getDocuments(companyId: string): Promise<Document[]>;
   getDocument(id: string): Promise<Document | undefined>;
   createDocument(document: InsertDocument): Promise<Document>;
   updateDocument(id: string, document: Partial<InsertDocument>): Promise<Document | undefined>;
   deleteDocument(id: string): Promise<boolean>;
 
   // Dashboard metrics
-  getMetrics(): Promise<{
+  getMetrics(companyId: string): Promise<{
     totalIncome: number;
     totalExpenses: number;
     balance: number;
     pendingPayments: number;
   }>;
   
-  getMonthlyData(): Promise<{
+  getMonthlyData(companyId: string): Promise<{
     month: string;
     income: number;
     expenses: number;
@@ -85,6 +95,7 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private companies: Map<string, Company> = new Map();
   private transactions: Map<string, Transaction> = new Map();
   private inventory: Map<string, Inventory> = new Map();
   private clients: Map<string, Client> = new Map();
@@ -92,12 +103,30 @@ export class MemStorage implements IStorage {
   private inventoryMovements: Map<string, InventoryMovement> = new Map();
   private categories: Map<string, Category> = new Map();
   private documents: Map<string, Document> = new Map();
+  private defaultCompanyId: string;
 
   constructor() {
-    this.initializeDefaultCategories();
+    this.defaultCompanyId = this.initializeDefaultCompany();
+    this.initializeDefaultCategories(this.defaultCompanyId);
   }
 
-  private initializeDefaultCategories() {
+  private initializeDefaultCompany(): string {
+    const id = randomUUID();
+    const defaultCompany: Company = {
+      id,
+      name: 'Mi Empresa Agrícola',
+      taxId: null,
+      address: null,
+      phone: null,
+      email: null,
+      isActive: true,
+      createdAt: new Date(),
+    };
+    this.companies.set(id, defaultCompany);
+    return id;
+  }
+
+  private initializeDefaultCategories(companyId: string) {
     const defaultIncomeCategories = [
       'Ventas - Productos',
       'Servicios',
@@ -118,6 +147,7 @@ export class MemStorage implements IStorage {
       const id = randomUUID();
       this.categories.set(id, {
         id,
+        companyId,
         name,
         type: 'income',
         isActive: true,
@@ -129,6 +159,7 @@ export class MemStorage implements IStorage {
       const id = randomUUID();
       this.categories.set(id, {
         id,
+        companyId,
         name,
         type: 'expense',
         isActive: true,
@@ -137,15 +168,58 @@ export class MemStorage implements IStorage {
     });
   }
 
+  // Companies
+  async getCompanies(): Promise<Company[]> {
+    return Array.from(this.companies.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getCompany(id: string): Promise<Company | undefined> {
+    return this.companies.get(id);
+  }
+
+  async createCompany(insertCompany: InsertCompany): Promise<Company> {
+    const id = randomUUID();
+    const company: Company = {
+      ...insertCompany,
+      taxId: insertCompany.taxId || null,
+      address: insertCompany.address || null,
+      phone: insertCompany.phone || null,
+      email: insertCompany.email || null,
+      isActive: insertCompany.isActive ?? true,
+      id,
+      createdAt: new Date(),
+    };
+    this.companies.set(id, company);
+    return company;
+  }
+
+  async updateCompany(id: string, update: Partial<InsertCompany>): Promise<Company | undefined> {
+    const company = this.companies.get(id);
+    if (!company) return undefined;
+    
+    const updated = { ...company, ...update };
+    this.companies.set(id, updated);
+    return updated;
+  }
+
+  async deleteCompany(id: string): Promise<boolean> {
+    return this.companies.delete(id);
+  }
+
+  getDefaultCompanyId(): string {
+    return this.defaultCompanyId;
+  }
+
   // Transactions
-  async getTransactions(filter?: {
+  async getTransactions(companyId: string, filter?: {
     type?: string;
     category?: string;
     dateFrom?: string;
     dateTo?: string;
     search?: string;
   }): Promise<Transaction[]> {
-    let transactions = Array.from(this.transactions.values());
+    let transactions = Array.from(this.transactions.values())
+      .filter(t => t.companyId === companyId);
     
     if (filter) {
       if (filter.type && filter.type !== 'all') {
@@ -227,8 +301,10 @@ export class MemStorage implements IStorage {
   }
 
   // Inventory
-  async getInventory(): Promise<Inventory[]> {
-    return Array.from(this.inventory.values()).sort((a, b) => a.name.localeCompare(b.name));
+  async getInventory(companyId: string): Promise<Inventory[]> {
+    return Array.from(this.inventory.values())
+      .filter(i => i.companyId === companyId)
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getInventoryItem(id: string): Promise<Inventory | undefined> {
@@ -262,8 +338,10 @@ export class MemStorage implements IStorage {
   }
 
   // Clients
-  async getClients(): Promise<Client[]> {
-    return Array.from(this.clients.values()).sort((a, b) => a.name.localeCompare(b.name));
+  async getClients(companyId: string): Promise<Client[]> {
+    return Array.from(this.clients.values())
+      .filter(c => c.companyId === companyId)
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getClient(id: string): Promise<Client | undefined> {
@@ -302,8 +380,10 @@ export class MemStorage implements IStorage {
   }
 
   // Suppliers
-  async getSuppliers(): Promise<Supplier[]> {
-    return Array.from(this.suppliers.values()).sort((a, b) => a.name.localeCompare(b.name));
+  async getSuppliers(companyId: string): Promise<Supplier[]> {
+    return Array.from(this.suppliers.values())
+      .filter(s => s.companyId === companyId)
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getSupplier(id: string): Promise<Supplier | undefined> {
@@ -342,8 +422,9 @@ export class MemStorage implements IStorage {
   }
 
   // Inventory movements
-  async getInventoryMovements(inventoryId?: string): Promise<InventoryMovement[]> {
-    let movements = Array.from(this.inventoryMovements.values());
+  async getInventoryMovements(companyId: string, inventoryId?: string): Promise<InventoryMovement[]> {
+    let movements = Array.from(this.inventoryMovements.values())
+      .filter(m => m.companyId === companyId);
     if (inventoryId) {
       movements = movements.filter(m => m.inventoryId === inventoryId);
     }
@@ -376,8 +457,9 @@ export class MemStorage implements IStorage {
   }
 
   // Categories
-  async getCategories(type?: 'income' | 'expense'): Promise<Category[]> {
-    let categories = Array.from(this.categories.values());
+  async getCategories(companyId: string, type?: 'income' | 'expense'): Promise<Category[]> {
+    let categories = Array.from(this.categories.values())
+      .filter(c => c.companyId === companyId);
     if (type) {
       categories = categories.filter(c => c.type === type);
     }
@@ -414,10 +496,12 @@ export class MemStorage implements IStorage {
   }
 
   // Documents
-  async getDocuments(): Promise<Document[]> {
-    return Array.from(this.documents.values()).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+  async getDocuments(companyId: string): Promise<Document[]> {
+    return Array.from(this.documents.values())
+      .filter(d => d.companyId === companyId)
+      .sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
@@ -452,7 +536,7 @@ export class MemStorage implements IStorage {
   }
 
   // Dashboard metrics
-  async getMetrics(): Promise<{
+  async getMetrics(companyId: string): Promise<{
     totalIncome: number;
     totalExpenses: number;
     balance: number;
@@ -461,10 +545,12 @@ export class MemStorage implements IStorage {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     
-    const monthlyTransactions = Array.from(this.transactions.values()).filter(t => {
-      const date = new Date(t.date);
-      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-    });
+    const monthlyTransactions = Array.from(this.transactions.values())
+      .filter(t => t.companyId === companyId)
+      .filter(t => {
+        const date = new Date(t.date);
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      });
     
     const totalIncome = monthlyTransactions
       .filter(t => t.type === 'income')
@@ -482,7 +568,7 @@ export class MemStorage implements IStorage {
     };
   }
 
-  async getMonthlyData(): Promise<{
+  async getMonthlyData(companyId: string): Promise<{
     month: string;
     income: number;
     expenses: number;
@@ -496,10 +582,12 @@ export class MemStorage implements IStorage {
     const data = [];
     
     for (let month = 0; month < 12; month++) {
-      const monthlyTransactions = Array.from(this.transactions.values()).filter(t => {
-        const date = new Date(t.date);
-        return date.getMonth() === month && date.getFullYear() === currentYear;
-      });
+      const monthlyTransactions = Array.from(this.transactions.values())
+        .filter(t => t.companyId === companyId)
+        .filter(t => {
+          const date = new Date(t.date);
+          return date.getMonth() === month && date.getFullYear() === currentYear;
+        });
       
       const income = monthlyTransactions
         .filter(t => t.type === 'income')
