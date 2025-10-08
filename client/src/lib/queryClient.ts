@@ -47,9 +47,10 @@ export const getQueryFn: <T>(options: {
 
     await throwIfResNotOk(res);
     
-    // HTTP 304 responses have no body, so React Query will keep using cached data
+    // HTTP 304 responses have no body - return undefined to keep cached data
+    // Must return BEFORE calling res.json() to avoid fetch spec violation
     if (res.status === 304) {
-      return undefined as any; // Signal to React Query to keep existing data
+      return undefined as any; // React Query will keep existing cached data
     }
     
     return await res.json();
