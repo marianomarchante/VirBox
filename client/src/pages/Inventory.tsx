@@ -175,7 +175,7 @@ export default function Inventory() {
             <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Inventario de Productos</h3>
+                <h3 className="text-lg font-semibold text-foreground">Inventario de bienes de la entidad</h3>
                 <p className="text-sm text-muted-foreground">
                   {inventory?.length || 0} productos registrados
                 </p>
