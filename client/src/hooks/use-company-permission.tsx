@@ -18,6 +18,7 @@ export function useCompanyPermission() {
 
   const hasPermission = (requiredRole?: 'administracion') => {
     if (!user) return false;
+    if (!currentCompanyId) return false; // No permissions without a selected company
     if (user.isAdmin) return true;
     if (!currentPermission) return false;
     if (!requiredRole) return true;
@@ -30,5 +31,6 @@ export function useCompanyPermission() {
     canRead: hasPermission(),
     canWrite: hasPermission('administracion'),
     isAdmin: user?.isAdmin || false,
+    hasCompanySelected: !!currentCompanyId,
   };
 }
