@@ -16,7 +16,7 @@ export default function Income() {
   const { currentCompanyId } = useCompany();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
 
-  const { transactions, createTransaction, isLoading } = useTransactions({
+  const { transactions, createTransaction } = useTransactions({
     type: 'income',
     search: '',
     category: '',
@@ -50,6 +50,18 @@ export default function Income() {
     });
   };
 
+  if (!hasCompanySelected) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-background">
+        <Sidebar />
+        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+        <div className="flex-1 flex items-center justify-center">
+          <NoCompanySelected />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
@@ -63,19 +75,7 @@ export default function Income() {
           onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
         />
         
-        {!hasCompanySelected ? (
-          <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 4rem)' }}>
-            <NoCompanySelected />
-          </div>
-        ) : isLoading ? (
-          <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 4rem)' }}>
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Cargando ingresos...</p>
-            </div>
-          </div>
-        ) : (
-          <div className="p-4 lg:p-8">
+        <div className="p-4 lg:p-8">
             <div className="bg-card rounded-lg border border-border p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -157,7 +157,6 @@ export default function Income() {
               </div>
             </div>
           </div>
-        )}
       </main>
 
       <TransactionModal
