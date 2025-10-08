@@ -67,26 +67,26 @@ export default function Expenses() {
       <Sidebar />
       <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
-      {!hasCompanySelected ? (
-        <div className="flex-1 flex items-center justify-center">
-          <NoCompanySelected />
-        </div>
-      ) : isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando gastos...</p>
+      <main className="flex-1 overflow-y-auto">
+        <TopBar
+          title="Gastos"
+          subtitle="Gestión de gastos operativos"
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
+        />
+        
+        {!hasCompanySelected ? (
+          <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 4rem)' }}>
+            <NoCompanySelected />
           </div>
-        </div>
-      ) : (
-        <main className="flex-1 overflow-y-auto">
-          <TopBar
-            title="Gastos"
-            subtitle="Gestión de gastos operativos"
-            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-            onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
-          />
-          
+        ) : isLoading ? (
+          <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 4rem)' }}>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Cargando gastos...</p>
+            </div>
+          </div>
+        ) : (
           <div className="p-4 lg:p-8">
             <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-6">
@@ -184,8 +184,8 @@ export default function Expenses() {
             </div>
             </div>
           </div>
-        </main>
-      )}
+        )}
+      </main>
 
       <TransactionModal
         isOpen={isTransactionModalOpen}
