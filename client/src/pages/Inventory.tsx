@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,8 +35,9 @@ import { insertInventorySchema, type InsertInventory } from "@shared/schema";
 
 export default function Inventory() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const { inventory, createInventoryItem } = useInventory();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const { inventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory();
   const { data: productCategories } = useProductCategories();
   const { canWrite } = useCompanyPermission();
 
@@ -54,12 +55,47 @@ export default function Inventory() {
 
   const onSubmit = async (data: InsertInventory) => {
     try {
-      await createInventoryItem.mutateAsync(data);
-      setIsAddModalOpen(false);
-      form.reset();
+      if (editingItemId) {
+        await updateInventoryItem.mutateAsync({ id: editingItemId, item: data });
+      } else {
+        await createInventoryItem.mutateAsync(data);
+      }
+      handleCloseModal();
     } catch (error) {
       // Error is handled by the mutation's onError callback
       // Keep modal open to allow user to fix the issue
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingItemId(null);
+    form.reset({
+      name: "",
+      categoryId: null,
+      currentStock: "0",
+      unit: "kg",
+      minStock: "0",
+      pricePerUnit: "0",
+    });
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingItemId(item.id);
+    form.reset({
+      name: item.name,
+      categoryId: item.categoryId,
+      currentStock: item.currentStock,
+      unit: item.unit,
+      minStock: item.minStock || "",
+      pricePerUnit: item.pricePerUnit || "",
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('¿Está seguro de que desea eliminar este producto del inventario?')) {
+      await deleteInventoryItem.mutateAsync(id);
     }
   };
 
@@ -109,7 +145,7 @@ export default function Inventory() {
               </div>
               <Button 
                 data-testid="button-add-product"
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={() => setIsModalOpen(true)}
                 disabled={!canWrite}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -139,17 +175,20 @@ export default function Inventory() {
                     <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Estado
                     </th>
+                    <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {!inventory || inventory.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
                         No hay productos en inventario. 
                         {canWrite && (
                           <button 
                             className="text-primary hover:underline ml-1"
-                            onClick={() => setIsAddModalOpen(true)}
+                            onClick={() => setIsModalOpen(true)}
                             data-testid="link-add-first-product"
                           >
                             Agregar el primero
@@ -205,6 +244,28 @@ export default function Inventory() {
                               {status.label}
                             </span>
                           </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(item)}
+                                disabled={!canWrite}
+                                data-testid={`button-edit-${item.id}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(item.id)}
+                                disabled={!canWrite}
+                                data-testid={`button-delete-${item.id}`}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })
@@ -216,10 +277,12 @@ export default function Inventory() {
         </div>
       </main>
 
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Agregar Producto al Inventario</DialogTitle>
+            <DialogTitle>
+              {editingItemId ? 'Editar Producto' : 'Agregar Producto al Inventario'}
+            </DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -371,20 +434,17 @@ export default function Inventory() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setIsAddModalOpen(false);
-                    form.reset();
-                  }}
+                  onClick={handleCloseModal}
                   data-testid="button-cancel"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createInventoryItem.isPending}
+                  disabled={createInventoryItem.isPending || updateInventoryItem.isPending}
                   data-testid="button-save-product"
                 >
-                  {createInventoryItem.isPending ? "Guardando..." : "Guardar Producto"}
+                  {(createInventoryItem.isPending || updateInventoryItem.isPending) ? "Guardando..." : editingItemId ? "Actualizar" : "Guardar Producto"}
                 </Button>
               </div>
             </form>
