@@ -16,6 +16,7 @@ import Suppliers from "@/pages/Suppliers";
 import Reports from "@/pages/Reports";
 import IncomeCategories from "@/pages/IncomeCategories";
 import ExpenseCategories from "@/pages/ExpenseCategories";
+import ProductCategories from "@/pages/ProductCategories";
 import DocumentManagement from "@/pages/DocumentManagement";
 import Companies from "@/pages/Companies";
 import UserManagement from "@/pages/UserManagement";
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/reportes" component={Reports} />
       <Route path="/categorias-ingresos" component={IncomeCategories} />
       <Route path="/categorias-gastos" component={ExpenseCategories} />
+      <Route path="/categorias-productos" component={ProductCategories} />
       <Route path="/gestion-documental" component={DocumentManagement} />
       <Route path="/empresas" component={Companies} />
       <Route path="/usuarios" component={UserManagement} />
