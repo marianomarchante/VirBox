@@ -64,7 +64,7 @@ export default function Expenses() {
 
   if (!hasCompanySelected) {
     return (
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div key="expenses-no-company" className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
         <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
         <div className="flex-1 flex items-center justify-center">
@@ -75,12 +75,13 @@ export default function Expenses() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div key={`expenses-${currentCompanyId}`} className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <main className="flex-1 overflow-y-auto">
         <TopBar
+          key="expenses-topbar"
           title="Gastos"
           subtitle="Gestión de gastos operativos"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}

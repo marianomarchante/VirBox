@@ -52,7 +52,7 @@ export default function Income() {
 
   if (!hasCompanySelected) {
     return (
-      <div className="flex h-screen overflow-hidden bg-background">
+      <div key="income-no-company" className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
         <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
         <div className="flex-1 flex items-center justify-center">
@@ -63,12 +63,13 @@ export default function Income() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div key={`income-${currentCompanyId}`} className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <main className="flex-1 overflow-y-auto">
         <TopBar
+          key="income-topbar"
           title="Ingresos"
           subtitle="Gestión de ingresos por ventas"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
