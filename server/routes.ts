@@ -127,6 +127,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/users/:userId/permissions", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const permissions = await storage.getUserPermissions(req.params.userId);
+      res.json(permissions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user permissions" });
+    }
+  });
+
   app.post("/api/admin/permissions", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const validatedData = insertUserCompanyPermissionSchema.parse(req.body);
