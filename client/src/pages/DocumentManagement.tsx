@@ -55,7 +55,7 @@ export default function DocumentManagement() {
 
   const createDocument = useMutation({
     mutationFn: async (data: InsertDocument) => {
-      const response = await apiRequest('POST', '/api/documents', data);
+      const response = await apiRequest('POST', `/api/documents?companyId=${currentCompanyId}`, data);
       return response.json();
     },
     onSuccess: () => {
@@ -69,7 +69,7 @@ export default function DocumentManagement() {
 
   const updateDocument = useMutation({
     mutationFn: async ({ id, document }: { id: string; document: Partial<InsertDocument> }) => {
-      const response = await apiRequest('PUT', `/api/documents/${id}`, document);
+      const response = await apiRequest('PUT', `/api/documents/${id}?companyId=${currentCompanyId}`, document);
       return response.json();
     },
     onSuccess: () => {
@@ -83,7 +83,7 @@ export default function DocumentManagement() {
 
   const deleteDocument = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/documents/${id}`);
+      await apiRequest('DELETE', `/api/documents/${id}?companyId=${currentCompanyId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents', currentCompanyId] });
@@ -130,10 +130,7 @@ export default function DocumentManagement() {
     if (editingDocument) {
       updateDocument.mutate({ id: editingDocument, document: data });
     } else {
-      createDocument.mutate({
-        ...data,
-        companyId: currentCompanyId!
-      });
+      createDocument.mutate(data);
     }
     handleCloseModal();
   };
