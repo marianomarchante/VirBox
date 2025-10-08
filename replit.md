@@ -233,6 +233,24 @@ The application uses PostgreSQL with the following core tables:
 - Product categories are company-specific
 - Soft delete support through status flags
 
+**Cascade Delete Implementation:**
+- Company deletion triggers automatic cascade delete of all related data
+- Implemented at application level using database transactions for atomicity
+- Deletion order (executed within a single transaction):
+  1. userCompanyPermissions (user access permissions)
+  2. documents (document records)
+  3. inventoryMovements (stock movement history)
+  4. transactions (financial transactions)
+  5. inventory (product inventory items)
+  6. clients (customer records)
+  7. suppliers (vendor records)
+  8. categories (income/expense categories)
+  9. productCategories (product category definitions)
+  10. companies (the company itself)
+- Transaction ensures atomicity: if any delete fails, all changes roll back
+- No orphaned data remains after company deletion
+- Data integrity guaranteed under failure scenarios
+
 **Type Safety:**
 - Shared schema definitions in `/shared/schema.ts`
 - Drizzle-zod integration for runtime validation
