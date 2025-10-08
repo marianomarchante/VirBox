@@ -15,7 +15,7 @@ export function useInventory() {
   } = useQuery<Inventory[]>({
     queryKey: ['/api/inventory', { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch(`/api/inventory?companyId=${currentCompanyId}`, { credentials: "include" });
+      const res = await fetch('/api/inventory', { credentials: "include" });
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
@@ -26,7 +26,7 @@ export function useInventory() {
 
   const createInventoryItem = useMutation({
     mutationFn: async (item: InsertInventory) => {
-      const response = await apiRequest('POST', `/api/inventory?companyId=${currentCompanyId}`, item);
+      const response = await apiRequest('POST', '/api/inventory', item);
       return response.json();
     },
     onSuccess: () => {
@@ -47,7 +47,7 @@ export function useInventory() {
 
   const updateInventoryItem = useMutation({
     mutationFn: async ({ id, item }: { id: string; item: Partial<InsertInventory> }) => {
-      const response = await apiRequest('PUT', `/api/inventory/${id}?companyId=${currentCompanyId}`, item);
+      const response = await apiRequest('PUT', `/api/inventory/${id}`, item);
       return response.json();
     },
     onSuccess: () => {
@@ -68,7 +68,7 @@ export function useInventory() {
 
   const deleteInventoryItem = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/inventory/${id}?companyId=${currentCompanyId}`);
+      await apiRequest('DELETE', `/api/inventory/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
@@ -102,7 +102,7 @@ export function useInventoryItem(id: string | undefined) {
   return useQuery<Inventory>({
     queryKey: ['/api/inventory', id, { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch(`/api/inventory/${id}?companyId=${currentCompanyId}`, { 
+      const res = await fetch(`/api/inventory/${id}`, { 
         credentials: "include" 
       });
       if (!res.ok) {

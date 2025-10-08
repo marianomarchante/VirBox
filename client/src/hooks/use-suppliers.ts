@@ -15,7 +15,7 @@ export function useSuppliers() {
   } = useQuery<Supplier[]>({
     queryKey: ['/api/suppliers', { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch(`/api/suppliers?companyId=${currentCompanyId}`, { credentials: "include" });
+      const res = await fetch('/api/suppliers', { credentials: "include" });
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
@@ -102,7 +102,7 @@ export function useSupplier(id: string | undefined) {
   return useQuery<Supplier>({
     queryKey: ['/api/suppliers', id, { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch(`/api/suppliers/${id}?companyId=${currentCompanyId}`, { 
+      const res = await fetch(`/api/suppliers/${id}`, { 
         credentials: "include" 
       });
       if (!res.ok) {

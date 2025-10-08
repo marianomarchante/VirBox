@@ -15,7 +15,7 @@ export function useClients() {
   } = useQuery<Client[]>({
     queryKey: ['/api/clients', { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch(`/api/clients?companyId=${currentCompanyId}`, { credentials: "include" });
+      const res = await fetch('/api/clients', { credentials: "include" });
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
@@ -102,7 +102,7 @@ export function useClient(id: string | undefined) {
   return useQuery<Client>({
     queryKey: ['/api/clients', id, { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch(`/api/clients/${id}?companyId=${currentCompanyId}`, { 
+      const res = await fetch(`/api/clients/${id}`, { 
         credentials: "include" 
       });
       if (!res.ok) {

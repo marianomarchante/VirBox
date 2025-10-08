@@ -85,7 +85,7 @@ export function useTransactions(filter?: TransactionFilter) {
 
   const deleteTransaction = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/transactions/${id}?companyId=${currentCompanyId}`);
+      await apiRequest('DELETE', `/api/transactions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });

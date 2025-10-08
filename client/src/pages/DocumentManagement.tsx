@@ -37,7 +37,7 @@ export default function DocumentManagement() {
   const { data: documents, isLoading } = useQuery<Document[]>({
     queryKey: ['/api/documents', currentCompanyId],
     queryFn: async () => {
-      const response = await fetch(`/api/documents?companyId=${currentCompanyId}`);
+      const response = await fetch('/api/documents');
       if (!response.ok) throw new Error('Failed to fetch documents');
       return response.json();
     },
@@ -46,7 +46,7 @@ export default function DocumentManagement() {
 
   const createDocument = useMutation({
     mutationFn: async (data: InsertDocument) => {
-      const response = await apiRequest('POST', `/api/documents?companyId=${currentCompanyId}`, data);
+      const response = await apiRequest('POST', '/api/documents', data);
       return response.json();
     },
     onSuccess: () => {
@@ -60,7 +60,7 @@ export default function DocumentManagement() {
 
   const updateDocument = useMutation({
     mutationFn: async ({ id, document }: { id: string; document: Partial<InsertDocument> }) => {
-      const response = await apiRequest('PUT', `/api/documents/${id}?companyId=${currentCompanyId}`, document);
+      const response = await apiRequest('PUT', `/api/documents/${id}`, document);
       return response.json();
     },
     onSuccess: () => {
@@ -74,7 +74,7 @@ export default function DocumentManagement() {
 
   const deleteDocument = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/documents/${id}?companyId=${currentCompanyId}`);
+      await apiRequest('DELETE', `/api/documents/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/documents', currentCompanyId] });
