@@ -187,7 +187,7 @@ export default function ProductCategories() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingCategory ? 'Editar Categoría de Producto' : 'Nueva Categoría de Producto'}
+              {editingCategory ? 'Editar Categoría de Producto' : 'Nueva categoría'}
             </DialogTitle>
           </DialogHeader>
           
