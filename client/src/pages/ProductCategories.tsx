@@ -76,7 +76,7 @@ export default function ProductCategories() {
   };
 
   const handleDelete = (categoryId: string) => {
-    if (window.confirm('¿Está seguro de que desea eliminar esta categoría de productos?')) {
+    if (window.confirm('¿Está seguro de que desea eliminar esta categoría de bienes de la entidad?')) {
       deleteCategory.mutate(categoryId);
     }
   };
@@ -94,13 +94,13 @@ export default function ProductCategories() {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando categorías de productos...</p>
+            <p className="text-muted-foreground">Cargando categorías de bienes de la entidad...</p>
           </div>
         </div>
       ) : (
         <main className="flex-1 overflow-y-auto">
           <TopBar
-            title="Categorías de Productos"
+            title="Categorías de Bienes de la entidad"
             subtitle="Gestión de categorías para el inventario"
             onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           />
@@ -109,7 +109,7 @@ export default function ProductCategories() {
             <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">Categorías de Productos</h3>
+                <h3 className="text-lg font-semibold text-foreground">Categorías de Bienes de la entidad</h3>
                 <p className="text-sm text-muted-foreground">
                   {categories?.length || 0} categorías registradas
                 </p>
