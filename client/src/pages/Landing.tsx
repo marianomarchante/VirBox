@@ -16,7 +16,7 @@ export default function Landing({ onLogin }: LandingProps) {
               className="text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-violet-600 dark:from-blue-400 dark:to-violet-400"
               data-testid="text-hero-title"
             >
-              Gestión de entidades. Una idea de Revertederos.CB
+              Gestión de entidades. Una idea de Mariano Marchante
             </h1>
             <p className="text-xl text-muted-foreground" data-testid="text-hero-description">
               Gestiona tus finanzas, inventarios, clientes y proveedores en un solo lugar.
