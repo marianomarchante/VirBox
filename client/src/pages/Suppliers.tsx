@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertSupplierSchema, type InsertSupplier } from "@shared/schema";
 
 export default function Suppliers() {
+  const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<string | null>(null);
@@ -110,29 +112,29 @@ export default function Suppliers() {
     return colors[category] || 'muted';
   };
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
-      
-      {!hasCompanySelected ? (
+  if (!hasCompanySelected) {
+    return (
+      <div key={`no-company-${location}`} className="flex h-screen overflow-hidden bg-background">
+        <Sidebar key={`sidebar-${location}`} />
+        <MobileMenu key={`mobile-${location}`} isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
         <div className="flex-1 flex items-center justify-center">
           <NoCompanySelected />
         </div>
-      ) : isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando proveedores...</p>
-          </div>
-        </div>
-      ) : (
-        <main className="flex-1 overflow-y-auto">
-          <TopBar
-            title="Proveedores"
-            subtitle="Gestión de proveedores y suministros"
-            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-          />
+      </div>
+    );
+  }
+
+  return (
+    <div key={`suppliers-${location}`} className="flex h-screen overflow-hidden bg-background">
+      <Sidebar key={`sidebar-${location}`} />
+      <MobileMenu key={`mobile-${location}`} isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      
+      <main className="flex-1 overflow-y-auto">
+        <TopBar
+          title="Proveedores"
+          subtitle="Gestión de proveedores y suministros"
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+        />
           
           <div className="p-4 lg:p-8">
             <div className="bg-card rounded-lg border border-border p-6">
@@ -317,7 +319,6 @@ export default function Suppliers() {
             </div>
           </div>
         </main>
-      )}
 
       {/* Add/Edit Supplier Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
