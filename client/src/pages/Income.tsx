@@ -16,7 +16,7 @@ export default function Income() {
   const { currentCompanyId } = useCompany();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
 
-  const { transactions, createTransaction } = useTransactions({
+  const { transactions, createTransaction, isLoading } = useTransactions({
     type: 'income',
     search: '',
     category: '',
@@ -55,17 +55,26 @@ export default function Income() {
       <Sidebar />
       <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
-      <main className="flex-1 overflow-y-auto">
-        <TopBar
-          title="Ingresos"
-          subtitle="Gestión de ingresos por ventas"
-          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-          onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
-        />
-        
-        {!hasCompanySelected ? (
+      {!hasCompanySelected ? (
+        <div className="flex-1 flex items-center justify-center">
           <NoCompanySelected />
-        ) : (
+        </div>
+      ) : isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Cargando ingresos...</p>
+          </div>
+        </div>
+      ) : (
+        <main className="flex-1 overflow-y-auto">
+          <TopBar
+            title="Ingresos"
+            subtitle="Gestión de ingresos por ventas"
+            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+            onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
+          />
+          
           <div className="p-4 lg:p-8">
             <div className="bg-card rounded-lg border border-border p-6">
               <div className="flex items-center justify-between mb-6">
@@ -148,8 +157,8 @@ export default function Income() {
               </div>
             </div>
           </div>
-        )}
-      </main>
+        </main>
+      )}
 
       <TransactionModal
         isOpen={isTransactionModalOpen}
