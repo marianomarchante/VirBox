@@ -49,6 +49,7 @@ The application uses a professional business-themed design system:
 RESTful API architecture with the following resource endpoints:
 - `/api/transactions` - Financial transactions (income/expenses)
 - `/api/inventory` - Product inventory management
+- `/api/product-categories` - Product category management for inventory
 - `/api/clients` - Client relationship management
 - `/api/suppliers` - Supplier management
 - `/api/dashboard` - Aggregated metrics and analytics
@@ -150,7 +151,7 @@ The application supports multiple companies with complete data isolation:
 - All data tables include a `companyId` field to segregate data by company
 - Storage layer enforces companyId verification on all GET, UPDATE, and DELETE operations
 - API layer automatically injects the companyId for all CREATE operations
-- Each company can only access its own data (transactions, inventory, clients, suppliers, categories, documents)
+- Each company can only access its own data (transactions, inventory, clients, suppliers, categories, product categories, documents)
 - **Permission-based access**: Users can only access companies they have explicit permissions for
 
 **Database Schema:**
@@ -194,21 +195,28 @@ The application uses PostgreSQL with the following core tables:
    - Tracks current stock levels with units of measurement
    - Minimum stock thresholds for alerts
    - Price per unit tracking
-   - Categorized by product type
+   - References product categories via categoryId (optional foreign key)
 
-3. **Clients Table**
+3. **Product Categories Table** (Added October 2025)
+   - Customizable product category management for inventory
+   - Fields: id, companyId, name, description (optional), isActive, createdAt
+   - Replaces previous hardcoded category system
+   - Each company can define their own product categories
+   - Used by inventory items via categoryId reference
+
+4. **Clients Table**
    - Customer relationship management
    - Contact information (email, phone, address)
    - Purchase history tracking (total purchases, order count)
    - Active/inactive status flag
 
-4. **Suppliers Table**
+5. **Suppliers Table**
    - Vendor management
    - Contact details and categorization
    - Total purchases and payment tracking
    - Category classification
 
-5. **Inventory Movements Table**
+6. **Inventory Movements Table**
    - Tracks stock changes over time
    - Links to transactions and inventory items
    - Records movement type (in/out) and quantities
@@ -216,6 +224,8 @@ The application uses PostgreSQL with the following core tables:
 **Data Relationships:**
 - Transactions reference clients or suppliers (one-to-many)
 - Inventory movements link to both inventory items and transactions (many-to-one)
+- Inventory items optionally reference product categories (many-to-one)
+- Product categories are company-specific
 - Soft delete support through status flags
 
 **Type Safety:**
