@@ -36,6 +36,17 @@ The application uses a professional business-themed design system:
 - Page components for each route in `/client/src/pages`
 - Custom hooks for data fetching and business logic in `/client/src/hooks`
 
+**No Company Selected Pattern (October 2025):**
+To prevent blank screens when no company is selected:
+- All pages verify `hasCompanySelected` flag from `useCompanyPermission()` hook
+- When `hasCompanySelected` is false: Display `<NoCompanySelected />` component with user-friendly message
+- When `hasCompanySelected` is true: Display normal page content
+- Implementation pattern applied to all 10 pages:
+  - Dashboard, Income, Expenses, Inventory, Clients, Suppliers
+  - ProductCategories, IncomeCategories, ExpenseCategories, DocumentManagement
+- Prevents UX issue where pages would render blank/empty when queries are disabled (due to no currentCompanyId)
+- Consistent user experience: users always see informative message instead of blank screen
+
 ### Backend Architecture
 
 **Technology Stack:**

@@ -133,8 +133,11 @@ export default function Suppliers() {
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
         
-        <div className="p-4 lg:p-8">
-          <div className="bg-card rounded-lg border border-border p-6">
+        {!hasCompanySelected ? (
+          <NoCompanySelected />
+        ) : (
+          <div className="p-4 lg:p-8">
+            <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Lista de Proveedores</h3>
@@ -313,8 +316,9 @@ export default function Suppliers() {
                 </tbody>
               </table>
             </div>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Add/Edit Supplier Modal */}

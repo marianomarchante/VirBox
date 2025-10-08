@@ -194,8 +194,11 @@ export default function DocumentManagement() {
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
         
-        <div className="p-4 lg:p-8">
-          <div className="bg-card rounded-lg border border-border p-6">
+        {!hasCompanySelected ? (
+          <NoCompanySelected />
+        ) : (
+          <div className="p-4 lg:p-8">
+            <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Documentos</h3>
@@ -294,8 +297,9 @@ export default function DocumentManagement() {
                 </tbody>
               </table>
             </div>
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
