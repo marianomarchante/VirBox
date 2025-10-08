@@ -43,6 +43,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
     queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
     queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
   };
 
   return (
