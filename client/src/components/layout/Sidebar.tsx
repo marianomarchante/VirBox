@@ -13,15 +13,17 @@ import {
   Tags,
   Files,
   Building2,
-  UserCog
+  UserCog,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
+import { Button } from "@/components/ui/button";
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user } = useAuthContext();
+  const { user, logout } = useAuthContext();
   const { currentCompany } = useCompany();
 
   const navigation = [
@@ -99,12 +101,27 @@ export default function Sidebar() {
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
-            <span className="text-primary-foreground font-semibold">JD</span>
+            <span className="text-primary-foreground font-semibold">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Juan Domínguez</p>
-            <p className="text-xs text-muted-foreground truncate">Administrador</p>
+            <p className="text-sm font-medium truncate">
+              {user?.firstName} {user?.lastName}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {user?.isAdmin ? 'Administrador' : 'Usuario'}
+            </p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={logout}
+            title="Cerrar sesión"
+            data-testid="button-logout"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
         </div>
       </div>
     </aside>
