@@ -9,16 +9,30 @@ import { useClients } from "@/hooks/use-clients";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
-import type { InsertTransaction } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import type { InsertTransaction, Transaction } from "@shared/schema";
 
 export default function Income() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const { currentCompanyId } = useCompany();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
 
-  const { transactions, createTransaction } = useTransactions({
+  const { transactions, createTransaction, updateTransaction, deleteTransaction } = useTransactions({
     type: 'income',
     search: '',
     category: '',
@@ -30,8 +44,44 @@ export default function Income() {
 
   const handleCreateTransaction = (transaction: InsertTransaction) => {
     if (!currentCompanyId) return;
-    createTransaction.mutate({ ...transaction, type: 'income', companyId: currentCompanyId });
+    if (editingTransaction) {
+      updateTransaction.mutate(
+        { id: editingTransaction.id, transaction: { ...transaction, type: 'income', companyId: currentCompanyId } },
+        {
+          onSuccess: () => {
+            setIsTransactionModalOpen(false);
+            setEditingTransaction(null);
+          },
+        }
+      );
+    } else {
+      createTransaction.mutate(
+        { ...transaction, type: 'income', companyId: currentCompanyId },
+        {
+          onSuccess: () => {
+            setIsTransactionModalOpen(false);
+          },
+        }
+      );
+    }
+  };
+
+  const handleEdit = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsTransactionModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteTransaction.mutate(id, {
+      onSuccess: () => {
+        setDeletingTransactionId(null);
+      },
+    });
+  };
+
+  const handleCloseModal = () => {
     setIsTransactionModalOpen(false);
+    setEditingTransaction(null);
   };
 
   const formatCurrency = (amount: string) => {
@@ -107,12 +157,15 @@ export default function Income() {
                       <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                         Importe
                       </th>
+                      <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {!transactions || transactions.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                        <td colSpan={6} className="py-8 text-center text-muted-foreground">
                           No hay ingresos registrados. 
                           <button 
                             onClick={() => setIsTransactionModalOpen(true)}
@@ -151,6 +204,28 @@ export default function Income() {
                               {formatCurrency(transaction.amount)}
                             </span>
                           </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(transaction)}
+                                disabled={!canWrite}
+                                data-testid={`button-edit-income-${transaction.id}`}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeletingTransactionId(transaction.id)}
+                                disabled={!canWrite}
+                                data-testid={`button-delete-income-${transaction.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -163,11 +238,34 @@ export default function Income() {
 
       <TransactionModal
         isOpen={isTransactionModalOpen}
-        onClose={() => setIsTransactionModalOpen(false)}
+        onClose={handleCloseModal}
         onSubmit={handleCreateTransaction}
         clients={clients?.map((c: any) => ({ id: c.id, name: c.name })) || []}
         suppliers={[]}
+        initialData={editingTransaction}
+        mode={editingTransaction ? 'edit' : 'create'}
       />
+
+      <AlertDialog open={!!deletingTransactionId} onOpenChange={() => setDeletingTransactionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar ingreso?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El ingreso será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingTransactionId && handleDelete(deletingTransactionId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

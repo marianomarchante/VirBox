@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,6 +19,8 @@ interface TransactionModalProps {
   onSubmit: (transaction: InsertTransaction) => void;
   clients: Array<{ id: string; name: string }>;
   suppliers: Array<{ id: string; name: string }>;
+  initialData?: any;
+  mode?: 'create' | 'edit';
 }
 
 export default function TransactionModal({ 
@@ -26,11 +28,15 @@ export default function TransactionModal({
   onClose, 
   onSubmit, 
   clients = [], 
-  suppliers = [] 
+  suppliers = [],
+  initialData = null,
+  mode = 'create'
 }: TransactionModalProps) {
   const { toast } = useToast();
-  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('income');
-  const [selectedPdf, setSelectedPdf] = useState<{ name: string; data: string } | null>(null);
+  const [transactionType, setTransactionType] = useState<'income' | 'expense'>(initialData?.type || 'income');
+  const [selectedPdf, setSelectedPdf] = useState<{ name: string; data: string } | null>(
+    initialData?.pdfFileName ? { name: initialData.pdfFileName, data: initialData.pdfDocument } : null
+  );
   
   const { categories: incomeCategories } = useCategories('income');
   const { categories: expenseCategories } = useCategories('expense');
@@ -41,7 +47,18 @@ export default function TransactionModal({
       category: z.string().min(1, "La categoría es obligatoria"),
       amount: z.string().min(1, "El importe es obligatorio").refine(val => parseFloat(val) > 0, "El importe debe ser mayor a 0"),
     })),
-    defaultValues: {
+    defaultValues: initialData ? {
+      type: initialData.type,
+      date: new Date(initialData.date),
+      concept: initialData.concept,
+      category: initialData.category,
+      amount: String(initialData.amount),
+      quantity: initialData.quantity || '',
+      clientSupplierId: initialData.clientSupplierId || '',
+      notes: initialData.notes || '',
+      pdfDocument: initialData.pdfDocument || '',
+      pdfFileName: initialData.pdfFileName || '',
+    } : {
       type: 'income',
       date: new Date(),
       concept: '',
@@ -84,6 +101,42 @@ export default function TransactionModal({
     form.setValue('pdfFileName', '');
   };
 
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        type: initialData.type,
+        date: new Date(initialData.date),
+        concept: initialData.concept,
+        category: initialData.category,
+        amount: String(initialData.amount),
+        quantity: initialData.quantity || '',
+        clientSupplierId: initialData.clientSupplierId || '',
+        notes: initialData.notes || '',
+        pdfDocument: initialData.pdfDocument || '',
+        pdfFileName: initialData.pdfFileName || '',
+      });
+      setTransactionType(initialData.type);
+      if (initialData.pdfFileName) {
+        setSelectedPdf({ name: initialData.pdfFileName, data: initialData.pdfDocument });
+      }
+    } else {
+      form.reset({
+        type: 'income',
+        date: new Date(),
+        concept: '',
+        category: '',
+        amount: '0',
+        quantity: '',
+        clientSupplierId: '',
+        notes: '',
+        pdfDocument: '',
+        pdfFileName: '',
+      });
+      setTransactionType('income');
+      setSelectedPdf(null);
+    }
+  }, [initialData, form]);
+
   const handleSubmit = (data: InsertTransaction) => {
     try {
       // Ensure amount is a string and date is properly formatted
@@ -124,14 +177,14 @@ export default function TransactionModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nueva Transacción</DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Editar Transacción' : 'Nueva Transacción'}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6" data-testid="transaction-form">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="type">Tipo de Transacción</Label>
-              <Select onValueChange={handleTypeChange} defaultValue="income">
+              <Select onValueChange={handleTypeChange} value={transactionType}>
                 <SelectTrigger data-testid="select-transaction-type">
                   <SelectValue />
                 </SelectTrigger>
@@ -169,7 +222,10 @@ export default function TransactionModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="category">Categoría</Label>
-              <Select onValueChange={(value) => form.setValue('category', value)}>
+              <Select 
+                onValueChange={(value) => form.setValue('category', value)}
+                value={form.watch('category') || undefined}
+              >
                 <SelectTrigger data-testid="select-category">
                   <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
@@ -223,7 +279,10 @@ export default function TransactionModal({
               <Label htmlFor="clientSupplierId">
                 {transactionType === 'income' ? 'Cliente' : 'Proveedor'} (opcional)
               </Label>
-              <Select onValueChange={(value) => form.setValue('clientSupplierId', value || undefined)}>
+              <Select 
+                onValueChange={(value) => form.setValue('clientSupplierId', value || undefined)}
+                value={form.watch('clientSupplierId') || undefined}
+              >
                 <SelectTrigger data-testid="select-client-supplier">
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
