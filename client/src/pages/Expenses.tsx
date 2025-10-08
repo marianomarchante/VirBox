@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
@@ -11,6 +12,7 @@ import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import type { InsertTransaction } from "@shared/schema";
 
 export default function Expenses() {
+  const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const { currentCompanyId } = useCompany();
@@ -64,9 +66,9 @@ export default function Expenses() {
 
   if (!hasCompanySelected) {
     return (
-      <div key="expenses-no-company" className="flex h-screen overflow-hidden bg-background">
-        <Sidebar />
-        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      <div key={`no-company-${location}`} className="flex h-screen overflow-hidden bg-background">
+        <Sidebar key={`sidebar-${location}`} />
+        <MobileMenu key={`mobile-${location}`} isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
         <div className="flex-1 flex items-center justify-center">
           <NoCompanySelected />
         </div>
@@ -75,13 +77,12 @@ export default function Expenses() {
   }
 
   return (
-    <div key={`expenses-${currentCompanyId}`} className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+    <div key={`expenses-${location}-${currentCompanyId}`} className="flex h-screen overflow-hidden bg-background">
+      <Sidebar key={`sidebar-${location}`} />
+      <MobileMenu key={`mobile-${location}`} isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <main className="flex-1 overflow-y-auto">
         <TopBar
-          key="expenses-topbar"
           title="Gastos"
           subtitle="Gestión de gastos operativos"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}

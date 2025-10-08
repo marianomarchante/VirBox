@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
@@ -11,6 +12,7 @@ import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import type { InsertTransaction } from "@shared/schema";
 
 export default function Income() {
+  const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const { currentCompanyId } = useCompany();
@@ -52,9 +54,9 @@ export default function Income() {
 
   if (!hasCompanySelected) {
     return (
-      <div key="income-no-company" className="flex h-screen overflow-hidden bg-background">
-        <Sidebar />
-        <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      <div key={`no-company-${location}`} className="flex h-screen overflow-hidden bg-background">
+        <Sidebar key={`sidebar-${location}`} />
+        <MobileMenu key={`mobile-${location}`} isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
         <div className="flex-1 flex items-center justify-center">
           <NoCompanySelected />
         </div>
@@ -63,13 +65,12 @@ export default function Income() {
   }
 
   return (
-    <div key={`income-${currentCompanyId}`} className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+    <div key={`income-${location}-${currentCompanyId}`} className="flex h-screen overflow-hidden bg-background">
+      <Sidebar key={`sidebar-${location}`} />
+      <MobileMenu key={`mobile-${location}`} isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <main className="flex-1 overflow-y-auto">
         <TopBar
-          key="income-topbar"
           title="Ingresos"
           subtitle="Gestión de ingresos por ventas"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
