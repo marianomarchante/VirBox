@@ -10,6 +10,7 @@ import {
   suppliers,
   inventoryMovements,
   categories,
+  productCategories,
   documents,
   type User,
   type UpsertUser,
@@ -29,6 +30,8 @@ import {
   type InsertInventoryMovement,
   type Category,
   type InsertCategory,
+  type ProductCategory,
+  type InsertProductCategory,
   type Document,
   type InsertDocument
 } from '@shared/schema';
@@ -500,6 +503,41 @@ export class PostgresStorage implements IStorage {
   async deleteCategory(id: string, companyId: string): Promise<boolean> {
     const result = await db.delete(categories)
       .where(and(eq(categories.id, id), eq(categories.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getProductCategories(companyId: string): Promise<ProductCategory[]> {
+    return await db.select().from(productCategories)
+      .where(eq(productCategories.companyId, companyId))
+      .orderBy(productCategories.name);
+  }
+
+  async getProductCategory(id: string, companyId: string): Promise<ProductCategory | undefined> {
+    const result = await db.select().from(productCategories)
+      .where(and(eq(productCategories.id, id), eq(productCategories.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createProductCategory(insertCategory: InsertProductCategory): Promise<ProductCategory> {
+    const companyId = insertCategory.companyId || await this.getDefaultCompanyId();
+    const result = await db.insert(productCategories).values({
+      ...insertCategory,
+      companyId,
+    }).returning();
+    return result[0];
+  }
+
+  async updateProductCategory(id: string, companyId: string, update: Partial<InsertProductCategory>): Promise<ProductCategory | undefined> {
+    const result = await db.update(productCategories).set(update)
+      .where(and(eq(productCategories.id, id), eq(productCategories.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteProductCategory(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(productCategories)
+      .where(and(eq(productCategories.id, id), eq(productCategories.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 

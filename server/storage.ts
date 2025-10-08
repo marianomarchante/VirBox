@@ -13,6 +13,8 @@ import {
   type InsertInventoryMovement,
   type Category,
   type InsertCategory,
+  type ProductCategory,
+  type InsertProductCategory,
   type Document,
   type InsertDocument,
   type User,
@@ -90,6 +92,13 @@ export interface IStorage {
   updateCategory(id: string, companyId: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string, companyId: string): Promise<boolean>;
 
+  // Product Categories
+  getProductCategories(companyId: string): Promise<ProductCategory[]>;
+  getProductCategory(id: string, companyId: string): Promise<ProductCategory | undefined>;
+  createProductCategory(category: InsertProductCategory): Promise<ProductCategory>;
+  updateProductCategory(id: string, companyId: string, category: Partial<InsertProductCategory>): Promise<ProductCategory | undefined>;
+  deleteProductCategory(id: string, companyId: string): Promise<boolean>;
+
   // Documents
   getDocuments(companyId: string): Promise<Document[]>;
   getDocument(id: string, companyId: string): Promise<Document | undefined>;
@@ -122,6 +131,7 @@ export class MemStorage implements IStorage {
   private suppliers: Map<string, Supplier> = new Map();
   private inventoryMovements: Map<string, InventoryMovement> = new Map();
   private categories: Map<string, Category> = new Map();
+  private productCategories: Map<string, ProductCategory> = new Map();
   private documents: Map<string, Document> = new Map();
   private defaultCompanyId: string;
 
@@ -677,6 +687,52 @@ export class MemStorage implements IStorage {
     const category = this.categories.get(id);
     if (category && category.companyId === companyId) {
       return this.categories.delete(id);
+    }
+    return false;
+  }
+
+  // Product Categories
+  async getProductCategories(companyId: string): Promise<ProductCategory[]> {
+    return Array.from(this.productCategories.values())
+      .filter(c => c.companyId === companyId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getProductCategory(id: string, companyId: string): Promise<ProductCategory | undefined> {
+    const category = this.productCategories.get(id);
+    if (category && category.companyId === companyId) {
+      return category;
+    }
+    return undefined;
+  }
+
+  async createProductCategory(insertCategory: InsertProductCategory): Promise<ProductCategory> {
+    const id = randomUUID();
+    const companyId = insertCategory.companyId || this.defaultCompanyId;
+    const category: ProductCategory = {
+      ...insertCategory,
+      companyId,
+      isActive: insertCategory.isActive ?? true,
+      id,
+      createdAt: new Date(),
+    };
+    this.productCategories.set(id, category);
+    return category;
+  }
+
+  async updateProductCategory(id: string, companyId: string, update: Partial<InsertProductCategory>): Promise<ProductCategory | undefined> {
+    const category = this.productCategories.get(id);
+    if (!category || category.companyId !== companyId) return undefined;
+    
+    const updated = { ...category, ...update };
+    this.productCategories.set(id, updated);
+    return updated;
+  }
+
+  async deleteProductCategory(id: string, companyId: string): Promise<boolean> {
+    const category = this.productCategories.get(id);
+    if (category && category.companyId === companyId) {
+      return this.productCategories.delete(id);
     }
     return false;
   }
