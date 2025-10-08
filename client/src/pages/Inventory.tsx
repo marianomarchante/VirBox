@@ -27,6 +27,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useInventory } from "@/hooks/use-inventory";
+import { useProductCategories } from "@/hooks/use-product-categories";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,13 +37,14 @@ export default function Inventory() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { inventory, createInventoryItem } = useInventory();
+  const { data: productCategories } = useProductCategories();
   const { canWrite } = useCompanyPermission();
 
   const form = useForm<InsertInventory>({
     resolver: zodResolver(insertInventorySchema),
     defaultValues: {
       name: "",
-      category: "materials",
+      categoryId: null,
       currentStock: "0",
       unit: "kg",
       minStock: "0",
@@ -78,16 +80,10 @@ export default function Inventory() {
     return { label: 'En Stock', color: 'bg-primary/10 text-primary' };
   };
 
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, string> = {
-      'materials': '🧱',
-      'supplies': '📦',
-      'equipment': '🔧',
-      'products': '📦',
-      'tools': '🛠️',
-      'services': '⚙️',
-    };
-    return icons[category] || '📦';
+  const getCategoryName = (categoryId: string | null) => {
+    if (!categoryId || !productCategories) return 'Sin categoría';
+    const category = productCategories.find(c => c.id === categoryId);
+    return category?.name || 'Sin categoría';
   };
 
   return (
@@ -171,19 +167,16 @@ export default function Inventory() {
                           data-testid={`inventory-row-${item.id}`}
                         >
                           <td className="py-3 px-4">
-                            <div className="flex items-center gap-3">
-                              <span className="text-xl">{getCategoryIcon(item.category)}</span>
-                              <div>
-                                <p className="text-sm font-medium">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  Actualizado: {new Date(item.lastUpdated).toLocaleDateString('es-ES')}
-                                </p>
-                              </div>
+                            <div>
+                              <p className="text-sm font-medium">{item.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Actualizado: {new Date(item.lastUpdated).toLocaleDateString('es-ES')}
+                              </p>
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <span className="inline-block px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded capitalize">
-                              {item.category}
+                            <span className="inline-block px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded">
+                              {getCategoryName(item.categoryId)}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -250,23 +243,30 @@ export default function Inventory() {
 
               <FormField
                 control={form.control}
-                name="category"
+                name="categoryId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Categoría</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+                      defaultValue={field.value || "none"}
+                    >
                       <FormControl>
                         <SelectTrigger data-testid="select-category">
                           <SelectValue placeholder="Seleccionar categoría" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="materials" data-testid="option-category-materials">Materiales</SelectItem>
-                        <SelectItem value="supplies" data-testid="option-category-supplies">Suministros</SelectItem>
-                        <SelectItem value="equipment" data-testid="option-category-equipment">Equipo</SelectItem>
-                        <SelectItem value="products" data-testid="option-category-products">Productos</SelectItem>
-                        <SelectItem value="tools" data-testid="option-category-tools">Herramientas</SelectItem>
-                        <SelectItem value="services" data-testid="option-category-services">Servicios</SelectItem>
+                        <SelectItem value="none" data-testid="option-category-none">Sin categoría</SelectItem>
+                        {productCategories?.filter(c => c.isActive).map((category) => (
+                          <SelectItem 
+                            key={category.id} 
+                            value={category.id}
+                            data-testid={`option-category-${category.id}`}
+                          >
+                            {category.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
