@@ -242,8 +242,23 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteCompany(id: string): Promise<boolean> {
-    const result = await db.delete(companies).where(eq(companies.id, id));
-    return result.rowCount !== null && result.rowCount > 0;
+    // Execute cascade delete within a transaction to ensure atomicity
+    return await db.transaction(async (tx) => {
+      // Delete all related data in cascade before deleting the company
+      await tx.delete(userCompanyPermissions).where(eq(userCompanyPermissions.companyId, id));
+      await tx.delete(documents).where(eq(documents.companyId, id));
+      await tx.delete(inventoryMovements).where(eq(inventoryMovements.companyId, id));
+      await tx.delete(transactions).where(eq(transactions.companyId, id));
+      await tx.delete(inventory).where(eq(inventory.companyId, id));
+      await tx.delete(clients).where(eq(clients.companyId, id));
+      await tx.delete(suppliers).where(eq(suppliers.companyId, id));
+      await tx.delete(categories).where(eq(categories.companyId, id));
+      await tx.delete(productCategories).where(eq(productCategories.companyId, id));
+      
+      // Finally, delete the company itself
+      const result = await tx.delete(companies).where(eq(companies.id, id));
+      return result.rowCount !== null && result.rowCount > 0;
+    });
   }
 
   async getTransactions(companyId: string, filter?: {
