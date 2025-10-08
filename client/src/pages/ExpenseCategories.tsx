@@ -78,32 +78,30 @@ export default function ExpenseCategories() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando categorías...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
-      <main className="flex-1 overflow-y-auto">
-        <TopBar
-          title="Categorías de Gastos"
-          subtitle="Gestión de categorías para gastos"
-          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-        />
-        
-        {!hasCompanySelected ? (
+      {!hasCompanySelected ? (
+        <div className="flex-1 flex items-center justify-center">
           <NoCompanySelected />
-        ) : (
+        </div>
+      ) : isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Cargando categorías de gastos...</p>
+          </div>
+        </div>
+      ) : (
+        <main className="flex-1 overflow-y-auto">
+          <TopBar
+            title="Categorías de Gastos"
+            subtitle="Gestión de categorías para gastos"
+            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          />
+          
           <div className="p-4 lg:p-8">
             <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-6">
@@ -173,8 +171,8 @@ export default function ExpenseCategories() {
             </div>
             </div>
           </div>
-        )}
-      </main>
+        </main>
+      )}
 
       <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
         <DialogContent>

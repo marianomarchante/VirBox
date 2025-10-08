@@ -81,32 +81,30 @@ export default function Clients() {
     }).format(num);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando clientes...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
-      <main className="flex-1 overflow-y-auto">
-        <TopBar
-          title="Clientes"
-          subtitle="Gestión de clientes y compradores"
-          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
-        />
-        
-        {!hasCompanySelected ? (
+      {!hasCompanySelected ? (
+        <div className="flex-1 flex items-center justify-center">
           <NoCompanySelected />
-        ) : (
+        </div>
+      ) : isLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Cargando clientes...</p>
+          </div>
+        </div>
+      ) : (
+        <main className="flex-1 overflow-y-auto">
+          <TopBar
+            title="Clientes"
+            subtitle="Gestión de clientes y compradores"
+            onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          />
+          
           <div className="p-4 lg:p-8">
             <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-6">
@@ -267,8 +265,8 @@ export default function Clients() {
             </div>
             </div>
           </div>
-        )}
-      </main>
+        </main>
+      )}
 
       {/* Add/Edit Client Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
