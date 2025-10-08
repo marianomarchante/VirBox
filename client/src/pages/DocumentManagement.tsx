@@ -130,7 +130,10 @@ export default function DocumentManagement() {
     if (editingDocument) {
       updateDocument.mutate({ id: editingDocument, document: data });
     } else {
-      createDocument.mutate(data);
+      createDocument.mutate({
+        ...data,
+        companyId: currentCompanyId!
+      });
     }
     handleCloseModal();
   };
