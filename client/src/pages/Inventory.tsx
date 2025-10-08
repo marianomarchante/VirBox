@@ -8,6 +8,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -37,6 +47,8 @@ export default function Inventory() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const { inventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory();
   const { data: productCategories } = useProductCategories();
   const { canWrite } = useCompanyPermission();
@@ -80,6 +92,14 @@ export default function Inventory() {
     });
   };
 
+  const handleModalOpenChange = (open: boolean) => {
+    if (open) {
+      setIsModalOpen(true);
+    } else {
+      handleCloseModal();
+    }
+  };
+
   const handleEdit = (item: any) => {
     setEditingItemId(item.id);
     form.reset({
@@ -93,9 +113,22 @@ export default function Inventory() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este producto del inventario?')) {
-      await deleteInventoryItem.mutateAsync(id);
+  const handleDeleteClick = (id: string) => {
+    setItemToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (itemToDelete) {
+      try {
+        await deleteInventoryItem.mutateAsync(itemToDelete);
+        setDeleteDialogOpen(false);
+        setItemToDelete(null);
+      } catch (error) {
+        // Error is handled by the mutation's onError callback
+        setDeleteDialogOpen(false);
+        setItemToDelete(null);
+      }
     }
   };
 
@@ -258,7 +291,7 @@ export default function Inventory() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDelete(item.id)}
+                                onClick={() => handleDeleteClick(item.id)}
                                 disabled={!canWrite}
                                 data-testid={`button-delete-${item.id}`}
                               >
@@ -277,7 +310,7 @@ export default function Inventory() {
         </div>
       </main>
 
-      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
+      <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
@@ -451,6 +484,27 @@ export default function Inventory() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará permanentemente este producto del inventario. Esta operación no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
