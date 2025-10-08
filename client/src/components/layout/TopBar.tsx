@@ -42,24 +42,13 @@ export default function TopBar({ title, subtitle, onOpenMobileMenu, onOpenTransa
           </div>
           <CompanySelector />
           {onOpenTransactionModal && (
-            <>
-              <Button 
-                onClick={onOpenTransactionModal}
-                className="hidden sm:flex items-center gap-2"
-                data-testid="button-new-transaction"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Nueva Transacción</span>
-              </Button>
-              <Button 
-                size="sm"
-                onClick={onOpenTransactionModal}
-                className="sm:hidden p-3"
-                data-testid="button-new-transaction-mobile"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </>
+            <Button 
+              onClick={onOpenTransactionModal}
+              className="flex items-center gap-2"
+              data-testid="button-new-transaction"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>
