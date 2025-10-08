@@ -1,7 +1,9 @@
 import { Link, useLocation } from "wouter";
-import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2 } from "lucide-react";
+import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2, UserCog, HelpCircle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -11,6 +13,7 @@ interface MobileMenuProps {
 export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const [location] = useLocation();
   const { currentCompany } = useCompany();
+  const { user, logout } = useAuthContext();
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -27,7 +30,11 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
     { name: "Categorías de Productos", href: "/categorias-productos", icon: Tags },
     { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
-    { name: "Empresas", href: "/empresas", icon: Building2 },
+    ...(user?.isAdmin ? [
+      { name: "Empresas", href: "/empresas", icon: Building2 },
+      { name: "Usuarios", href: "/usuarios", icon: UserCog }
+    ] : []),
+    { name: "Ayuda", href: "/ayuda", icon: HelpCircle },
   ];
 
   if (!isOpen) return null;
@@ -96,12 +103,27 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-semibold">JD</span>
+              <span className="text-primary-foreground font-semibold">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Juan Domínguez</p>
-              <p className="text-xs text-muted-foreground truncate">Administrador</p>
+              <p className="text-sm font-medium truncate">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.isAdmin ? 'Administrador' : 'Usuario'}
+              </p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              title="Cerrar sesión"
+              data-testid="button-logout-mobile"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </aside>
