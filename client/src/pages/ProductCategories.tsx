@@ -18,6 +18,7 @@ import {
   useDeleteProductCategory 
 } from "@/hooks/use-product-categories";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertProductCategorySchema, type InsertProductCategory } from "@shared/schema";
 
 type CategoryFormValues = InsertProductCategory;
@@ -31,7 +32,7 @@ export default function ProductCategories() {
   const createCategory = useCreateProductCategory();
   const updateCategory = useUpdateProductCategory();
   const deleteCategory = useDeleteProductCategory();
-  const { canWrite } = useCompanyPermission();
+  const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(insertProductCategorySchema),

@@ -11,6 +11,7 @@ import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useClients } from "@/hooks/use-clients";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertClientSchema, type InsertClient } from "@shared/schema";
 
 export default function Clients() {
@@ -19,7 +20,7 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<string | null>(null);
 
   const { clients, createClient, updateClient, deleteClient, isLoading } = useClients();
-  const { canWrite } = useCompanyPermission();
+  const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   const form = useForm<InsertClient>({
     resolver: zodResolver(insertClientSchema),

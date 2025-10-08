@@ -12,6 +12,7 @@ import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useSuppliers } from "@/hooks/use-suppliers";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertSupplierSchema, type InsertSupplier } from "@shared/schema";
 
 export default function Suppliers() {
@@ -20,7 +21,7 @@ export default function Suppliers() {
   const [editingSupplier, setEditingSupplier] = useState<string | null>(null);
 
   const { suppliers, createSupplier, updateSupplier, deleteSupplier, isLoading } = useSuppliers();
-  const { canWrite } = useCompanyPermission();
+  const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   const form = useForm<InsertSupplier>({
     resolver: zodResolver(insertSupplierSchema),

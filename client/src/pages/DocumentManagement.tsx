@@ -16,6 +16,7 @@ import { insertDocumentSchema, type Document, type InsertDocument } from "@share
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { z } from "zod";
 import { format } from "date-fns";
 
@@ -32,7 +33,7 @@ export default function DocumentManagement() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { currentCompanyId } = useCompany();
-  const { canWrite } = useCompanyPermission();
+  const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   const { data: documents, isLoading } = useQuery<Document[]>({
     queryKey: ['/api/documents', currentCompanyId],

@@ -7,13 +7,14 @@ import { useTransactions } from "@/hooks/use-transactions";
 import { useSuppliers } from "@/hooks/use-suppliers";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import type { InsertTransaction } from "@shared/schema";
 
 export default function Expenses() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const { currentCompanyId } = useCompany();
-  const { canWrite } = useCompanyPermission();
+  const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   const { transactions, createTransaction } = useTransactions({
     type: 'expense',

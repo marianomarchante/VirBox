@@ -39,6 +39,7 @@ import TopBar from "@/components/layout/TopBar";
 import { useInventory } from "@/hooks/use-inventory";
 import { useProductCategories } from "@/hooks/use-product-categories";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertInventorySchema, type InsertInventory } from "@shared/schema";
@@ -51,7 +52,7 @@ export default function Inventory() {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const { inventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory();
   const { data: productCategories } = useProductCategories();
-  const { canWrite } = useCompanyPermission();
+  const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   const form = useForm<InsertInventory>({
     resolver: zodResolver(insertInventorySchema),

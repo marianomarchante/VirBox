@@ -17,6 +17,7 @@ import { useClients } from "@/hooks/use-clients";
 import { useSuppliers } from "@/hooks/use-suppliers";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import type { TransactionFilter, InsertTransaction } from "@shared/schema";
 
 export default function Dashboard() {
@@ -31,7 +32,7 @@ export default function Dashboard() {
   });
 
   const { currentCompanyId } = useCompany();
-  const { canWrite } = useCompanyPermission();
+  const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   // Data fetching
   const { data: metrics } = useQuery({
@@ -86,37 +87,41 @@ export default function Dashboard() {
           onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}
         />
         
-        <div className="p-4 lg:p-8 space-y-6">
-          <MetricsGrid metrics={metrics as { totalIncome: number; totalExpenses: number; balance: number }} />
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <IncomeVsExpensesChart data={monthlyData as any} />
-            <CategoryBreakdown />
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <RecentTransactions 
-              transactions={incomeTransactions} 
-              title="Ingresos Recientes" 
-              type="income" 
+        {!hasCompanySelected ? (
+          <NoCompanySelected />
+        ) : (
+          <div className="p-4 lg:p-8 space-y-6">
+            <MetricsGrid metrics={metrics as { totalIncome: number; totalExpenses: number; balance: number }} />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <IncomeVsExpensesChart data={monthlyData as any} />
+              <CategoryBreakdown />
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RecentTransactions 
+                transactions={incomeTransactions} 
+                title="Ingresos Recientes" 
+                type="income" 
+              />
+              <RecentTransactions 
+                transactions={expenseTransactions} 
+                title="Gastos Recientes" 
+                type="expense" 
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <InventoryStatus inventory={inventory || []} />
+              <TopClients clients={clients || []} />
+            </div>
+            
+            <SearchAndFilter 
+              transactions={filteredTransactions || []}
+              onFilterChange={setTransactionFilter}
             />
-            <RecentTransactions 
-              transactions={expenseTransactions} 
-              title="Gastos Recientes" 
-              type="expense" 
-            />
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <InventoryStatus inventory={inventory || []} />
-            <TopClients clients={clients || []} />
-          </div>
-          
-          <SearchAndFilter 
-            transactions={filteredTransactions || []}
-            onFilterChange={setTransactionFilter}
-          />
-        </div>
+        )}
       </main>
 
       <TransactionModal

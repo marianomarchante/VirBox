@@ -13,6 +13,7 @@ import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useCategories } from "@/hooks/use-categories";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertCategorySchema, type InsertCategory } from "@shared/schema";
 import { z } from "zod";
 
@@ -28,7 +29,7 @@ export default function ExpenseCategories() {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
 
   const { categories, createCategory, updateCategory, deleteCategory, isLoading } = useCategories('expense');
-  const { canWrite } = useCompanyPermission();
+  const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
