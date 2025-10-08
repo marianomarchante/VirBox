@@ -12,7 +12,6 @@ export function useTransactions(filter?: TransactionFilter) {
   // Build query string from filter
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
-    if (currentCompanyId) params.append('companyId', currentCompanyId);
     
     if (filter) {
       Object.entries(filter).forEach(([key, value]) => {
@@ -22,7 +21,7 @@ export function useTransactions(filter?: TransactionFilter) {
       });
     }
     return params.toString() ? `?${params.toString()}` : '';
-  }, [filter, currentCompanyId]);
+  }, [filter]);
 
   const {
     data: transactions,
@@ -42,7 +41,7 @@ export function useTransactions(filter?: TransactionFilter) {
 
   const createTransaction = useMutation({
     mutationFn: async (transaction: InsertTransaction) => {
-      const response = await apiRequest('POST', `/api/transactions?companyId=${currentCompanyId}`, transaction);
+      const response = await apiRequest('POST', '/api/transactions', transaction);
       return response.json();
     },
     onSuccess: () => {
@@ -64,7 +63,7 @@ export function useTransactions(filter?: TransactionFilter) {
 
   const updateTransaction = useMutation({
     mutationFn: async ({ id, transaction }: { id: string; transaction: Partial<InsertTransaction> }) => {
-      const response = await apiRequest('PUT', `/api/transactions/${id}?companyId=${currentCompanyId}`, transaction);
+      const response = await apiRequest('PUT', `/api/transactions/${id}`, transaction);
       return response.json();
     },
     onSuccess: () => {
