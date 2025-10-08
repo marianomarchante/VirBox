@@ -68,7 +68,7 @@ export const inventory = pgTable("inventory", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
-  category: text("category").notNull(), // e.g. 'materials', 'supplies', 'equipment'
+  categoryId: varchar("category_id"),
   currentStock: decimal("current_stock", { precision: 10, scale: 2 }).notNull(),
   unit: text("unit").notNull(), // e.g. 'kg', 'units', 'tons'
   minStock: decimal("min_stock", { precision: 10, scale: 2 }).default("0"),
@@ -122,6 +122,15 @@ export const categories = pgTable("categories", {
   companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'income' | 'expense'
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const productCategories = pgTable("product_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -189,6 +198,13 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
   companyId: z.string().optional(),
 });
 
+export const insertProductCategorySchema = createInsertSchema(productCategories).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
+});
+
 export const insertDocumentSchema = createInsertSchema(documents).omit({
   id: true,
   createdAt: true,
@@ -217,6 +233,9 @@ export type InsertInventoryMovement = z.infer<typeof insertInventoryMovementSche
 
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
+
+export type ProductCategory = typeof productCategories.$inferSelect;
+export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
 
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
