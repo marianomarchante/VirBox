@@ -88,6 +88,11 @@ The application uses **Replit Auth** (OpenID Connect / OAuth 2.0) for user authe
    - Automatic cache invalidation on logout
    - Landing page for non-authenticated users
    - Protected routes require authentication
+   - Logout functionality available in Sidebar and MobileMenu:
+     - Displays user initials (from firstName and lastName)
+     - Shows full name and role (Administrador/Usuario)
+     - Logout button clears React Query cache and redirects to /api/logout
+     - Available on both desktop (Sidebar) and mobile (MobileMenu) layouts
 
 4. **User Profile Management:**
    - Users automatically created/updated on first login via OIDC claims
