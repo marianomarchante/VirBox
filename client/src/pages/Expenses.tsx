@@ -102,7 +102,7 @@ export default function Expenses() {
                       Proveedor
                     </th>
                     <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Monto
+                      Importe
                     </th>
                   </tr>
                 </thead>

@@ -162,7 +162,7 @@ export default function SearchAndFilter({ transactions, onFilterChange }: Search
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Concepto</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Categoría</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Tipo</th>
-              <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Monto</th>
+              <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Importe</th>
               <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Acciones</th>
             </tr>
           </thead>

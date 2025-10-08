@@ -201,7 +201,7 @@ export default function Inventory() {
                               {item.pricePerUnit ? 
                                 new Intl.NumberFormat('es-ES', { 
                                   style: 'currency', 
-                                  currency: 'USD' 
+                                  currency: 'EUR' 
                                 }).format(parseFloat(item.pricePerUnit))
                                 : '-'
                               }

@@ -39,7 +39,7 @@ export default function TransactionModal({
     resolver: zodResolver(insertTransactionSchema.extend({
       concept: z.string().min(1, "El concepto es obligatorio"),
       category: z.string().min(1, "La categoría es obligatoria"),
-      amount: z.string().min(1, "El monto es obligatorio").refine(val => parseFloat(val) > 0, "El monto debe ser mayor a 0"),
+      amount: z.string().min(1, "El importe es obligatorio").refine(val => parseFloat(val) > 0, "El importe debe ser mayor a 0"),
     })),
     defaultValues: {
       type: 'income',
@@ -189,9 +189,9 @@ export default function TransactionModal({
             </div>
             
             <div>
-              <Label htmlFor="amount">Monto</Label>
+              <Label htmlFor="amount">Importe</Label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 <Input
                   type="number"
                   step="0.01"
