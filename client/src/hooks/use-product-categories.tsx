@@ -54,7 +54,7 @@ export function useUpdateProductCategory() {
   
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertProductCategory> }) => {
-      return await apiRequest('PUT', `/api/product-categories/${id}`, data);
+      return await apiRequest('PUT', `/api/product-categories/${id}`, { ...data, companyId: currentCompanyId ?? undefined });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
@@ -71,7 +71,9 @@ export function useDeleteProductCategory() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/product-categories/${id}`);
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      await apiRequest('DELETE', `/api/product-categories/${id}?${params.toString()}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
