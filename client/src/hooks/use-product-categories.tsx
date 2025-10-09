@@ -1,10 +1,24 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ProductCategory, InsertProductCategory } from "@shared/schema";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export function useProductCategories() {
+  const { currentCompanyId } = useCompany();
+  
   return useQuery<ProductCategory[]>({
-    queryKey: ['/api/product-categories'],
+    queryKey: ['/api/product-categories', { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const url = `/api/product-categories?${params.toString()}`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
+    enabled: !!currentCompanyId,
   });
 }
 

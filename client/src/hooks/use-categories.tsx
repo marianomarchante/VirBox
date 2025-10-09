@@ -11,7 +11,10 @@ export function useCategories(type?: 'income' | 'expense') {
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ['/api/categories', { companyId: currentCompanyId, type }],
     queryFn: async () => {
-      const url = type ? `/api/categories?type=${type}` : '/api/categories';
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      if (type) params.append('type', type);
+      const url = `/api/categories?${params.toString()}`;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
