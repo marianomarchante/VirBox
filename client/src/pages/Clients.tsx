@@ -38,7 +38,7 @@ export default function Clients() {
 
   const handleSubmit = (data: InsertClient) => {
     if (editingClient) {
-      updateClient.mutate({ id: editingClient, client: data });
+      updateClient.mutate({ id: editingClient, client: { ...data, companyId: currentCompanyId ?? undefined } });
     } else {
       createClient.mutate({ ...data, companyId: currentCompanyId ?? undefined });
     }
