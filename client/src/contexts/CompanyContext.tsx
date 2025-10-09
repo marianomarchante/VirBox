@@ -37,13 +37,15 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setCurrentCompanyIdState(companyId);
     localStorage.setItem('currentCompanyId', companyId);
     
-    queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/dashboard/monthly-data'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/documents'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/dashboard/metrics'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['/api/dashboard/monthly-data'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['/api/transactions'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['/api/inventory'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['/api/clients'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['/api/suppliers'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['/api/documents'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['/api/categories'], exact: false });
+    queryClient.invalidateQueries({ queryKey: ['/api/product-categories'], exact: false });
   };
 
   return (
