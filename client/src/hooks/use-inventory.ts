@@ -76,7 +76,9 @@ export function useInventory() {
 
   const deleteInventoryItem = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/inventory/${id}`);
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      await apiRequest('DELETE', `/api/inventory/${id}?${params.toString()}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 

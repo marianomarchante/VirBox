@@ -109,7 +109,9 @@ export function useTransactions(filter?: TransactionFilter) {
 
   const deleteTransaction = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/transactions/${id}`);
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      await apiRequest('DELETE', `/api/transactions/${id}?${params.toString()}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 

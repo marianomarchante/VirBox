@@ -76,7 +76,9 @@ export function useClients() {
 
   const deleteClient = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/clients/${id}`);
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      await apiRequest('DELETE', `/api/clients/${id}?${params.toString()}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 

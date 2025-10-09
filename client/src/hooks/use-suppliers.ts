@@ -76,7 +76,9 @@ export function useSuppliers() {
 
   const deleteSupplier = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/suppliers/${id}`);
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      await apiRequest('DELETE', `/api/suppliers/${id}?${params.toString()}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
