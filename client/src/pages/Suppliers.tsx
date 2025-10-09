@@ -52,7 +52,7 @@ export default function Suppliers() {
 
   const handleSubmit = (data: InsertSupplier) => {
     if (editingSupplier) {
-      updateSupplier.mutate({ id: editingSupplier, supplier: data });
+      updateSupplier.mutate({ id: editingSupplier, supplier: { ...data, companyId: currentCompanyId ?? undefined } });
     } else {
       createSupplier.mutate({ ...data, companyId: currentCompanyId ?? undefined });
     }
