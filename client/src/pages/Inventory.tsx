@@ -71,7 +71,7 @@ export default function Inventory() {
   const onSubmit = async (data: InsertInventory) => {
     try {
       if (editingItemId) {
-        await updateInventoryItem.mutateAsync({ id: editingItemId, item: data });
+        await updateInventoryItem.mutateAsync({ id: editingItemId, item: { ...data, companyId: currentCompanyId ?? undefined } });
       } else {
         await createInventoryItem.mutateAsync({ ...data, companyId: currentCompanyId ?? undefined });
       }
