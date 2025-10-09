@@ -249,7 +249,7 @@ export default function Reports() {
       
       <main className="flex-1 overflow-y-auto">
         <TopBar
-          title="Reportes"
+          title="Informes"
           subtitle="Análisis financiero y estadísticas"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />

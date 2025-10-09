@@ -22,7 +22,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { name: "Inventario", href: "/inventario", icon: Package },
     { name: "Clientes", href: "/clientes", icon: Users },
     { name: "Proveedores", href: "/proveedores", icon: Truck },
-    { name: "Reportes", href: "/reportes", icon: FileText },
+    { name: "Informes", href: "/informes", icon: FileText },
   ];
 
   const secondaryNav = [

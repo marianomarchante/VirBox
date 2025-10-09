@@ -77,7 +77,7 @@ export default function Landing({ onLogin }: LandingProps) {
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Reportes financieros, control de inventario, gestión de clientes y proveedores en tiempo real.
+                  Informes financieros, control de inventario, gestión de clientes y proveedores en tiempo real.
                 </CardDescription>
               </CardContent>
             </Card>

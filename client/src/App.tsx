@@ -31,7 +31,7 @@ function Router() {
       <Route path="/inventario" component={Inventory} />
       <Route path="/clientes" component={Clients} />
       <Route path="/proveedores" component={Suppliers} />
-      <Route path="/reportes" component={Reports} />
+      <Route path="/informes" component={Reports} />
       <Route path="/categorias-ingresos" component={IncomeCategories} />
       <Route path="/categorias-gastos" component={ExpenseCategories} />
       <Route path="/categorias-productos" component={ProductCategories} />
