@@ -63,7 +63,7 @@ async function checkCompanyPermission(req: any, companyId: string, requiredRole?
 
 // Helper to get companyId from request with permission check
 async function getCompanyIdWithPermission(req: any, requiredRole?: 'administracion'): Promise<{ companyId: string; hasPermission: boolean }> {
-  const companyId = req.query.companyId as string;
+  const companyId = (req.query.companyId || req.body?.companyId) as string;
   if (!companyId) {
     return { companyId: '', hasPermission: false };
   }
