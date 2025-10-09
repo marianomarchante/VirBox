@@ -291,7 +291,7 @@ export default function Reports() {
     
     const transactionData = filteredTransactions.map(t => [
       new Date(t.date).toLocaleDateString('es-ES'),
-      t.description,
+      t.concept,
       t.type === 'income' ? 'Ingreso' : 'Gasto',
       t.category,
       formatCurrency(parseFloat(t.amount)),
