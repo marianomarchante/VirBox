@@ -11,6 +11,7 @@ import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useClients } from "@/hooks/use-clients";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import { useCompany } from "@/contexts/CompanyContext";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertClientSchema, type InsertClient } from "@shared/schema";
 
@@ -21,6 +22,7 @@ export default function Clients() {
 
   const { clients, createClient, updateClient, deleteClient, isLoading } = useClients();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
+  const { currentCompanyId } = useCompany();
 
   const form = useForm<InsertClient>({
     resolver: zodResolver(insertClientSchema),
@@ -38,7 +40,7 @@ export default function Clients() {
     if (editingClient) {
       updateClient.mutate({ id: editingClient, client: data });
     } else {
-      createClient.mutate(data);
+      createClient.mutate({ ...data, companyId: currentCompanyId ?? undefined });
     }
     handleCloseModal();
   };

@@ -39,6 +39,7 @@ import TopBar from "@/components/layout/TopBar";
 import { useInventory } from "@/hooks/use-inventory";
 import { useProductCategories } from "@/hooks/use-product-categories";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import { useCompany } from "@/contexts/CompanyContext";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,6 +54,7 @@ export default function Inventory() {
   const { inventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory();
   const { data: productCategories } = useProductCategories();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
+  const { currentCompanyId } = useCompany();
 
   const form = useForm<InsertInventory>({
     resolver: zodResolver(insertInventorySchema),
@@ -71,7 +73,7 @@ export default function Inventory() {
       if (editingItemId) {
         await updateInventoryItem.mutateAsync({ id: editingItemId, item: data });
       } else {
-        await createInventoryItem.mutateAsync(data);
+        await createInventoryItem.mutateAsync({ ...data, companyId: currentCompanyId ?? undefined });
       }
       handleCloseModal();
     } catch (error) {

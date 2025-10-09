@@ -13,6 +13,7 @@ import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useSuppliers } from "@/hooks/use-suppliers";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import { useCompany } from "@/contexts/CompanyContext";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertSupplierSchema, type InsertSupplier } from "@shared/schema";
 
@@ -24,6 +25,7 @@ export default function Suppliers() {
 
   const { suppliers, createSupplier, updateSupplier, deleteSupplier, isLoading } = useSuppliers();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
+  const { currentCompanyId } = useCompany();
 
   const form = useForm<InsertSupplier>({
     resolver: zodResolver(insertSupplierSchema),
@@ -52,7 +54,7 @@ export default function Suppliers() {
     if (editingSupplier) {
       updateSupplier.mutate({ id: editingSupplier, supplier: data });
     } else {
-      createSupplier.mutate(data);
+      createSupplier.mutate({ ...data, companyId: currentCompanyId ?? undefined });
     }
     handleCloseModal();
   };
