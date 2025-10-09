@@ -63,7 +63,10 @@ async function checkCompanyPermission(req: any, companyId: string, requiredRole?
 
 // Helper to get companyId from request with permission check
 async function getCompanyIdWithPermission(req: any, requiredRole?: 'administracion'): Promise<{ companyId: string; hasPermission: boolean }> {
-  const companyId = (req.query.companyId as string) || await storage.getDefaultCompanyId();
+  const companyId = req.query.companyId as string;
+  if (!companyId) {
+    return { companyId: '', hasPermission: false };
+  }
   const hasPermission = await checkCompanyPermission(req, companyId, requiredRole);
   return { companyId, hasPermission };
 }
@@ -569,14 +572,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Category routes (protected)
   app.get("/api/categories", isAuthenticated, async (req: any, res) => {
-    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
-    if (!hasPermission) {
-      return res.status(403).json({ message: "Forbidden: No access to this company" });
-    }
+    try {
+      console.log('[GET /api/categories] Query params:', req.query);
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+      console.log('[GET /api/categories] CompanyId:', companyId);
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: No access to this company" });
+      }
 
-    const type = req.query.type as 'income' | 'expense' | undefined;
-    const categories = await storage.getCategories(companyId, type);
-    res.json(categories);
+      const type = req.query.type as 'income' | 'expense' | undefined;
+      const categories = await storage.getCategories(companyId, type);
+      console.log('[GET /api/categories] Returning categories count:', categories.length);
+      res.json(categories);
+    } catch (error: any) {
+      console.log('[GET /api/categories] Error:', error.message);
+      res.status(400).json({ message: error.message });
+    }
   });
 
   app.get("/api/categories/:id", isAuthenticated, async (req: any, res) => {

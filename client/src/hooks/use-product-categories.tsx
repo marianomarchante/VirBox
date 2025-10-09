@@ -40,29 +40,45 @@ export function useCreateProductCategory() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/product-categories'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/product-categories', { companyId: currentCompanyId }],
+        exact: false,
+        refetchType: 'all'
+      });
     },
   });
 }
 
 export function useUpdateProductCategory() {
+  const { currentCompanyId } = useCompany();
+  
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertProductCategory> }) => {
       return await apiRequest('PUT', `/api/product-categories/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/product-categories'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/product-categories', { companyId: currentCompanyId }],
+        exact: false,
+        refetchType: 'all'
+      });
     },
   });
 }
 
 export function useDeleteProductCategory() {
+  const { currentCompanyId } = useCompany();
+  
   return useMutation({
     mutationFn: async (id: string) => {
       await apiRequest('DELETE', `/api/product-categories/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/product-categories'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/product-categories', { companyId: currentCompanyId }],
+        exact: false,
+        refetchType: 'all'
+      });
     },
   });
 }

@@ -34,7 +34,8 @@ export function useCategories(type?: 'income' | 'expense') {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: ['/api/categories'],
+        queryKey: ['/api/categories', { companyId: currentCompanyId }],
+        exact: false,
         refetchType: 'all'
       });
       toast({
@@ -58,7 +59,8 @@ export function useCategories(type?: 'income' | 'expense') {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: ['/api/categories'],
+        queryKey: ['/api/categories', { companyId: currentCompanyId }],
+        exact: false,
         refetchType: 'all'
       });
       toast({
@@ -81,7 +83,8 @@ export function useCategories(type?: 'income' | 'expense') {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: ['/api/categories'],
+        queryKey: ['/api/categories', { companyId: currentCompanyId }],
+        exact: false,
         refetchType: 'all'
       });
       toast({
