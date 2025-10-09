@@ -39,12 +39,15 @@ export default function Reports() {
   const { categories: incomeCategories } = useCategories('income');
   const { categories: expenseCategories } = useCategories('expense');
 
-  // Generate available years from transactions
+  // Generate available years from 1950 to current year
   const availableYears = useMemo(() => {
-    if (!allTransactions) return [new Date().getFullYear().toString()];
-    const years = new Set(allTransactions.map(t => new Date(t.date).getFullYear().toString()));
-    return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a));
-  }, [allTransactions]);
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear; year >= 1950; year--) {
+      years.push(year.toString());
+    }
+    return years;
+  }, []);
 
   // Filter transactions based on selected period and category
   const filteredTransactions = useMemo(() => {
