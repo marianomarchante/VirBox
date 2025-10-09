@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Calendar, TrendingUp, TrendingDown, DollarSign, Package } from "lucide-react";
+import { Download, Calendar, TrendingUp, TrendingDown, DollarSign, Package, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,9 @@ import { useCategories } from "@/hooks/use-categories";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { useLocation } from "wouter";
+import { useCompany } from "@/contexts/CompanyContext";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type PeriodType = 'month' | 'quarter' | 'year' | 'all';
 
@@ -27,6 +30,7 @@ export default function Reports() {
   const [categoryType, setCategoryType] = useState<'all' | 'income' | 'expense'>('all');
   
   const { hasCompanySelected } = useCompanyPermission();
+  const { currentCompany } = useCompany();
 
   const { transactions: allTransactions } = useTransactions({
     search: '',
@@ -230,6 +234,144 @@ export default function Reports() {
     }
   };
 
+  // Export report to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Informe Financiero', pageWidth / 2, 20, { align: 'center' });
+    
+    // Company and period
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Empresa: ${currentCompany?.name || 'N/A'}`, 14, 30);
+    doc.text(`Período: ${getPeriodLabel()}`, 14, 36);
+    
+    // Filter info
+    let yPos = 42;
+    if (categoryType !== 'all') {
+      doc.text(`Tipo: ${categoryType === 'income' ? 'Ingresos' : 'Gastos'}`, 14, yPos);
+      yPos += 6;
+    }
+    if (selectedCategory !== 'all') {
+      doc.text(`Categoría: ${selectedCategory}`, 14, yPos);
+      yPos += 6;
+    }
+    
+    yPos += 4;
+
+    // Metrics table
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen de Métricas', 14, yPos);
+    yPos += 2;
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Métrica', 'Valor']],
+      body: [
+        ['Ingresos Totales', formatCurrency(metrics.totalIncome)],
+        ['Gastos Totales', formatCurrency(metrics.totalExpenses)],
+        ['Ganancia Neta', formatCurrency(metrics.balance)],
+        ['Transacciones', transactions?.length.toString() || '0'],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [59, 130, 246] },
+      margin: { left: 14, right: 14 },
+    });
+
+    // Transactions table
+    yPos = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalle de Transacciones', 14, yPos);
+    
+    const transactionData = filteredTransactions.map(t => [
+      new Date(t.date).toLocaleDateString('es-ES'),
+      t.description,
+      t.type === 'income' ? 'Ingreso' : 'Gasto',
+      t.category,
+      formatCurrency(parseFloat(t.amount)),
+    ]);
+
+    autoTable(doc, {
+      startY: yPos + 2,
+      head: [['Fecha', 'Descripción', 'Tipo', 'Categoría', 'Monto']],
+      body: transactionData,
+      theme: 'striped',
+      headStyles: { fillColor: [59, 130, 246] },
+      margin: { left: 14, right: 14 },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 50 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 30, halign: 'right' },
+      },
+    });
+
+    // Category breakdown if available
+    if (categoryChartData.length > 0) {
+      yPos = (doc as any).lastAutoTable.finalY + 10;
+      
+      // Check if we need a new page
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Gastos por Categoría', 14, yPos);
+      
+      const categoryBreakdownData = categoryChartData.map(item => [
+        item.name,
+        formatCurrency(item.value),
+        `${((item.value / metrics.totalExpenses) * 100).toFixed(1)}%`,
+      ]);
+
+      autoTable(doc, {
+        startY: yPos + 2,
+        head: [['Categoría', 'Monto', 'Porcentaje']],
+        body: categoryBreakdownData,
+        theme: 'striped',
+        headStyles: { fillColor: [59, 130, 246] },
+        margin: { left: 14, right: 14 },
+        columnStyles: {
+          1: { halign: 'right' },
+          2: { halign: 'right' },
+        },
+      });
+    }
+
+    // Footer with date
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(
+        `Generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}`,
+        pageWidth / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
+      doc.text(
+        `Página ${i} de ${totalPages}`,
+        pageWidth - 20,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'right' }
+      );
+    }
+
+    // Save the PDF
+    const fileName = `informe_${getPeriodLabel().replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(fileName);
+  };
+
   if (!hasCompanySelected) {
     return (
       <div key={`no-company-${location}`} className="flex h-screen overflow-hidden bg-background">
@@ -258,6 +400,18 @@ export default function Reports() {
           {/* Report Controls */}
           <Card>
             <CardContent className="pt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Filtros de Informe</h3>
+                <Button
+                  onClick={exportToPDF}
+                  variant="outline"
+                  className="gap-2"
+                  data-testid="button-export-pdf"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Exportar a PDF
+                </Button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Period Type Filter */}
                 <div>
