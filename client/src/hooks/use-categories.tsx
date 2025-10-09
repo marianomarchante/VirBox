@@ -54,7 +54,7 @@ export function useCategories(type?: 'income' | 'expense') {
 
   const updateCategory = useMutation({
     mutationFn: async ({ id, category }: { id: string; category: Partial<InsertCategory> }) => {
-      const response = await apiRequest('PUT', `/api/categories/${id}`, category);
+      const response = await apiRequest('PUT', `/api/categories/${id}`, { ...category, companyId: currentCompanyId ?? undefined });
       return response.json();
     },
     onSuccess: () => {
@@ -79,7 +79,9 @@ export function useCategories(type?: 'income' | 'expense') {
 
   const deleteCategory = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/categories/${id}`);
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      await apiRequest('DELETE', `/api/categories/${id}?${params.toString()}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
