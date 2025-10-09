@@ -13,6 +13,10 @@ export function useTransactions(filter?: TransactionFilter) {
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
     
+    if (currentCompanyId) {
+      params.append('companyId', currentCompanyId);
+    }
+    
     if (filter) {
       Object.entries(filter).forEach(([key, value]) => {
         if (value && value !== 'all') {
@@ -21,7 +25,7 @@ export function useTransactions(filter?: TransactionFilter) {
       });
     }
     return params.toString() ? `?${params.toString()}` : '';
-  }, [filter]);
+  }, [filter, currentCompanyId]);
 
   const {
     data: transactions,
@@ -45,8 +49,18 @@ export function useTransactions(filter?: TransactionFilter) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/transactions', { companyId: currentCompanyId }],
+        exact: false
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/dashboard/metrics', { companyId: currentCompanyId }],
+        exact: false
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/dashboard/monthly-data', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Transacción creada",
         description: "La transacción se ha registrado correctamente.",
@@ -67,8 +81,18 @@ export function useTransactions(filter?: TransactionFilter) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/transactions', { companyId: currentCompanyId }],
+        exact: false
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/dashboard/metrics', { companyId: currentCompanyId }],
+        exact: false
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/dashboard/monthly-data', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Transacción actualizada",
         description: "Los cambios se han guardado correctamente.",
@@ -88,8 +112,18 @@ export function useTransactions(filter?: TransactionFilter) {
       await apiRequest('DELETE', `/api/transactions/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/transactions', { companyId: currentCompanyId }],
+        exact: false
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/dashboard/metrics', { companyId: currentCompanyId }],
+        exact: false
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/dashboard/monthly-data', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Transacción eliminada",
         description: "La transacción se ha eliminado correctamente.",

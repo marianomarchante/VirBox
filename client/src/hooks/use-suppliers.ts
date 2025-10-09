@@ -15,7 +15,9 @@ export function useSuppliers() {
   } = useQuery<Supplier[]>({
     queryKey: ['/api/suppliers', { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch('/api/suppliers', { credentials: "include" });
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const res = await fetch(`/api/suppliers?${params.toString()}`, { credentials: "include" });
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
@@ -30,7 +32,10 @@ export function useSuppliers() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/suppliers', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Proveedor agregado",
         description: "El proveedor se ha registrado correctamente.",
@@ -51,7 +56,10 @@ export function useSuppliers() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/suppliers', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Proveedor actualizado",
         description: "Los cambios se han guardado correctamente.",
@@ -71,7 +79,10 @@ export function useSuppliers() {
       await apiRequest('DELETE', `/api/suppliers/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/suppliers'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/suppliers', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Proveedor eliminado",
         description: "El proveedor se ha eliminado correctamente.",

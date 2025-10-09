@@ -15,7 +15,9 @@ export function useClients() {
   } = useQuery<Client[]>({
     queryKey: ['/api/clients', { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch('/api/clients', { credentials: "include" });
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const res = await fetch(`/api/clients?${params.toString()}`, { credentials: "include" });
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
@@ -30,7 +32,10 @@ export function useClients() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/clients', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Cliente agregado",
         description: "El cliente se ha registrado correctamente.",
@@ -51,7 +56,10 @@ export function useClients() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/clients', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Cliente actualizado",
         description: "Los cambios se han guardado correctamente.",
@@ -71,7 +79,10 @@ export function useClients() {
       await apiRequest('DELETE', `/api/clients/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clients'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/clients', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Cliente eliminado",
         description: "El cliente se ha eliminado correctamente.",

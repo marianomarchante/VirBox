@@ -36,11 +36,27 @@ export default function Dashboard() {
 
   // Data fetching
   const { data: metrics } = useQuery({
-    queryKey: ['/api/dashboard/metrics'],
+    queryKey: ['/api/dashboard/metrics', { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const res = await fetch(`/api/dashboard/metrics?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return await res.json();
+    },
+    enabled: !!currentCompanyId,
   });
 
   const { data: monthlyData = [] } = useQuery({
-    queryKey: ['/api/dashboard/monthly-data'],
+    queryKey: ['/api/dashboard/monthly-data', { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const res = await fetch(`/api/dashboard/monthly-data?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return await res.json();
+    },
+    enabled: !!currentCompanyId,
   });
 
   const { 
@@ -63,17 +79,6 @@ export default function Dashboard() {
   const incomeTransactions = transactions?.filter((t: any) => t.type === 'income') || [];
   const expenseTransactions = transactions?.filter((t: any) => t.type === 'expense') || [];
 
-  if (!metrics) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
@@ -89,6 +94,13 @@ export default function Dashboard() {
         
         {!hasCompanySelected ? (
           <NoCompanySelected />
+        ) : !metrics ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Cargando dashboard...</p>
+            </div>
+          </div>
         ) : (
           <div className="p-4 lg:p-8 space-y-6">
             <MetricsGrid metrics={metrics as { totalIncome: number; totalExpenses: number; balance: number }} />

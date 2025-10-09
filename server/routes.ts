@@ -572,22 +572,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Category routes (protected)
   app.get("/api/categories", isAuthenticated, async (req: any, res) => {
-    try {
-      console.log('[GET /api/categories] Query params:', req.query);
-      const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
-      console.log('[GET /api/categories] CompanyId:', companyId);
-      if (!hasPermission) {
-        return res.status(403).json({ message: "Forbidden: No access to this company" });
-      }
-
-      const type = req.query.type as 'income' | 'expense' | undefined;
-      const categories = await storage.getCategories(companyId, type);
-      console.log('[GET /api/categories] Returning categories count:', categories.length);
-      res.json(categories);
-    } catch (error: any) {
-      console.log('[GET /api/categories] Error:', error.message);
-      res.status(400).json({ message: error.message });
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
     }
+
+    const type = req.query.type as 'income' | 'expense' | undefined;
+    const categories = await storage.getCategories(companyId, type);
+    res.json(categories);
   });
 
   app.get("/api/categories/:id", isAuthenticated, async (req: any, res) => {

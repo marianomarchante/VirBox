@@ -15,7 +15,9 @@ export function useInventory() {
   } = useQuery<Inventory[]>({
     queryKey: ['/api/inventory', { companyId: currentCompanyId }],
     queryFn: async () => {
-      const res = await fetch('/api/inventory', { credentials: "include" });
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const res = await fetch(`/api/inventory?${params.toString()}`, { credentials: "include" });
       if (!res.ok) {
         throw new Error(`${res.status}: ${res.statusText}`);
       }
@@ -30,7 +32,10 @@ export function useInventory() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/inventory', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Producto agregado",
         description: "El producto se ha agregado al inventario correctamente.",
@@ -51,7 +56,10 @@ export function useInventory() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/inventory', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Producto actualizado",
         description: "Los cambios se han guardado correctamente.",
@@ -71,7 +79,10 @@ export function useInventory() {
       await apiRequest('DELETE', `/api/inventory/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/inventory', { companyId: currentCompanyId }],
+        exact: false
+      });
       toast({
         title: "Producto eliminado",
         description: "El producto se ha eliminado del inventario.",
