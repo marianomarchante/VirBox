@@ -594,12 +594,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/categories", isAuthenticated, async (req: any, res) => {
     try {
-      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      const validatedData = insertCategorySchema.parse(req.body);
+      const companyId = validatedData.companyId;
+      
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID is required" });
+      }
+
+      const hasPermission = await checkCompanyPermission(req, companyId, 'administracion');
       if (!hasPermission) {
         return res.status(403).json({ message: "Forbidden: Admin permission required" });
       }
 
-      const validatedData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory({
         ...validatedData,
         companyId,
@@ -675,12 +681,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/product-categories", isAuthenticated, async (req: any, res) => {
     try {
-      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      const validatedData = insertProductCategorySchema.parse(req.body);
+      const companyId = validatedData.companyId;
+      
+      if (!companyId) {
+        return res.status(400).json({ message: "Company ID is required" });
+      }
+
+      const hasPermission = await checkCompanyPermission(req, companyId, 'administracion');
       if (!hasPermission) {
         return res.status(403).json({ message: "Forbidden: Admin permission required" });
       }
 
-      const validatedData = insertProductCategorySchema.parse(req.body);
       const category = await storage.createProductCategory({
         ...validatedData,
         companyId
