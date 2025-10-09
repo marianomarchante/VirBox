@@ -30,9 +30,14 @@ export function useProductCategory(id: string | undefined) {
 }
 
 export function useCreateProductCategory() {
+  const { currentCompanyId } = useCompany();
+  
   return useMutation({
     mutationFn: async (data: InsertProductCategory) => {
-      return await apiRequest('POST', '/api/product-categories', data);
+      return await apiRequest('POST', '/api/product-categories', {
+        ...data,
+        companyId: currentCompanyId,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/product-categories'] });

@@ -26,7 +26,10 @@ export function useCategories(type?: 'income' | 'expense') {
 
   const createCategory = useMutation({
     mutationFn: async (category: InsertCategory) => {
-      const response = await apiRequest('POST', '/api/categories', category);
+      const response = await apiRequest('POST', '/api/categories', {
+        ...category,
+        companyId: currentCompanyId,
+      });
       return response.json();
     },
     onSuccess: () => {
