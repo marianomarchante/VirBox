@@ -135,9 +135,19 @@ export const productCategories = pgTable("product_categories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const documentCategories = pgTable("document_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const documents = pgTable("documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull(),
+  categoryId: varchar("category_id"),
   title: text("title").notNull(),
   description: text("description"),
   pdfData: text("pdf_data"), // PDF file stored as base64
@@ -205,6 +215,13 @@ export const insertProductCategorySchema = createInsertSchema(productCategories)
   companyId: z.string().optional(),
 });
 
+export const insertDocumentCategorySchema = createInsertSchema(documentCategories).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
+});
+
 export const insertDocumentSchema = createInsertSchema(documents).omit({
   id: true,
   createdAt: true,
@@ -236,6 +253,9 @@ export type InsertCategory = z.infer<typeof insertCategorySchema>;
 
 export type ProductCategory = typeof productCategories.$inferSelect;
 export type InsertProductCategory = z.infer<typeof insertProductCategorySchema>;
+
+export type DocumentCategory = typeof documentCategories.$inferSelect;
+export type InsertDocumentCategory = z.infer<typeof insertDocumentCategorySchema>;
 
 export type Document = typeof documents.$inferSelect;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
