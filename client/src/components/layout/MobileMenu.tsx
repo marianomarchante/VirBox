@@ -29,6 +29,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { name: "Categorías de Ingresos", href: "/categorias-ingresos", icon: Tags },
     { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
     { name: "Categorías Inventario", href: "/categorias-productos", icon: Tags },
+    { name: "Categorías Documentos", href: "/categorias-documentos", icon: Tags },
     { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
     ...(user?.isAdmin ? [
       { name: "Empresas", href: "/empresas", icon: Building2 },

@@ -11,6 +11,7 @@ import {
   inventoryMovements,
   categories,
   productCategories,
+  documentCategories,
   documents,
   type User,
   type UpsertUser,
@@ -32,6 +33,8 @@ import {
   type InsertCategory,
   type ProductCategory,
   type InsertProductCategory,
+  type DocumentCategory,
+  type InsertDocumentCategory,
   type Document,
   type InsertDocument
 } from '@shared/schema';
@@ -553,6 +556,41 @@ export class PostgresStorage implements IStorage {
   async deleteProductCategory(id: string, companyId: string): Promise<boolean> {
     const result = await db.delete(productCategories)
       .where(and(eq(productCategories.id, id), eq(productCategories.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getDocumentCategories(companyId: string): Promise<DocumentCategory[]> {
+    return await db.select().from(documentCategories)
+      .where(eq(documentCategories.companyId, companyId))
+      .orderBy(documentCategories.name);
+  }
+
+  async getDocumentCategory(id: string, companyId: string): Promise<DocumentCategory | undefined> {
+    const result = await db.select().from(documentCategories)
+      .where(and(eq(documentCategories.id, id), eq(documentCategories.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createDocumentCategory(insertCategory: InsertDocumentCategory): Promise<DocumentCategory> {
+    const companyId = insertCategory.companyId || await this.getDefaultCompanyId();
+    const result = await db.insert(documentCategories).values({
+      ...insertCategory,
+      companyId,
+    }).returning();
+    return result[0];
+  }
+
+  async updateDocumentCategory(id: string, companyId: string, update: Partial<InsertDocumentCategory>): Promise<DocumentCategory | undefined> {
+    const result = await db.update(documentCategories).set(update)
+      .where(and(eq(documentCategories.id, id), eq(documentCategories.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDocumentCategory(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(documentCategories)
+      .where(and(eq(documentCategories.id, id), eq(documentCategories.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 
