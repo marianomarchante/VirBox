@@ -4,13 +4,14 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import TransactionModal from "@/components/forms/TransactionModal";
+import PdfViewer from "@/components/shared/PdfViewer";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useClients } from "@/hooks/use-clients";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, FileText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,7 @@ export default function Income() {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
+  const [viewingPdf, setViewingPdf] = useState<{ data: string; fileName: string } | null>(null);
   const { currentCompanyId } = useCompany();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
 
@@ -206,6 +208,16 @@ export default function Income() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-2">
+                              {transaction.pdfDocument && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setViewingPdf({ data: transaction.pdfDocument, fileName: transaction.pdfFileName || 'documento.pdf' })}
+                                  data-testid={`button-view-pdf-${transaction.id}`}
+                                >
+                                  <FileText className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -266,6 +278,15 @@ export default function Income() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {viewingPdf && (
+        <PdfViewer
+          isOpen={true}
+          onClose={() => setViewingPdf(null)}
+          pdfData={viewingPdf.data}
+          fileName={viewingPdf.fileName}
+        />
+      )}
     </div>
   );
 }
