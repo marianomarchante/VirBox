@@ -55,6 +55,20 @@ Document categories provide a way to organize and classify documents within the 
 - **Security:** All operations require company permissions (admin for create/update/delete, consulta for read)
 - **Navigation:** Accessible via sidebar and mobile menu under Documents section
 
+### Document Search and Filtering
+
+The document management system includes a comprehensive filtering system for efficient document retrieval:
+- **Search Filter:** Text search across document titles and descriptions (case-insensitive, trimmed for accuracy)
+- **Category Filter:** Filter by specific category, all categories, or documents without a category
+- **Date Range Filter:** Filter documents by creation date (from/to date pickers with inclusive range)
+- **UI/UX Features:**
+  - Responsive filter panel with grid layout (4 columns on desktop, stacked on mobile)
+  - Real-time filtering using React useMemo for optimal performance
+  - Clear filters button (conditionally shown when filters are active)
+  - Dynamic result count showing "X de Y documentos"
+  - Contextual empty state messages (different for filtered vs. no documents)
+- **Implementation:** Frontend-based filtering using useMemo to derive filteredDocuments from cached query data
+
 ## External Dependencies
 
 - **Database:** Neon Serverless PostgreSQL (`@neondatabase/serverless`), Drizzle Kit for migrations.
