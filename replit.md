@@ -34,6 +34,14 @@ The system supports multi-company data isolation, where every data table include
 - **Business Data:** `Transactions`, `Inventory`, `ProductCategories` (company-specific), `Clients`, `Suppliers`, and `InventoryMovements` tables.
 Data relationships are defined, and soft deletion is supported via status flags. A cascade delete mechanism, implemented at the application level with database transactions, ensures complete removal of all related data when a company is deleted, guaranteeing data integrity. Shared Zod schemas and Drizzle-zod integration provide type safety.
 
+### PDF Document Management
+
+Transactions (income and expenses) support PDF document attachments for record-keeping and compliance:
+- **Storage:** PDFs are stored as base64-encoded data URLs in the `pdfDocument` field, with original filenames in `pdfFileName`
+- **Upload:** Users can attach PDF files when creating or editing transactions via the TransactionModal component
+- **Visualization:** A dedicated PdfViewer component displays attached PDFs in a modal with download capability
+- **UI Integration:** Income and Expenses tables show a FileText icon (blue) for transactions with PDFs, allowing instant viewing
+
 ## External Dependencies
 
 - **Database:** Neon Serverless PostgreSQL (`@neondatabase/serverless`), Drizzle Kit for migrations.
