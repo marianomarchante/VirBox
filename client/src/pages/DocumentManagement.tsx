@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Edit, Trash2, FileText, Download, Upload } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, Edit, Trash2, FileText, Download, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +33,13 @@ export default function DocumentManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState<string | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  
   const { toast } = useToast();
   const { currentCompanyId } = useCompany();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
@@ -55,6 +62,38 @@ export default function DocumentManagement() {
     },
     enabled: !!currentCompanyId,
   });
+
+  // Filtered documents based on search and filters
+  const filteredDocuments = useMemo(() => {
+    if (!documents) return [];
+
+    return documents.filter(document => {
+      // Search filter (title and description) - trim to avoid accidental spaces
+      const trimmedSearch = searchTerm.trim().toLowerCase();
+      const matchesSearch = trimmedSearch === "" || 
+        document.title.toLowerCase().includes(trimmedSearch) ||
+        (document.description && document.description.toLowerCase().includes(trimmedSearch));
+
+      // Category filter
+      const matchesCategory = selectedCategoryFilter === "all" || 
+        (selectedCategoryFilter === "none" && !document.categoryId) ||
+        document.categoryId === selectedCategoryFilter;
+
+      // Date range filter
+      const documentDate = new Date(document.createdAt);
+      const matchesDateFrom = !dateFrom || documentDate >= new Date(dateFrom);
+      const matchesDateTo = !dateTo || documentDate <= new Date(dateTo + "T23:59:59");
+
+      return matchesSearch && matchesCategory && matchesDateFrom && matchesDateTo;
+    });
+  }, [documents, searchTerm, selectedCategoryFilter, dateFrom, dateTo]);
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategoryFilter("all");
+    setDateFrom("");
+    setDateTo("");
+  };
 
   const createDocument = useMutation({
     mutationFn: async (data: InsertDocument) => {
@@ -215,7 +254,7 @@ export default function DocumentManagement() {
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Documentos</h3>
                 <p className="text-sm text-muted-foreground">
-                  {documents?.length || 0} documentos registrados
+                  {filteredDocuments?.length || 0} de {documents?.length || 0} documentos
                 </p>
               </div>
               <Button 
@@ -226,6 +265,75 @@ export default function DocumentManagement() {
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Documento
               </Button>
+            </div>
+
+            {/* Filters Section */}
+            <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por título o descripción..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search-documents"
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <Select
+                  value={selectedCategoryFilter}
+                  onValueChange={setSelectedCategoryFilter}
+                >
+                  <SelectTrigger data-testid="select-filter-category">
+                    <SelectValue placeholder="Todas las categorías" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
+                    <SelectItem value="none">Sin categoría</SelectItem>
+                    {documentCategories?.filter(cat => cat.isActive).map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Date From */}
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  placeholder="Fecha desde"
+                  data-testid="input-date-from"
+                />
+
+                {/* Date To */}
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  placeholder="Fecha hasta"
+                  data-testid="input-date-to"
+                />
+              </div>
+
+              {/* Clear Filters Button */}
+              {(searchTerm || selectedCategoryFilter !== "all" || dateFrom || dateTo) && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilters}
+                    data-testid="button-clear-filters"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Limpiar filtros
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="overflow-x-auto">
@@ -240,7 +348,7 @@ export default function DocumentManagement() {
                   </tr>
                 </thead>
                 <tbody>
-                  {documents?.map((document) => (
+                  {filteredDocuments?.map((document) => (
                     <tr
                       key={document.id}
                       className="border-b border-border hover:bg-muted/50 transition-colors"
@@ -299,10 +407,12 @@ export default function DocumentManagement() {
                       </td>
                     </tr>
                   ))}
-                  {documents?.length === 0 && (
+                  {filteredDocuments?.length === 0 && (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-muted-foreground">
-                        No hay documentos registrados
+                        {searchTerm || selectedCategoryFilter !== "all" || dateFrom || dateTo
+                          ? "No se encontraron documentos con los filtros aplicados"
+                          : "No hay documentos registrados"}
                       </td>
                     </tr>
                   )}
