@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -16,6 +17,7 @@ import { insertDocumentSchema, type Document, type InsertDocument } from "@share
 import { useToast } from "@/hooks/use-toast";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
+import { useDocumentCategories } from "@/hooks/use-document-categories";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -34,6 +36,7 @@ export default function DocumentManagement() {
   const { toast } = useToast();
   const { currentCompanyId } = useCompany();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
+  const { categories: documentCategories } = useDocumentCategories();
 
   const { data: documents, isLoading } = useQuery<Document[]>({
     queryKey: ['/api/documents', currentCompanyId],
@@ -99,6 +102,7 @@ export default function DocumentManagement() {
     defaultValues: {
       title: '',
       description: '',
+      categoryId: null,
       pdfData: '',
       pdfFileName: '',
     },
@@ -142,6 +146,7 @@ export default function DocumentManagement() {
     form.reset({
       title: '',
       description: '',
+      categoryId: null,
       pdfData: '',
       pdfFileName: '',
     });
@@ -154,6 +159,7 @@ export default function DocumentManagement() {
       form.reset({
         title: document.title,
         description: document.description || '',
+        categoryId: document.categoryId || null,
         pdfData: document.pdfData || '',
         pdfFileName: document.pdfFileName || '',
       });
@@ -351,6 +357,35 @@ export default function DocumentManagement() {
                         data-testid="input-document-description"
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categoría</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                      value={field.value || "none"}
+                    >
+                      <FormControl>
+                        <SelectTrigger data-testid="select-document-category">
+                          <SelectValue placeholder="Seleccionar categoría" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">Sin categoría</SelectItem>
+                        {documentCategories?.filter(cat => cat.isActive).map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
