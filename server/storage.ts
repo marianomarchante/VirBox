@@ -15,6 +15,8 @@ import {
   type InsertCategory,
   type ProductCategory,
   type InsertProductCategory,
+  type DocumentCategory,
+  type InsertDocumentCategory,
   type Document,
   type InsertDocument,
   type User,
@@ -99,6 +101,13 @@ export interface IStorage {
   updateProductCategory(id: string, companyId: string, category: Partial<InsertProductCategory>): Promise<ProductCategory | undefined>;
   deleteProductCategory(id: string, companyId: string): Promise<boolean>;
 
+  // Document Categories
+  getDocumentCategories(companyId: string): Promise<DocumentCategory[]>;
+  getDocumentCategory(id: string, companyId: string): Promise<DocumentCategory | undefined>;
+  createDocumentCategory(category: InsertDocumentCategory): Promise<DocumentCategory>;
+  updateDocumentCategory(id: string, companyId: string, category: Partial<InsertDocumentCategory>): Promise<DocumentCategory | undefined>;
+  deleteDocumentCategory(id: string, companyId: string): Promise<boolean>;
+
   // Documents
   getDocuments(companyId: string): Promise<Document[]>;
   getDocument(id: string, companyId: string): Promise<Document | undefined>;
@@ -132,6 +141,7 @@ export class MemStorage implements IStorage {
   private inventoryMovements: Map<string, InventoryMovement> = new Map();
   private categories: Map<string, Category> = new Map();
   private productCategories: Map<string, ProductCategory> = new Map();
+  private documentCategories: Map<string, DocumentCategory> = new Map();
   private documents: Map<string, Document> = new Map();
   private defaultCompanyId: string;
 
@@ -737,6 +747,52 @@ export class MemStorage implements IStorage {
     return false;
   }
 
+  // Document Categories
+  async getDocumentCategories(companyId: string): Promise<DocumentCategory[]> {
+    return Array.from(this.documentCategories.values())
+      .filter(c => c.companyId === companyId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getDocumentCategory(id: string, companyId: string): Promise<DocumentCategory | undefined> {
+    const category = this.documentCategories.get(id);
+    if (category && category.companyId === companyId) {
+      return category;
+    }
+    return undefined;
+  }
+
+  async createDocumentCategory(insertCategory: InsertDocumentCategory): Promise<DocumentCategory> {
+    const id = randomUUID();
+    const companyId = insertCategory.companyId || this.defaultCompanyId;
+    const category: DocumentCategory = {
+      ...insertCategory,
+      companyId,
+      isActive: insertCategory.isActive ?? true,
+      id,
+      createdAt: new Date(),
+    };
+    this.documentCategories.set(id, category);
+    return category;
+  }
+
+  async updateDocumentCategory(id: string, companyId: string, update: Partial<InsertDocumentCategory>): Promise<DocumentCategory | undefined> {
+    const category = this.documentCategories.get(id);
+    if (!category || category.companyId !== companyId) return undefined;
+    
+    const updated = { ...category, ...update };
+    this.documentCategories.set(id, updated);
+    return updated;
+  }
+
+  async deleteDocumentCategory(id: string, companyId: string): Promise<boolean> {
+    const category = this.documentCategories.get(id);
+    if (category && category.companyId === companyId) {
+      return this.documentCategories.delete(id);
+    }
+    return false;
+  }
+
   // Documents
   async getDocuments(companyId: string): Promise<Document[]> {
     return Array.from(this.documents.values())
@@ -760,6 +816,7 @@ export class MemStorage implements IStorage {
     const document: Document = {
       ...insertDocument,
       companyId,
+      categoryId: insertDocument.categoryId || null,
       description: insertDocument.description || null,
       pdfData: insertDocument.pdfData || null,
       pdfFileName: insertDocument.pdfFileName || null,
