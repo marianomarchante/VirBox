@@ -31,7 +31,7 @@ Permissions are enforced on both the backend (middleware for `isAuthenticated`, 
 
 The system supports multi-company data isolation, where every data table includes a `companyId` field, and all operations enforce companyId verification. The PostgreSQL database schema includes:
 - **Authentication & Authorization:** `Sessions`, `Users` (with `isAdmin` flag), `UserCompanyPermissions` (linking users to companies with roles), and `Companies` tables.
-- **Business Data:** `Transactions`, `Inventory`, `ProductCategories` (company-specific), `Clients`, `Suppliers`, and `InventoryMovements` tables.
+- **Business Data:** `Transactions`, `Inventory`, `ProductCategories` (company-specific), `DocumentCategories` (company-specific), `Documents`, `Clients`, `Suppliers`, and `InventoryMovements` tables.
 Data relationships are defined, and soft deletion is supported via status flags. A cascade delete mechanism, implemented at the application level with database transactions, ensures complete removal of all related data when a company is deleted, guaranteeing data integrity. Shared Zod schemas and Drizzle-zod integration provide type safety.
 
 ### PDF Document Management
@@ -41,6 +41,19 @@ Transactions (income and expenses) support PDF document attachments for record-k
 - **Upload:** Users can attach PDF files when creating or editing transactions via the TransactionModal component
 - **Visualization:** A dedicated PdfViewer component displays attached PDFs in a modal with download capability
 - **UI Integration:** Income and Expenses tables show a FileText icon (blue) for transactions with PDFs, allowing instant viewing
+
+### Document Categories
+
+Document categories provide a way to organize and classify documents within the document management system:
+- **Database Schema:** `DocumentCategories` table with company-scoped categories (id, name, description, companyId, isActive, createdAt)
+- **Document Association:** `Documents` table includes optional `categoryId` field for category assignment
+- **API Endpoints:** Full CRUD operations at `/api/document-categories` with company-level authorization and Zod validation
+- **Frontend Components:** 
+  - Dedicated DocumentCategories page at `/document-categories` for category management
+  - Category selector integrated into document creation/editing forms
+  - useDocumentCategories hook following established patterns for category management
+- **Security:** All operations require company permissions (admin for create/update/delete, consulta for read)
+- **Navigation:** Accessible via sidebar and mobile menu under Documents section
 
 ## External Dependencies
 
