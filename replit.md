@@ -84,6 +84,28 @@ The reports module supports flexible time-based filtering with multiple period o
 - **PDF Export:** Automatically includes custom date range in report header and filename
 - **UI/UX:** DatePickers use shadcn Calendar component with Popover for clean, accessible interface
 
+### Interactive Help System
+
+The application includes a comprehensive built-in help system accessible from every page:
+- **Location:** Help button in the TopBar (top-right corner, next to company selector)
+- **Structure:** Dialog-based interface with tabbed navigation for organized content
+- **Content Sections:**
+  - **Inicio (Overview):** Introduction, multi-company system explanation, quick start guide
+  - **Módulos:** Detailed documentation for all main modules (Dashboard, Transactions, Inventory, Clients, Suppliers, Documents)
+  - **Informes:** Complete guide for Reports module including filters, date ranges, and PDF export
+  - **Admin:** Administrative functions for user management, company management, and system configuration
+- **Features:**
+  - Organized with Tabs component for easy navigation
+  - ScrollArea for comfortable reading of extensive content
+  - Visual icons for each section and feature
+  - Non-technical language suitable for all users
+  - Fully in Spanish for accessibility
+- **Implementation:** 
+  - Help component (`client/src/components/shared/Help.tsx`)
+  - Integrated in TopBar for universal access
+  - Uses shadcn Dialog, Tabs, and ScrollArea components
+- **UI/UX:** Clean modal interface with HelpCircle icon, responsive layout, and clear visual hierarchy
+
 ## External Dependencies
 
 - **Database:** Neon Serverless PostgreSQL (`@neondatabase/serverless`), Drizzle Kit for migrations.
