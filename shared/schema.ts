@@ -69,11 +69,12 @@ export const inventory = pgTable("inventory", {
   companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
   categoryId: varchar("category_id"),
-  currentStock: decimal("current_stock", { precision: 10, scale: 2 }).notNull(),
-  unit: text("unit").notNull(), // e.g. 'kg', 'units', 'tons'
-  minStock: decimal("min_stock", { precision: 10, scale: 2 }).default("0"),
-  pricePerUnit: decimal("price_per_unit", { precision: 10, scale: 2 }),
-  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  value: decimal("value", { precision: 10, scale: 2 }).notNull(), // Value in euros
+  acquisitionDate: timestamp("acquisition_date").notNull(), // Date of acquisition
+  pdfDocument: text("pdf_document"), // Optional PDF document stored as base64
+  pdfFileName: text("pdf_file_name"), // Original filename of the PDF
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const clients = pgTable("clients", {
@@ -171,9 +172,11 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
 
 export const insertInventorySchema = createInsertSchema(inventory).omit({
   id: true,
-  lastUpdated: true,
+  createdAt: true,
+  updatedAt: true,
 }).extend({
   companyId: z.string().optional(),
+  acquisitionDate: z.union([z.date(), z.string().transform(val => new Date(val))]),
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({

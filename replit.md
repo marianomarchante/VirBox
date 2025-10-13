@@ -83,19 +83,25 @@ Both Income and Expenses pages include comprehensive filtering capabilities for 
 - **Implementation:** Backend filtering through useTransactions hook with filter parameters (search, category, dateFrom, dateTo)
 - **Test Coverage:** All filter inputs and clear filters button include data-testid attributes for e2e testing
 
-### Inventory Filtering
+### Inventory Module (Objects Management)
 
-The Inventory page includes filtering capabilities for efficient product retrieval:
-- **Search Filter:** Text search by product name (case-insensitive, trimmed for accuracy, null-safe using optional chaining)
-- **Category Filter:** Filter by specific product category, all categories, or products without a category
-- **UI/UX Features:**
-  - Responsive filter panel with 2-column grid layout (stacked on mobile)
-  - Real-time filtering using React useMemo for optimal performance
-  - Clear filters button (conditionally shown when filters are active)
-  - Dynamic product count showing "X de Y productos"
-  - Contextual empty state messages (different for filtered vs. no products)
+The Inventory module tracks valuable objects and assets owned by the organization:
+- **Database Schema:** `Inventory` table with fields: id, name, categoryId, value (euros), acquisitionDate, pdfDocument, pdfFileName, companyId, createdAt, updatedAt
+- **Object Tracking:** Each inventory item represents a physical or digital asset with monetary value and acquisition date
+- **PDF Support:** Objects can have attached PDF documents (receipts, invoices, certificates) stored as base64 with original filenames
+- **Filtering Capabilities:**
+  - **Search Filter:** Text search by object name (case-insensitive, trimmed for accuracy, null-safe using optional chaining)
+  - **Category Filter:** Filter by specific product category, all categories, or objects without a category
+  - **UI/UX Features:**
+    - Responsive filter panel with 2-column grid layout (stacked on mobile)
+    - Real-time filtering using React useMemo for optimal performance
+    - Clear filters button (conditionally shown when filters are active)
+    - Dynamic object count showing "X de Y objetos"
+    - Contextual empty state messages (different for filtered vs. no objects)
+- **Display:** Table shows object name, category, value (€), acquisition date, and PDF indicator (blue FileText icon when document exists)
+- **PDF Visualization:** PdfViewer component displays attached documents in modal with download capability
 - **Implementation:** Frontend-based filtering using useMemo to derive filteredInventory from cached query data with null-safe operators
-- **Test Coverage:** All filter inputs and clear filters button include data-testid attributes for e2e testing
+- **Test Coverage:** All filter inputs, clear filters button, and PDF viewing include data-testid attributes for e2e testing
 
 ### Reports Date Range Filtering
 

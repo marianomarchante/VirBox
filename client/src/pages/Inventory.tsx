@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Edit, Trash2, Search, X } from "lucide-react";
+import { Plus, Edit, Trash2, Search, X, Upload, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,6 +44,12 @@ import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertInventorySchema, type InsertInventory } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import PdfViewer from "@/components/shared/PdfViewer";
+
+// Form type with acquisitionDate as string for HTML date input
+type InventoryFormData = Omit<InsertInventory, 'acquisitionDate'> & { acquisitionDate: string };
 
 export default function Inventory() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,6 +57,7 @@ export default function Inventory() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [selectedPdf, setSelectedPdf] = useState<{ name: string; data: string } | null>(null);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,13 +67,14 @@ export default function Inventory() {
   const { data: productCategories } = useProductCategories();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
   const { currentCompanyId } = useCompany();
+  const { toast } = useToast();
 
   // Filtered inventory based on search and category filters
   const filteredInventory = useMemo(() => {
     if (!inventory) return [];
 
     return inventory.filter(item => {
-      // Search filter (by product name) - trim to avoid accidental spaces
+      // Search filter (by object name) - trim to avoid accidental spaces
       const trimmedSearch = searchTerm.trim().toLowerCase();
       const matchesSearch = trimmedSearch === "" || 
         (item.name?.toLowerCase() ?? "").includes(trimmedSearch);
@@ -80,24 +88,64 @@ export default function Inventory() {
     });
   }, [inventory, searchTerm, selectedCategoryFilter]);
 
-  const form = useForm<InsertInventory>({
-    resolver: zodResolver(insertInventorySchema),
+  // Form validation schema with acquisitionDate as string
+  const formSchema = insertInventorySchema.extend({
+    acquisitionDate: z.string().min(1, "La fecha de adquisición es obligatoria"),
+  }).omit({ acquisitionDate: true }).merge(z.object({ acquisitionDate: z.string() }));
+
+  const form = useForm<InventoryFormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       categoryId: null,
-      currentStock: "0",
-      unit: "kg",
-      minStock: "0",
-      pricePerUnit: "0",
+      value: "0",
+      acquisitionDate: new Date().toISOString().split('T')[0],
+      pdfDocument: "",
+      pdfFileName: "",
     },
   });
 
-  const onSubmit = async (data: InsertInventory) => {
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast({
+          title: "Error",
+          description: "Solo se permiten archivos PDF.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setSelectedPdf({ name: file.name, data: base64 });
+        form.setValue('pdfDocument', base64);
+        form.setValue('pdfFileName', file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePdf = () => {
+    setSelectedPdf(null);
+    form.setValue('pdfDocument', '');
+    form.setValue('pdfFileName', '');
+  };
+
+  const onSubmit = async (data: InventoryFormData) => {
     try {
+      // Convert string date to Date object
+      const formattedData: InsertInventory = {
+        ...data,
+        acquisitionDate: new Date(data.acquisitionDate),
+      };
+      
       if (editingItemId) {
-        await updateInventoryItem.mutateAsync({ id: editingItemId, item: { ...data, companyId: currentCompanyId ?? undefined } });
+        await updateInventoryItem.mutateAsync({ id: editingItemId, item: { ...formattedData, companyId: currentCompanyId ?? undefined } });
       } else {
-        await createInventoryItem.mutateAsync({ ...data, companyId: currentCompanyId ?? undefined });
+        await createInventoryItem.mutateAsync({ ...formattedData, companyId: currentCompanyId ?? undefined });
       }
       handleCloseModal();
     } catch (error) {
@@ -109,13 +157,14 @@ export default function Inventory() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingItemId(null);
+    setSelectedPdf(null);
     form.reset({
       name: "",
       categoryId: null,
-      currentStock: "0",
-      unit: "kg",
-      minStock: "0",
-      pricePerUnit: "0",
+      value: "0",
+      acquisitionDate: new Date().toISOString().split('T')[0],
+      pdfDocument: "",
+      pdfFileName: "",
     });
   };
 
@@ -132,11 +181,14 @@ export default function Inventory() {
     form.reset({
       name: item.name,
       categoryId: item.categoryId,
-      currentStock: item.currentStock,
-      unit: item.unit,
-      minStock: item.minStock || "",
-      pricePerUnit: item.pricePerUnit || "",
+      value: item.value,
+      acquisitionDate: new Date(item.acquisitionDate).toISOString().split('T')[0],
+      pdfDocument: item.pdfDocument || "",
+      pdfFileName: item.pdfFileName || "",
     });
+    if (item.pdfFileName) {
+      setSelectedPdf({ name: item.pdfFileName, data: item.pdfDocument });
+    }
     setIsModalOpen(true);
   };
 
@@ -159,23 +211,6 @@ export default function Inventory() {
     }
   };
 
-  const formatStock = (stock: string, unit: string) => {
-    const num = parseFloat(stock);
-    return `${num.toLocaleString('es-ES')} ${unit}`;
-  };
-
-  const getStockStatus = (current: string, min: string) => {
-    const currentStock = parseFloat(current);
-    const minStock = parseFloat(min || '0');
-    
-    if (currentStock <= minStock) {
-      return { label: 'Stock Bajo', color: 'bg-accent/10 text-accent' };
-    } else if (currentStock <= minStock * 1.5) {
-      return { label: 'Stock Medio', color: 'bg-secondary/10 text-secondary' };
-    }
-    return { label: 'En Stock', color: 'bg-primary/10 text-primary' };
-  };
-
   const getCategoryName = (categoryId: string | null) => {
     if (!categoryId || !productCategories) return 'Sin categoría';
     const category = productCategories.find(c => c.id === categoryId);
@@ -195,7 +230,7 @@ export default function Inventory() {
       <main className="flex-1 overflow-y-auto">
         <TopBar
           title="Inventario"
-          subtitle="Control de productos y materiales"
+          subtitle="Control de objetos y bienes"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         />
         
@@ -208,7 +243,7 @@ export default function Inventory() {
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Inventario de bienes de la entidad</h3>
                 <p className="text-sm text-muted-foreground">
-                  {filteredInventory?.length || 0} de {inventory?.length || 0} productos
+                  {filteredInventory?.length || 0} de {inventory?.length || 0} objetos
                 </p>
               </div>
               <Button 
@@ -217,7 +252,7 @@ export default function Inventory() {
                 disabled={!canWrite}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Agregar Producto
+                Agregar Objeto
               </Button>
             </div>
 
@@ -228,7 +263,7 @@ export default function Inventory() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por nombre de producto..."
+                    placeholder="Buscar por nombre de objeto..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9"
@@ -277,22 +312,19 @@ export default function Inventory() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Producto
+                      Objeto
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Categoría
                     </th>
                     <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Stock Actual
+                      Valor
                     </th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Stock Mínimo
-                    </th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Precio/Unidad
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
+                      Fecha Adquisición
                     </th>
                     <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Estado
+                      Documento
                     </th>
                     <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Acciones
@@ -302,10 +334,10 @@ export default function Inventory() {
                 <tbody>
                   {!filteredInventory || filteredInventory.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
                         {searchTerm || selectedCategoryFilter !== "all"
-                          ? "No se encontraron productos con los filtros aplicados"
-                          : "No hay productos en inventario."}
+                          ? "No se encontraron objetos con los filtros aplicados"
+                          : "No hay objetos en inventario."}
                         {!searchTerm && selectedCategoryFilter === "all" && canWrite && (
                           <button 
                             className="text-primary hover:underline ml-1"
@@ -319,7 +351,6 @@ export default function Inventory() {
                     </tr>
                   ) : (
                     filteredInventory.map((item: any) => {
-                      const status = getStockStatus(item.currentStock, item.minStock || '0');
                       return (
                         <tr 
                           key={item.id} 
@@ -327,12 +358,7 @@ export default function Inventory() {
                           data-testid={`inventory-row-${item.id}`}
                         >
                           <td className="py-3 px-4">
-                            <div>
-                              <p className="text-sm font-medium">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                Actualizado: {new Date(item.lastUpdated).toLocaleDateString('es-ES')}
-                              </p>
-                            </div>
+                            <p className="text-sm font-medium">{item.name}</p>
                           </td>
                           <td className="py-3 px-4">
                             <span className="inline-block px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded">
@@ -341,29 +367,33 @@ export default function Inventory() {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span className="text-sm font-medium">
-                              {formatStock(item.currentStock, item.unit)}
+                              {new Intl.NumberFormat('es-ES', { 
+                                style: 'currency', 
+                                currency: 'EUR' 
+                              }).format(parseFloat(item.value || '0'))}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-4">
                             <span className="text-sm text-muted-foreground">
-                              {item.minStock ? formatStock(item.minStock, item.unit) : '-'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span className="text-sm text-muted-foreground">
-                              {item.pricePerUnit ? 
-                                new Intl.NumberFormat('es-ES', { 
-                                  style: 'currency', 
-                                  currency: 'EUR' 
-                                }).format(parseFloat(item.pricePerUnit))
-                                : '-'
-                              }
+                              {new Date(item.acquisitionDate).toLocaleDateString('es-ES')}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${status.color}`}>
-                              {status.label}
-                            </span>
+                            {item.pdfDocument && (
+                              <button
+                                onClick={() => {
+                                  setSelectedPdf({ 
+                                    name: item.pdfFileName || 'documento.pdf', 
+                                    data: item.pdfDocument 
+                                  });
+                                }}
+                                className="text-blue-500 hover:text-blue-700"
+                                title="Ver documento PDF"
+                                data-testid={`button-view-pdf-${item.id}`}
+                              >
+                                <FileText className="w-5 h-5" />
+                              </button>
+                            )}
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-2">
@@ -403,7 +433,7 @@ export default function Inventory() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {editingItemId ? 'Editar Producto' : 'Agregar Producto al Inventario'}
+              {editingItemId ? 'Editar Objeto' : 'Agregar Objeto al Inventario'}
             </DialogTitle>
           </DialogHeader>
           <Form {...form}>
@@ -413,12 +443,12 @@ export default function Inventory() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre del Producto</FormLabel>
+                    <FormLabel>Nombre del Objeto</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Ej: Cemento, Arena, Ladrillos"
-                        data-testid="input-product-name"
+                        placeholder="Ej: Escritorio, Silla, Ordenador"
+                        data-testid="input-object-name"
                       />
                     </FormControl>
                     <FormMessage />
@@ -462,88 +492,35 @@ export default function Inventory() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="currentStock"
+                  name="value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Stock Actual</FormLabel>
+                      <FormLabel>Valor (€)</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          type="number"
-                          step="0.01"
-                          placeholder="0"
-                          data-testid="input-current-stock"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="unit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Unidad</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-unit">
-                            <SelectValue placeholder="Seleccionar unidad" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="kg" data-testid="option-unit-kg">Kilogramos (kg)</SelectItem>
-                          <SelectItem value="units" data-testid="option-unit-units">Unidades</SelectItem>
-                          <SelectItem value="tons" data-testid="option-unit-tons">Toneladas (t)</SelectItem>
-                          <SelectItem value="m" data-testid="option-unit-m">Metros (m)</SelectItem>
-                          <SelectItem value="m2" data-testid="option-unit-m2">Metros cuadrados (m²)</SelectItem>
-                          <SelectItem value="m3" data-testid="option-unit-m3">Metros cúbicos (m³)</SelectItem>
-                          <SelectItem value="l" data-testid="option-unit-l">Litros (l)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="minStock"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Stock Mínimo</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          value={field.value || ""}
-                          type="number"
-                          step="0.01"
-                          placeholder="0"
-                          data-testid="input-min-stock"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="pricePerUnit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Precio por Unidad</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          value={field.value || ""}
                           type="number"
                           step="0.01"
                           placeholder="0.00"
-                          data-testid="input-price-per-unit"
+                          data-testid="input-value"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="acquisitionDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fecha de Adquisición</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="date"
+                          data-testid="input-acquisition-date"
                         />
                       </FormControl>
                       <FormMessage />
@@ -551,6 +528,59 @@ export default function Inventory() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="pdfDocument"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Documento PDF (opcional)</FormLabel>
+                    <FormControl>
+                      <div className="mt-2">
+                        {!selectedPdf ? (
+                          <div className="flex items-center gap-3">
+                            <Input
+                              id="pdf"
+                              type="file"
+                              accept=".pdf,application/pdf"
+                              onChange={handlePdfChange}
+                              className="hidden"
+                              data-testid="input-pdf-file"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById('pdf')?.click()}
+                              className="w-full"
+                              data-testid="button-upload-pdf"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Seleccionar archivo PDF
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-md" data-testid="pdf-preview">
+                            <FileText className="w-5 h-5 text-primary" />
+                            <span className="flex-1 text-sm truncate" data-testid="text-pdf-name">
+                              {selectedPdf.name}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleRemovePdf}
+                              data-testid="button-remove-pdf"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="flex justify-end gap-3 pt-4">
                 <Button
@@ -564,9 +594,9 @@ export default function Inventory() {
                 <Button
                   type="submit"
                   disabled={createInventoryItem.isPending || updateInventoryItem.isPending}
-                  data-testid="button-save-product"
+                  data-testid="button-save-object"
                 >
-                  {(createInventoryItem.isPending || updateInventoryItem.isPending) ? "Guardando..." : editingItemId ? "Actualizar" : "Guardar Producto"}
+                  {(createInventoryItem.isPending || updateInventoryItem.isPending) ? "Guardando..." : editingItemId ? "Actualizar" : "Guardar Objeto"}
                 </Button>
               </div>
             </form>
@@ -577,9 +607,9 @@ export default function Inventory() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+            <AlertDialogTitle>¿Eliminar objeto?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará permanentemente este producto del inventario. Esta operación no se puede deshacer.
+              Esta acción eliminará permanentemente este objeto del inventario. Esta operación no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -594,6 +624,15 @@ export default function Inventory() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {selectedPdf && (
+        <PdfViewer
+          isOpen={!!selectedPdf}
+          onClose={() => setSelectedPdf(null)}
+          pdfData={selectedPdf.data}
+          fileName={selectedPdf.name}
+        />
+      )}
     </div>
   );
 }
