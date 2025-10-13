@@ -208,7 +208,7 @@ export default function Reports() {
           const date = new Date(t.date);
           const weekStart = new Date(date);
           weekStart.setDate(date.getDate() - date.getDay());
-          const weekKey = format(weekStart, 'dd/MM', { locale: es });
+          const weekKey = format(weekStart, 'dd/MM/yyyy', { locale: es });
           
           if (!weeklyData[weekKey]) {
             weeklyData[weekKey] = { income: 0, expenses: 0 };
@@ -225,7 +225,14 @@ export default function Reports() {
           month,
           income: data.income,
           expenses: data.expenses,
-        }));
+        })).sort((a, b) => {
+          // Sort by date to ensure correct order
+          const [dayA, monthA, yearA] = a.month.split('/').map(Number);
+          const [dayB, monthB, yearB] = b.month.split('/').map(Number);
+          const dateA = new Date(yearA, monthA - 1, dayA);
+          const dateB = new Date(yearB, monthB - 1, dayB);
+          return dateA.getTime() - dateB.getTime();
+        });
       }
       
       // Daily data for smaller ranges
@@ -539,7 +546,13 @@ export default function Reports() {
                           <CalendarComponent
                             mode="single"
                             selected={dateFrom}
-                            onSelect={setDateFrom}
+                            onSelect={(date) => {
+                              setDateFrom(date);
+                              // Clear dateTo if it's before the new dateFrom
+                              if (date && dateTo && date > dateTo) {
+                                setDateTo(undefined);
+                              }
+                            }}
                             initialFocus
                             locale={es}
                           />
