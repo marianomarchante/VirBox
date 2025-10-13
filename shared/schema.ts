@@ -69,6 +69,7 @@ export const inventory = pgTable("inventory", {
   companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
   categoryId: varchar("category_id"),
+  location: text("location"), // Optional location/placement of the object
   value: decimal("value", { precision: 10, scale: 2 }).notNull(), // Value in euros
   acquisitionDate: timestamp("acquisition_date").notNull(), // Date of acquisition
   pdfDocument: text("pdf_document"), // Optional PDF document stored as base64

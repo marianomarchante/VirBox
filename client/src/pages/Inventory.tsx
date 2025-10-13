@@ -100,6 +100,7 @@ export default function Inventory() {
     defaultValues: {
       name: "",
       categoryId: null,
+      location: "",
       value: "0",
       acquisitionDate: new Date().toISOString().split('T')[0],
       pdfDocument: "",
@@ -195,6 +196,7 @@ export default function Inventory() {
     form.reset({
       name: "",
       categoryId: null,
+      location: "",
       value: "0",
       acquisitionDate: new Date().toISOString().split('T')[0],
       pdfDocument: "",
@@ -217,6 +219,7 @@ export default function Inventory() {
     form.reset({
       name: item.name,
       categoryId: item.categoryId,
+      location: item.location || "",
       value: item.value,
       acquisitionDate: new Date(item.acquisitionDate).toISOString().split('T')[0],
       pdfDocument: item.pdfDocument || "",
@@ -358,6 +361,9 @@ export default function Inventory() {
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Categoría
                     </th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
+                      Emplazamiento
+                    </th>
                     <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Valor
                     </th>
@@ -375,7 +381,7 @@ export default function Inventory() {
                 <tbody>
                   {!filteredInventory || filteredInventory.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
                         {searchTerm || selectedCategoryFilter !== "all"
                           ? "No se encontraron objetos con los filtros aplicados"
                           : "No hay objetos en inventario."}
@@ -404,6 +410,11 @@ export default function Inventory() {
                           <td className="py-3 px-4">
                             <span className="inline-block px-2 py-1 text-xs font-medium bg-muted text-muted-foreground rounded">
                               {getCategoryName(item.categoryId)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-sm text-muted-foreground">
+                              {item.location || '-'}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -543,6 +554,25 @@ export default function Inventory() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Emplazamiento (opcional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value ?? ""}
+                        placeholder="Ej: Oficina principal, Almacén 2, Sala de juntas"
+                        data-testid="input-location"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

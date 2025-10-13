@@ -145,7 +145,7 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                   description="Gestión de objetos y bienes de la entidad"
                   features={[
                     "Registro de objetos con valor en euros",
-                    "Fecha de adquisición para cada bien",
+                    "Fecha de adquisición y emplazamiento de cada bien",
                     "Adjuntar documentos PDF e imágenes",
                     "Categorización personalizada de objetos",
                     "Visualización de documentos e imágenes adjuntos"
