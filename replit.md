@@ -69,6 +69,20 @@ The document management system includes a comprehensive filtering system for eff
   - Contextual empty state messages (different for filtered vs. no documents)
 - **Implementation:** Frontend-based filtering using useMemo to derive filteredDocuments from cached query data
 
+### Transaction Filtering (Income & Expenses)
+
+Both Income and Expenses pages include comprehensive filtering capabilities for efficient transaction retrieval:
+- **Search Filter:** Text search across transaction concepts and notes (case-insensitive, trimmed for accuracy)
+- **Category Filter:** Filter by specific transaction category using useCategories hook (type='income' or 'expense')
+- **Date Range Filter:** Filter transactions by date (from/to date pickers with inclusive range)
+- **UI/UX Features:**
+  - Responsive filter panel matching DocumentManagement pattern (4 columns on desktop, stacked on mobile)
+  - Real-time filtering integrated with useTransactions hook for backend optimization
+  - Clear filters button (conditionally shown when filters are active)
+  - Dynamic transaction count display
+- **Implementation:** Backend filtering through useTransactions hook with filter parameters (search, category, dateFrom, dateTo)
+- **Test Coverage:** All filter inputs and clear filters button include data-testid attributes for e2e testing
+
 ### Reports Date Range Filtering
 
 The reports module supports flexible time-based filtering with multiple period options:
