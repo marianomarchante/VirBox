@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, Edit, Trash2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,10 +51,34 @@ export default function Inventory() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+  
   const { inventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory();
   const { data: productCategories } = useProductCategories();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
   const { currentCompanyId } = useCompany();
+
+  // Filtered inventory based on search and category filters
+  const filteredInventory = useMemo(() => {
+    if (!inventory) return [];
+
+    return inventory.filter(item => {
+      // Search filter (by product name) - trim to avoid accidental spaces
+      const trimmedSearch = searchTerm.trim().toLowerCase();
+      const matchesSearch = trimmedSearch === "" || 
+        (item.name?.toLowerCase() ?? "").includes(trimmedSearch);
+
+      // Category filter
+      const matchesCategory = selectedCategoryFilter === "all" || 
+        (selectedCategoryFilter === "none" && !item.categoryId) ||
+        item.categoryId === selectedCategoryFilter;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [inventory, searchTerm, selectedCategoryFilter]);
 
   const form = useForm<InsertInventory>({
     resolver: zodResolver(insertInventorySchema),
@@ -158,6 +182,11 @@ export default function Inventory() {
     return category?.name || 'Sin categoría';
   };
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategoryFilter("all");
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
@@ -179,7 +208,7 @@ export default function Inventory() {
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Inventario de bienes de la entidad</h3>
                 <p className="text-sm text-muted-foreground">
-                  {inventory?.length || 0} productos registrados
+                  {filteredInventory?.length || 0} de {inventory?.length || 0} productos
                 </p>
               </div>
               <Button 
@@ -190,6 +219,57 @@ export default function Inventory() {
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Producto
               </Button>
+            </div>
+
+            {/* Filters Section */}
+            <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre de producto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search-inventory"
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <Select
+                  value={selectedCategoryFilter}
+                  onValueChange={setSelectedCategoryFilter}
+                >
+                  <SelectTrigger data-testid="select-filter-category-inventory">
+                    <SelectValue placeholder="Todas las categorías" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
+                    <SelectItem value="none">Sin categoría</SelectItem>
+                    {productCategories?.filter(cat => cat.isActive).map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(searchTerm || selectedCategoryFilter !== "all") && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilters}
+                    data-testid="button-clear-filters-inventory"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Limpiar filtros
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="overflow-x-auto" data-testid="inventory-table">
@@ -220,11 +300,13 @@ export default function Inventory() {
                   </tr>
                 </thead>
                 <tbody>
-                  {!inventory || inventory.length === 0 ? (
+                  {!filteredInventory || filteredInventory.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                        No hay productos en inventario. 
-                        {canWrite && (
+                        {searchTerm || selectedCategoryFilter !== "all"
+                          ? "No se encontraron productos con los filtros aplicados"
+                          : "No hay productos en inventario."}
+                        {!searchTerm && selectedCategoryFilter === "all" && canWrite && (
                           <button 
                             className="text-primary hover:underline ml-1"
                             onClick={() => setIsModalOpen(true)}
@@ -236,7 +318,7 @@ export default function Inventory() {
                       </td>
                     </tr>
                   ) : (
-                    inventory.map((item: any) => {
+                    filteredInventory.map((item: any) => {
                       const status = getStockStatus(item.currentStock, item.minStock || '0');
                       return (
                         <tr 
