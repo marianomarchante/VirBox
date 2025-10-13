@@ -13,6 +13,9 @@ import { insertTransactionSchema, type InsertTransaction } from "@shared/schema"
 import { useToast } from "@/hooks/use-toast";
 import { useCategories } from "@/hooks/use-categories";
 
+// Form type with date as string for HTML date input
+type TransactionFormData = Omit<InsertTransaction, 'date'> & { date: string };
+
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -41,15 +44,19 @@ export default function TransactionModal({
   const { categories: incomeCategories } = useCategories('income');
   const { categories: expenseCategories } = useCategories('expense');
 
-  const form = useForm<InsertTransaction>({
-    resolver: zodResolver(insertTransactionSchema.extend({
-      concept: z.string().min(1, "El concepto es obligatorio"),
-      category: z.string().min(1, "La categoría es obligatoria"),
-      amount: z.string().min(1, "El importe es obligatorio").refine(val => parseFloat(val) > 0, "El importe debe ser mayor a 0"),
-    })),
+  // Form validation schema with date as string
+  const formSchema = insertTransactionSchema.extend({
+    date: z.string().min(1, "La fecha es obligatoria"),
+    concept: z.string().min(1, "El concepto es obligatorio"),
+    category: z.string().min(1, "La categoría es obligatoria"),
+    amount: z.string().min(1, "El importe es obligatorio").refine(val => parseFloat(val) > 0, "El importe debe ser mayor a 0"),
+  }).omit({ date: true }).merge(z.object({ date: z.string() }));
+
+  const form = useForm<TransactionFormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
       type: initialData.type,
-      date: new Date(initialData.date),
+      date: new Date(initialData.date).toISOString().split('T')[0],
       concept: initialData.concept,
       category: initialData.category,
       amount: String(initialData.amount),
@@ -60,7 +67,7 @@ export default function TransactionModal({
       pdfFileName: initialData.pdfFileName || '',
     } : {
       type: 'income',
-      date: new Date(),
+      date: new Date().toISOString().split('T')[0],
       concept: '',
       category: '',
       amount: '0',
@@ -105,7 +112,7 @@ export default function TransactionModal({
     if (initialData) {
       form.reset({
         type: initialData.type,
-        date: new Date(initialData.date),
+        date: new Date(initialData.date).toISOString().split('T')[0],
         concept: initialData.concept,
         category: initialData.category,
         amount: String(initialData.amount),
@@ -122,7 +129,7 @@ export default function TransactionModal({
     } else {
       form.reset({
         type: 'income',
-        date: new Date(),
+        date: new Date().toISOString().split('T')[0],
         concept: '',
         category: '',
         amount: '0',
@@ -137,13 +144,13 @@ export default function TransactionModal({
     }
   }, [initialData, form]);
 
-  const handleSubmit = (data: InsertTransaction) => {
+  const handleSubmit = (data: TransactionFormData) => {
     try {
-      // Ensure amount is a string and date is properly formatted
-      const formattedData = {
+      // Convert string date to Date object and ensure amount is a string
+      const formattedData: InsertTransaction = {
         ...data,
         amount: String(data.amount),
-        date: data.date instanceof Date ? data.date : new Date(data.date),
+        date: new Date(data.date),
         clientSupplierId: data.clientSupplierId || undefined,
       };
       onSubmit(formattedData);
@@ -199,7 +206,7 @@ export default function TransactionModal({
               <Label htmlFor="date">Fecha</Label>
               <Input
                 type="date"
-                {...form.register("date", { valueAsDate: true })}
+                {...form.register("date")}
                 data-testid="input-date"
               />
             </div>
