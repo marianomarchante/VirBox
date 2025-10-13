@@ -369,6 +369,7 @@ export default function Expenses() {
         suppliers={suppliers?.map((s: any) => ({ id: s.id, name: s.name })) || []}
         initialData={editingTransaction}
         mode={editingTransaction ? 'edit' : 'create'}
+        fixedType="expense"
       />
 
       <AlertDialog open={!!deletingTransactionId} onOpenChange={() => setDeletingTransactionId(null)}>

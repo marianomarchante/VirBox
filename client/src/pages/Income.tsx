@@ -342,6 +342,7 @@ export default function Income() {
         suppliers={[]}
         initialData={editingTransaction}
         mode={editingTransaction ? 'edit' : 'create'}
+        fixedType="income"
       />
 
       <AlertDialog open={!!deletingTransactionId} onOpenChange={() => setDeletingTransactionId(null)}>

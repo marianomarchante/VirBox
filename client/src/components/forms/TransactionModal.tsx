@@ -24,6 +24,7 @@ interface TransactionModalProps {
   suppliers: Array<{ id: string; name: string }>;
   initialData?: any;
   mode?: 'create' | 'edit';
+  fixedType?: 'income' | 'expense'; // Fixed transaction type from the calling page
 }
 
 export default function TransactionModal({ 
@@ -33,10 +34,14 @@ export default function TransactionModal({
   clients = [], 
   suppliers = [],
   initialData = null,
-  mode = 'create'
+  mode = 'create',
+  fixedType
 }: TransactionModalProps) {
   const { toast } = useToast();
-  const [transactionType, setTransactionType] = useState<'income' | 'expense'>(initialData?.type || 'income');
+  // Use fixedType if provided, otherwise use initialData type or default to 'income'
+  const [transactionType, setTransactionType] = useState<'income' | 'expense'>(
+    fixedType || initialData?.type || 'income'
+  );
   const [selectedPdf, setSelectedPdf] = useState<{ name: string; data: string } | null>(
     initialData?.pdfFileName ? { name: initialData.pdfFileName, data: initialData.pdfDocument } : null
   );
@@ -55,7 +60,7 @@ export default function TransactionModal({
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
-      type: initialData.type,
+      type: fixedType || initialData.type,
       date: new Date(initialData.date).toISOString().split('T')[0],
       concept: initialData.concept,
       category: initialData.category,
@@ -66,7 +71,7 @@ export default function TransactionModal({
       pdfDocument: initialData.pdfDocument || '',
       pdfFileName: initialData.pdfFileName || '',
     } : {
-      type: 'income',
+      type: fixedType || 'income',
       date: new Date().toISOString().split('T')[0],
       concept: '',
       category: '',
@@ -110,8 +115,9 @@ export default function TransactionModal({
 
   useEffect(() => {
     if (initialData) {
+      const typeToUse = fixedType || initialData.type;
       form.reset({
-        type: initialData.type,
+        type: typeToUse,
         date: new Date(initialData.date).toISOString().split('T')[0],
         concept: initialData.concept,
         category: initialData.category,
@@ -122,13 +128,14 @@ export default function TransactionModal({
         pdfDocument: initialData.pdfDocument || '',
         pdfFileName: initialData.pdfFileName || '',
       });
-      setTransactionType(initialData.type);
+      setTransactionType(typeToUse);
       if (initialData.pdfFileName) {
         setSelectedPdf({ name: initialData.pdfFileName, data: initialData.pdfDocument });
       }
     } else {
+      const typeToUse = fixedType || 'income';
       form.reset({
-        type: 'income',
+        type: typeToUse,
         date: new Date().toISOString().split('T')[0],
         concept: '',
         category: '',
@@ -139,10 +146,10 @@ export default function TransactionModal({
         pdfDocument: '',
         pdfFileName: '',
       });
-      setTransactionType('income');
+      setTransactionType(typeToUse);
       setSelectedPdf(null);
     }
-  }, [initialData, form]);
+  }, [initialData, form, fixedType]);
 
   const handleSubmit = (data: TransactionFormData) => {
     try {
@@ -154,7 +161,22 @@ export default function TransactionModal({
         clientSupplierId: data.clientSupplierId || undefined,
       };
       onSubmit(formattedData);
-      form.reset();
+      
+      // Reset form with the correct type based on fixedType
+      const typeToUse = fixedType || 'income';
+      form.reset({
+        type: typeToUse,
+        date: new Date().toISOString().split('T')[0],
+        concept: '',
+        category: '',
+        amount: '0',
+        quantity: '',
+        clientSupplierId: '',
+        notes: '',
+        pdfDocument: '',
+        pdfFileName: '',
+      });
+      setTransactionType(typeToUse);
       setSelectedPdf(null);
       onClose();
       toast({
@@ -191,8 +213,12 @@ export default function TransactionModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="type">Tipo de Transacción</Label>
-              <Select onValueChange={handleTypeChange} value={transactionType}>
-                <SelectTrigger data-testid="select-transaction-type">
+              <Select 
+                onValueChange={handleTypeChange} 
+                value={transactionType}
+                disabled={!!fixedType}
+              >
+                <SelectTrigger data-testid="select-transaction-type" disabled={!!fixedType}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
