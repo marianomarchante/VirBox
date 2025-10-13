@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { HelpCircle, X, Home, TrendingUp, TrendingDown, Package, Users, Truck, FileText, FolderOpen, Building2, BarChart3, Settings, Calendar, Filter, Download, Upload } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -434,7 +434,7 @@ export default function Help() {
 }
 
 function ModuleSection({ icon, title, description, features }: { 
-  icon: React.ReactNode; 
+  icon: ReactNode; 
   title: string; 
   description: string; 
   features: string[];
