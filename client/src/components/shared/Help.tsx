@@ -146,9 +146,9 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                   features={[
                     "Registro de objetos con valor en euros",
                     "Fecha de adquisición para cada bien",
-                    "Adjuntar documentos PDF (facturas, certificados)",
+                    "Adjuntar documentos PDF e imágenes",
                     "Categorización personalizada de objetos",
-                    "Visualización y descarga de documentos adjuntos"
+                    "Visualización de documentos e imágenes adjuntos"
                   ]}
                 />
 

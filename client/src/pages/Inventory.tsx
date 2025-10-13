@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Edit, Trash2, Search, X, Upload, FileText } from "lucide-react";
+import { Plus, Edit, Trash2, Search, X, Upload, FileText, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -58,6 +58,8 @@ export default function Inventory() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<{ name: string; data: string } | null>(null);
+  const [selectedImage, setSelectedImage] = useState<{ name: string; data: string } | null>(null);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -102,6 +104,8 @@ export default function Inventory() {
       acquisitionDate: new Date().toISOString().split('T')[0],
       pdfDocument: "",
       pdfFileName: "",
+      imageDocument: "",
+      imageFileName: "",
     },
   });
 
@@ -134,6 +138,35 @@ export default function Inventory() {
     form.setValue('pdfFileName', '');
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Solo se permiten archivos de imagen.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        setSelectedImage({ name: file.name, data: base64 });
+        form.setValue('imageDocument', base64);
+        form.setValue('imageFileName', file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    form.setValue('imageDocument', '');
+    form.setValue('imageFileName', '');
+  };
+
   const onSubmit = async (data: InventoryFormData) => {
     try {
       // Convert string date to Date object
@@ -158,6 +191,7 @@ export default function Inventory() {
     setIsModalOpen(false);
     setEditingItemId(null);
     setSelectedPdf(null);
+    setSelectedImage(null);
     form.reset({
       name: "",
       categoryId: null,
@@ -165,6 +199,8 @@ export default function Inventory() {
       acquisitionDate: new Date().toISOString().split('T')[0],
       pdfDocument: "",
       pdfFileName: "",
+      imageDocument: "",
+      imageFileName: "",
     });
   };
 
@@ -185,9 +221,14 @@ export default function Inventory() {
       acquisitionDate: new Date(item.acquisitionDate).toISOString().split('T')[0],
       pdfDocument: item.pdfDocument || "",
       pdfFileName: item.pdfFileName || "",
+      imageDocument: item.imageDocument || "",
+      imageFileName: item.imageFileName || "",
     });
     if (item.pdfFileName) {
       setSelectedPdf({ name: item.pdfFileName, data: item.pdfDocument });
+    }
+    if (item.imageFileName) {
+      setSelectedImage({ name: item.imageFileName, data: item.imageDocument });
     }
     setIsModalOpen(true);
   };
@@ -379,21 +420,39 @@ export default function Inventory() {
                             </span>
                           </td>
                           <td className="py-3 px-4 text-center">
-                            {item.pdfDocument && (
-                              <button
-                                onClick={() => {
-                                  setSelectedPdf({ 
-                                    name: item.pdfFileName || 'documento.pdf', 
-                                    data: item.pdfDocument 
-                                  });
-                                }}
-                                className="text-blue-500 hover:text-blue-700"
-                                title="Ver documento PDF"
-                                data-testid={`button-view-pdf-${item.id}`}
-                              >
-                                <FileText className="w-5 h-5" />
-                              </button>
-                            )}
+                            <div className="flex items-center justify-center gap-2">
+                              {item.pdfDocument && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedPdf({ 
+                                      name: item.pdfFileName || 'documento.pdf', 
+                                      data: item.pdfDocument 
+                                    });
+                                  }}
+                                  className="text-blue-500 hover:text-blue-700"
+                                  title="Ver documento PDF"
+                                  data-testid={`button-view-pdf-${item.id}`}
+                                >
+                                  <FileText className="w-5 h-5" />
+                                </button>
+                              )}
+                              {item.imageDocument && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedImage({ 
+                                      name: item.imageFileName || 'imagen', 
+                                      data: item.imageDocument 
+                                    });
+                                    setImageViewerOpen(true);
+                                  }}
+                                  className="text-green-500 hover:text-green-700"
+                                  title="Ver imagen"
+                                  data-testid={`button-view-image-${item.id}`}
+                                >
+                                  <Image className="w-5 h-5" />
+                                </button>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-2">
@@ -582,6 +641,59 @@ export default function Inventory() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="imageDocument"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Imagen (opcional)</FormLabel>
+                    <FormControl>
+                      <div className="mt-2">
+                        {!selectedImage ? (
+                          <div className="flex items-center gap-3">
+                            <Input
+                              id="image"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="hidden"
+                              data-testid="input-image-file"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => document.getElementById('image')?.click()}
+                              className="w-full"
+                              data-testid="button-upload-image"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Seleccionar imagen
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 p-3 bg-muted rounded-md" data-testid="image-preview">
+                            <Image className="w-5 h-5 text-primary" />
+                            <span className="flex-1 text-sm truncate" data-testid="text-image-name">
+                              {selectedImage.name}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleRemoveImage}
+                              data-testid="button-remove-image"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="flex justify-end gap-3 pt-4">
                 <Button
                   type="button"
@@ -632,6 +744,24 @@ export default function Inventory() {
           pdfData={selectedPdf.data}
           fileName={selectedPdf.name}
         />
+      )}
+
+      {selectedImage && (
+        <Dialog open={imageViewerOpen} onOpenChange={setImageViewerOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>{selectedImage.name}</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center p-4">
+              <img 
+                src={selectedImage.data} 
+                alt={selectedImage.name} 
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                data-testid="image-viewer"
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

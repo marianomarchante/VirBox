@@ -73,6 +73,8 @@ export const inventory = pgTable("inventory", {
   acquisitionDate: timestamp("acquisition_date").notNull(), // Date of acquisition
   pdfDocument: text("pdf_document"), // Optional PDF document stored as base64
   pdfFileName: text("pdf_file_name"), // Original filename of the PDF
+  imageDocument: text("image_document"), // Optional image stored as base64
+  imageFileName: text("image_file_name"), // Original filename of the image
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -86,9 +86,9 @@ Both Income and Expenses pages include comprehensive filtering capabilities for 
 ### Inventory Module (Objects Management)
 
 The Inventory module tracks valuable objects and assets owned by the organization:
-- **Database Schema:** `Inventory` table with fields: id, name, categoryId, value (euros), acquisitionDate, pdfDocument, pdfFileName, companyId, createdAt, updatedAt
+- **Database Schema:** `Inventory` table with fields: id, name, categoryId, value (euros), acquisitionDate, pdfDocument, pdfFileName, imageDocument, imageFileName, companyId, createdAt, updatedAt
 - **Object Tracking:** Each inventory item represents a physical or digital asset with monetary value and acquisition date
-- **PDF Support:** Objects can have attached PDF documents (receipts, invoices, certificates) stored as base64 with original filenames
+- **Document Support:** Objects can have attached PDF documents (receipts, invoices, certificates) and images stored as base64 with original filenames
 - **Filtering Capabilities:**
   - **Search Filter:** Text search by object name (case-insensitive, trimmed for accuracy, null-safe using optional chaining)
   - **Category Filter:** Filter by specific product category, all categories, or objects without a category
@@ -98,8 +98,8 @@ The Inventory module tracks valuable objects and assets owned by the organizatio
     - Clear filters button (conditionally shown when filters are active)
     - Dynamic object count showing "X de Y objetos"
     - Contextual empty state messages (different for filtered vs. no objects)
-- **Display:** Table shows object name, category, value (€), acquisition date, and PDF indicator (blue FileText icon when document exists)
-- **PDF Visualization:** PdfViewer component displays attached documents in modal with download capability
+- **Display:** Table shows object name, category, value (€), acquisition date, and document indicators (blue FileText icon for PDFs, green Image icon for images)
+- **Visualization:** PdfViewer component for PDF documents with download capability, Dialog component for image viewing
 - **Implementation:** Frontend-based filtering using useMemo to derive filteredInventory from cached query data with null-safe operators
 - **Test Coverage:** All filter inputs, clear filters button, and PDF viewing include data-testid attributes for e2e testing
 
