@@ -142,12 +142,13 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                 <ModuleSection
                   icon={<Package className="h-5 w-5" />}
                   title="Inventario"
-                  description="Gestión de bienes y stock de la entidad"
+                  description="Gestión de objetos y bienes de la entidad"
                   features={[
-                    "Control de stock con alertas de stock mínimo",
-                    "Categorización de productos personalizada",
-                    "Historial de movimientos (entradas/salidas)",
-                    "Ubicación y seguimiento de productos"
+                    "Registro de objetos con valor en euros",
+                    "Fecha de adquisición para cada bien",
+                    "Adjuntar documentos PDF (facturas, certificados)",
+                    "Categorización personalizada de objetos",
+                    "Visualización y descarga de documentos adjuntos"
                   ]}
                 />
 
