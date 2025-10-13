@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Calendar, TrendingUp, TrendingDown, DollarSign, Package, FileDown } from "lucide-react";
+import { Download, Calendar, TrendingUp, TrendingDown, DollarSign, Package, FileDown, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
@@ -16,8 +18,11 @@ import { useLocation } from "wouter";
 import { useCompany } from "@/contexts/CompanyContext";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
-type PeriodType = 'month' | 'quarter' | 'year' | 'all';
+type PeriodType = 'month' | 'quarter' | 'year' | 'all' | 'dateRange';
 
 export default function Reports() {
   const [location] = useLocation();
@@ -26,6 +31,8 @@ export default function Reports() {
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().getMonth().toString());
   const [selectedQuarter, setSelectedQuarter] = useState<string>('Q1');
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [categoryType, setCategoryType] = useState<'all' | 'income' | 'expense'>('all');
   
@@ -77,6 +84,21 @@ export default function Reports() {
         if (transactionYear !== selectedYear) {
           return false;
         }
+      } else if (periodType === 'dateRange') {
+        if (dateFrom) {
+          const fromDate = new Date(dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          if (transactionDate < fromDate) {
+            return false;
+          }
+        }
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (transactionDate > toDate) {
+            return false;
+          }
+        }
       }
       // 'all' doesn't filter by period
 
@@ -93,7 +115,7 @@ export default function Reports() {
 
       return true;
     });
-  }, [allTransactions, periodType, selectedMonth, selectedQuarter, selectedYear, selectedCategory, categoryType]);
+  }, [allTransactions, periodType, selectedMonth, selectedQuarter, selectedYear, dateFrom, dateTo, selectedCategory, categoryType]);
 
   // Calculate metrics from filtered transactions
   const metrics = useMemo(() => {
@@ -168,6 +190,60 @@ export default function Reports() {
           expenses: monthTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0),
         };
       });
+    } else if (periodType === 'dateRange') {
+      // Daily data for date range
+      if (!dateFrom || !dateTo) {
+        return [];
+      }
+      
+      const start = new Date(dateFrom);
+      const end = new Date(dateTo);
+      const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // If range is too large (more than 90 days), group by week
+      if (daysDiff > 90) {
+        const weeklyData: Record<string, { income: number; expenses: number }> = {};
+        
+        filteredTransactions.forEach(t => {
+          const date = new Date(t.date);
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - date.getDay());
+          const weekKey = format(weekStart, 'dd/MM', { locale: es });
+          
+          if (!weeklyData[weekKey]) {
+            weeklyData[weekKey] = { income: 0, expenses: 0 };
+          }
+          
+          if (t.type === 'income') {
+            weeklyData[weekKey].income += parseFloat(t.amount);
+          } else {
+            weeklyData[weekKey].expenses += parseFloat(t.amount);
+          }
+        });
+        
+        return Object.entries(weeklyData).map(([month, data]) => ({
+          month,
+          income: data.income,
+          expenses: data.expenses,
+        }));
+      }
+      
+      // Daily data for smaller ranges
+      return Array.from({ length: daysDiff }, (_, i) => {
+        const currentDate = new Date(start);
+        currentDate.setDate(start.getDate() + i);
+        
+        const dayTransactions = filteredTransactions.filter(t => {
+          const d = new Date(t.date);
+          return d.toDateString() === currentDate.toDateString();
+        });
+        
+        return {
+          month: format(currentDate, 'dd/MM', { locale: es }),
+          income: dayTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0),
+          expenses: dayTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0),
+        };
+      });
     } else {
       // Yearly data for all years
       return availableYears.map(year => {
@@ -183,7 +259,7 @@ export default function Reports() {
         };
       }).reverse();
     }
-  }, [periodType, selectedMonth, selectedQuarter, selectedYear, filteredTransactions, availableYears]);
+  }, [periodType, selectedMonth, selectedQuarter, selectedYear, dateFrom, dateTo, filteredTransactions, availableYears]);
 
   const transactions = filteredTransactions;
 
@@ -229,6 +305,16 @@ export default function Reports() {
       return `${selectedQuarter} ${selectedYear}`;
     } else if (periodType === 'year') {
       return selectedYear;
+    } else if (periodType === 'dateRange') {
+      if (dateFrom && dateTo) {
+        return `${format(dateFrom, 'dd/MM/yyyy', { locale: es })} - ${format(dateTo, 'dd/MM/yyyy', { locale: es })}`;
+      } else if (dateFrom) {
+        return `Desde ${format(dateFrom, 'dd/MM/yyyy', { locale: es })}`;
+      } else if (dateTo) {
+        return `Hasta ${format(dateTo, 'dd/MM/yyyy', { locale: es })}`;
+      } else {
+        return 'Rango personalizado (sin fechas)';
+      }
     } else {
       return 'Todos los años';
     }
@@ -424,10 +510,90 @@ export default function Reports() {
                       <SelectItem value="month">Mes</SelectItem>
                       <SelectItem value="quarter">Trimestre</SelectItem>
                       <SelectItem value="year">Año</SelectItem>
+                      <SelectItem value="dateRange">Rango personalizado</SelectItem>
                       <SelectItem value="all">Todos los años</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Date Range Selectors (only for dateRange) */}
+                {periodType === 'dateRange' && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Desde</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !dateFrom && "text-muted-foreground"
+                            )}
+                            data-testid="button-date-from"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateFrom ? format(dateFrom, 'dd/MM/yyyy', { locale: es }) : "Seleccionar fecha"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={dateFrom}
+                            onSelect={setDateFrom}
+                            initialFocus
+                            locale={es}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Hasta</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !dateTo && "text-muted-foreground"
+                            )}
+                            data-testid="button-date-to"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateTo ? format(dateTo, 'dd/MM/yyyy', { locale: es }) : "Seleccionar fecha"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={dateTo}
+                            onSelect={setDateTo}
+                            initialFocus
+                            locale={es}
+                            disabled={(date) => dateFrom ? date < dateFrom : false}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {(dateFrom || dateTo) && (
+                      <div className="flex items-end">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setDateFrom(undefined);
+                            setDateTo(undefined);
+                          }}
+                          className="w-full"
+                          data-testid="button-clear-dates"
+                        >
+                          <X className="mr-2 h-4 w-4" />
+                          Limpiar fechas
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {/* Month Selector (only for monthly) */}
                 {periodType === 'month' && (
@@ -473,8 +639,8 @@ export default function Reports() {
                   </div>
                 )}
 
-                {/* Year Selector (not for "all" period) */}
-                {periodType !== 'all' && (
+                {/* Year Selector (not for "all" or "dateRange" period) */}
+                {periodType !== 'all' && periodType !== 'dateRange' && (
                   <div>
                     <label className="text-sm font-medium mb-2 block">Año</label>
                     <Select value={selectedYear} onValueChange={setSelectedYear}>
