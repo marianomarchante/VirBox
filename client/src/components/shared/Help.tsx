@@ -5,17 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export default function Help() {
-  const [open, setOpen] = useState(false);
+interface HelpDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: ReactNode;
+}
+
+export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const dialogOpen = isControlled ? open : internalOpen;
+  const setDialogOpen = isControlled ? onOpenChange : setInternalOpen;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2" data-testid="button-help">
-          <HelpCircle className="h-5 w-5" />
-          <span className="hidden sm:inline">Ayuda</span>
-        </Button>
-      </DialogTrigger>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
@@ -458,5 +463,18 @@ function ModuleSection({ icon, title, description, features }: {
         ))}
       </ul>
     </section>
+  );
+}
+
+export default function Help() {
+  return (
+    <HelpDialog 
+      trigger={
+        <Button variant="ghost" size="sm" className="gap-2" data-testid="button-help">
+          <HelpCircle className="h-5 w-5" />
+          <span className="hidden sm:inline">Ayuda</span>
+        </Button>
+      }
+    />
   );
 }
