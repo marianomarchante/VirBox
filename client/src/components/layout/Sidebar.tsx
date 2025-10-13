@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   Calculator,
@@ -27,7 +26,6 @@ export default function Sidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuthContext();
   const { currentCompany } = useCompany();
-  const [helpOpen, setHelpOpen] = useState(false);
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -99,14 +97,17 @@ export default function Sidebar() {
             );
           })}
           
-          <button 
-            onClick={() => setHelpOpen(true)}
-            className="sidebar-link w-full"
-            data-testid="nav-ayuda"
-          >
-            <HelpCircle className="w-5 h-5" />
-            <span>Ayuda</span>
-          </button>
+          <HelpDialog 
+            trigger={
+              <button 
+                className="sidebar-link w-full"
+                data-testid="nav-ayuda"
+              >
+                <HelpCircle className="w-5 h-5" />
+                <span>Ayuda</span>
+              </button>
+            }
+          />
         </div>
       </nav>
 
@@ -136,8 +137,6 @@ export default function Sidebar() {
           </Button>
         </div>
       </div>
-      
-      <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </aside>
   );
 }

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2, UserCog, HelpCircle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +15,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const [location] = useLocation();
   const { currentCompany } = useCompany();
   const { user, logout } = useAuthContext();
-  const [helpOpen, setHelpOpen] = useState(false);
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -101,14 +99,17 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               );
             })}
             
-            <button 
-              onClick={() => setHelpOpen(true)}
-              className="sidebar-link w-full"
-              data-testid="mobile-nav-ayuda"
-            >
-              <HelpCircle className="w-5 h-5" />
-              <span>Ayuda</span>
-            </button>
+            <HelpDialog 
+              trigger={
+                <button 
+                  className="sidebar-link w-full"
+                  data-testid="mobile-nav-ayuda"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                  <span>Ayuda</span>
+                </button>
+              }
+            />
           </div>
         </nav>
 
@@ -138,8 +139,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </Button>
           </div>
         </div>
-        
-        <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
       </aside>
     </div>
   );
