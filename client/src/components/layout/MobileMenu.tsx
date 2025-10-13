@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2, UserCog, HelpCircle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { HelpDialog } from "@/components/shared/Help";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const [location] = useLocation();
   const { currentCompany } = useCompany();
   const { user, logout } = useAuthContext();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -35,7 +38,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
       { name: "Empresas", href: "/empresas", icon: Building2 },
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
     ] : []),
-    { name: "Ayuda", href: "/ayuda", icon: HelpCircle },
   ];
 
   if (!isOpen) return null;
@@ -98,6 +100,15 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 </Link>
               );
             })}
+            
+            <button 
+              onClick={() => setHelpOpen(true)}
+              className="sidebar-link w-full"
+              data-testid="mobile-nav-ayuda"
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span>Ayuda</span>
+            </button>
           </div>
         </nav>
 
@@ -127,6 +138,8 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </Button>
           </div>
         </div>
+        
+        <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
       </aside>
     </div>
   );
