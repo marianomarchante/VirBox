@@ -7,11 +7,14 @@ import TransactionModal from "@/components/forms/TransactionModal";
 import PdfViewer from "@/components/shared/PdfViewer";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useSuppliers } from "@/hooks/use-suppliers";
+import { useCategories } from "@/hooks/use-categories";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pencil, Trash2, FileText, Search, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,18 +34,26 @@ export default function Expenses() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const [viewingPdf, setViewingPdf] = useState<{ data: string; fileName: string } | null>(null);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  
   const { currentCompanyId } = useCompany();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
 
   const { transactions, createTransaction, updateTransaction, deleteTransaction } = useTransactions({
     type: 'expense',
-    search: '',
-    category: '',
-    dateFrom: '',
-    dateTo: '',
+    search: searchTerm,
+    category: selectedCategoryFilter === "all" ? '' : selectedCategoryFilter,
+    dateFrom: dateFrom,
+    dateTo: dateTo,
   });
 
   const { suppliers } = useSuppliers();
+  const { categories: expenseCategories } = useCategories('expense');
 
   const handleCreateTransaction = (transaction: InsertTransaction) => {
     if (!currentCompanyId) return;
@@ -84,6 +95,13 @@ export default function Expenses() {
   const handleCloseModal = () => {
     setIsTransactionModalOpen(false);
     setEditingTransaction(null);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategoryFilter("all");
+    setDateFrom("");
+    setDateTo("");
   };
 
   const formatCurrency = (amount: string) => {
@@ -150,6 +168,74 @@ export default function Expenses() {
                   {transactions?.length || 0} transacciones registradas
                 </p>
               </div>
+            </div>
+
+            {/* Filters Section */}
+            <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por concepto o notas..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-search-expenses"
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <Select
+                  value={selectedCategoryFilter}
+                  onValueChange={setSelectedCategoryFilter}
+                >
+                  <SelectTrigger data-testid="select-filter-category-expenses">
+                    <SelectValue placeholder="Todas las categorías" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
+                    {expenseCategories?.filter(cat => cat.isActive).map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Date From */}
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  placeholder="Fecha desde"
+                  data-testid="input-date-from-expenses"
+                />
+
+                {/* Date To */}
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  placeholder="Fecha hasta"
+                  data-testid="input-date-to-expenses"
+                />
+              </div>
+
+              {/* Clear Filters Button */}
+              {(searchTerm || selectedCategoryFilter !== "all" || dateFrom || dateTo) && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilters}
+                    data-testid="button-clear-filters-expenses"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Limpiar filtros
+                  </Button>
+                </div>
+              )}
             </div>
             
             <div className="overflow-x-auto" data-testid="expenses-table">
