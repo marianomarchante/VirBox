@@ -83,6 +83,20 @@ Both Income and Expenses pages include comprehensive filtering capabilities for 
 - **Implementation:** Backend filtering through useTransactions hook with filter parameters (search, category, dateFrom, dateTo)
 - **Test Coverage:** All filter inputs and clear filters button include data-testid attributes for e2e testing
 
+### Inventory Filtering
+
+The Inventory page includes filtering capabilities for efficient product retrieval:
+- **Search Filter:** Text search by product name (case-insensitive, trimmed for accuracy, null-safe using optional chaining)
+- **Category Filter:** Filter by specific product category, all categories, or products without a category
+- **UI/UX Features:**
+  - Responsive filter panel with 2-column grid layout (stacked on mobile)
+  - Real-time filtering using React useMemo for optimal performance
+  - Clear filters button (conditionally shown when filters are active)
+  - Dynamic product count showing "X de Y productos"
+  - Contextual empty state messages (different for filtered vs. no products)
+- **Implementation:** Frontend-based filtering using useMemo to derive filteredInventory from cached query data with null-safe operators
+- **Test Coverage:** All filter inputs and clear filters button include data-testid attributes for e2e testing
+
 ### Reports Date Range Filtering
 
 The reports module supports flexible time-based filtering with multiple period options:
