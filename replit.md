@@ -69,6 +69,21 @@ The document management system includes a comprehensive filtering system for eff
   - Contextual empty state messages (different for filtered vs. no documents)
 - **Implementation:** Frontend-based filtering using useMemo to derive filteredDocuments from cached query data
 
+### Reports Date Range Filtering
+
+The reports module supports flexible time-based filtering with multiple period options:
+- **Period Types:** Month, Quarter, Year, All Years, and Custom Date Range
+- **Custom Date Range:** 
+  - Two DatePicker components for "From" and "To" dates with Spanish locale
+  - "To" date automatically constrained to be >= "From" date
+  - Clear dates button for easy reset
+  - Inclusive date filtering (start of "from" date to end of "to" date)
+- **Chart Adaptation:** 
+  - Daily view for ranges ≤ 90 days
+  - Weekly aggregation for ranges > 90 days (optimized performance)
+- **PDF Export:** Automatically includes custom date range in report header and filename
+- **UI/UX:** DatePickers use shadcn Calendar component with Popover for clean, accessible interface
+
 ## External Dependencies
 
 - **Database:** Neon Serverless PostgreSQL (`@neondatabase/serverless`), Drizzle Kit for migrations.
