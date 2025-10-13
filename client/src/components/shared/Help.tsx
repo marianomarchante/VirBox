@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { HelpCircle, X, Home, TrendingUp, TrendingDown, Package, Users, Truck, FileText, FolderOpen, Building2, BarChart3, Settings, Calendar, Filter, Download, Upload } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,6 +22,9 @@ export default function Help() {
             <HelpCircle className="h-6 w-6" />
             Guía de Usuario - MiContable
           </DialogTitle>
+          <DialogDescription>
+            Documentación completa del sistema de gestión empresarial
+          </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="overview" className="w-full">
