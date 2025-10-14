@@ -99,6 +99,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user permission for a specific company
+  app.get('/api/auth/permissions/:companyId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const companyId = req.params.companyId;
+      
+      // Check if user is a global admin
+      const user = await storage.getUser(userId);
+      if (user?.isAdmin) {
+        // Global admins have full access to all companies
+        return res.json([{
+          id: 'admin-access',
+          userId,
+          companyId,
+          role: 'administracion',
+          createdAt: new Date()
+        }]);
+      }
+
+      // Get specific permission for this company
+      const permission = await storage.getUserPermissionForCompany(userId, companyId);
+      if (permission) {
+        res.json([permission]);
+      } else {
+        res.json([]);
+      }
+    } catch (error) {
+      console.error("Error fetching company permission:", error);
+      res.status(500).json({ message: "Failed to fetch company permission" });
+    }
+  });
+
   // Admin-only routes for user management
   app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
     try {

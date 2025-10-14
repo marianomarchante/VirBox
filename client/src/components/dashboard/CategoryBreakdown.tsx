@@ -1,9 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { Tag } from "lucide-react";
+import { useCompany } from "@/contexts/CompanyContext";
 
 export default function CategoryBreakdown() {
+  const { currentCompanyId } = useCompany();
+  
   const { data: transactions = [] } = useQuery<any[]>({
-    queryKey: ['/api/transactions'],
+    queryKey: ['/api/transactions', currentCompanyId],
+    queryFn: async () => {
+      if (!currentCompanyId) return [];
+      const params = new URLSearchParams({
+        companyId: currentCompanyId,
+        type: 'all'
+      });
+      const res = await fetch(`/api/transactions?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error(`${res.status}: ${res.statusText}`);
+      return res.json();
+    },
+    enabled: !!currentCompanyId,
   });
 
   // Calculate expense categories from real data
