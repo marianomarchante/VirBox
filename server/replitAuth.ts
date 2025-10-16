@@ -93,8 +93,14 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  // Get all domains (Replit domains + custom domain if provided)
+  const replitDomains = process.env.REPLIT_DOMAINS!.split(",");
+  const customDomain = process.env.CUSTOM_DOMAIN;
+  const allDomains = customDomain 
+    ? [...replitDomains, customDomain]
+    : replitDomains;
+
+  for (const domain of allDomains) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
