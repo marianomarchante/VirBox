@@ -34,7 +34,7 @@ Supports multi-company data isolation with `companyId` in all tables. The Postgr
 *   **Transaction Filtering:** Income and Expenses pages feature filtering by text, category, and date range, optimized for backend integration.
 *   **Inventory Module:** Tracks valuable objects with attributes like name, category, location, value, acquisition date, and supports PDF/image attachments. Includes robust filtering by text and category.
 *   **Reports Date Range Filtering:** Flexible time-based filtering (Month, Quarter, Year, Custom Range) with dynamic chart aggregation (daily/weekly) and PDF export.
-*   **Events Module:** Manages company events with CRUD operations, date tracking, and search functionality.
+*   **Events Module:** Manages company events with CRUD operations, date tracking, search functionality, and automatic notification modal at startup showing past/current-day events with inline deletion.
 *   **Interactive Help System:** A comprehensive, tabbed help system accessible from all pages, providing detailed documentation for all modules in Spanish.
 
 ## External Dependencies

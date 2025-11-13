@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { PastEventsModal } from "@/components/events/PastEventsModal";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import Income from "@/pages/Income";
@@ -69,6 +70,7 @@ function AuthenticatedApp() {
     <CompanyProvider>
       <TooltipProvider>
         <Toaster />
+        <PastEventsModal />
         <Router />
       </TooltipProvider>
     </CompanyProvider>
