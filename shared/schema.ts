@@ -250,6 +250,7 @@ export const insertEventSchema = createInsertSchema(events).omit({
   createdAt: true,
 }).extend({
   companyId: z.string().optional(),
+  date: z.coerce.date(),
 });
 
 // Types
