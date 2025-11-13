@@ -101,7 +101,9 @@ export function useEvents() {
 
   const markAsRead = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiRequest('PATCH', `/api/events/${id}/read`);
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const response = await apiRequest('PATCH', `/api/events/${id}/read?${params.toString()}`);
       return response.json();
     },
     onSuccess: () => {
