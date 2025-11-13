@@ -86,7 +86,7 @@ export default function Dashboard() {
       
       <main className="flex-1 overflow-y-auto">
         <TopBar
-          title="Dashboard"
+          title="Estadísticas"
           subtitle="Resumen financiero del mes"
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onOpenTransactionModal={canWrite ? () => setIsTransactionModalOpen(true) : undefined}

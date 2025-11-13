@@ -17,7 +17,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const { user, logout } = useAuthContext();
 
   const navigation = [
-    { name: "Dashboard", href: "/", icon: BarChart3 },
+    { name: "Estadísticas", href: "/", icon: BarChart3 },
     { name: "Ingresos", href: "/ingresos", icon: TrendingUp },
     { name: "Gastos", href: "/gastos", icon: TrendingDown },
     { name: "Inventario", href: "/inventario", icon: Package },

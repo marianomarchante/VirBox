@@ -89,7 +89,7 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                     </li>
                     <li className="flex gap-2">
                       <span className="font-bold text-primary">3.</span>
-                      <span>Explora el Dashboard para ver el resumen de tu empresa</span>
+                      <span>Explora las Estadísticas para ver el resumen de tu empresa</span>
                     </li>
                     <li className="flex gap-2">
                       <span className="font-bold text-primary">4.</span>
@@ -105,7 +105,7 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
               <div className="space-y-4">
                 <ModuleSection
                   icon={<Home className="h-5 w-5" />}
-                  title="Dashboard"
+                  title="Estadísticas"
                   description="Panel principal con métricas y resumen de tu empresa"
                   features={[
                     "Visualiza ingresos, gastos y ganancia neta del mes actual",
