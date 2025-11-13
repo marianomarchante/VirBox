@@ -167,13 +167,10 @@ export default function Suppliers() {
                       Proveedor
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
+                      ID Fiscal
+                    </th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Categoría
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Contacto
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Ubicación
                     </th>
                     <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Total Compras
@@ -192,7 +189,7 @@ export default function Suppliers() {
                 <tbody>
                   {!suppliers || suppliers.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
                         No hay proveedores registrados. 
                         {canWrite && (
                           <button 
@@ -227,10 +224,21 @@ export default function Suppliers() {
                               <p className="text-sm font-medium">{supplier.name}</p>
                               {supplier.contactPerson && (
                                 <p className="text-xs text-muted-foreground">
-                                  Contacto: {supplier.contactPerson}
+                                  {supplier.contactPerson}
                                 </p>
                               )}
                             </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            {supplier.idFiscal ? (
+                              <span className="text-sm font-mono text-muted-foreground">
+                                {supplier.idFiscal}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground italic">
+                                Sin ID fiscal
+                              </span>
+                            )}
                           </td>
                           <td className="py-3 px-4">
                             <span 
@@ -238,30 +246,6 @@ export default function Suppliers() {
                             >
                               {getCategoryLabel(supplier.category)}
                             </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="space-y-1">
-                              {supplier.email && (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Mail className="w-3 h-3" />
-                                  {supplier.email}
-                                </div>
-                              )}
-                              {supplier.phone && (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Phone className="w-3 h-3" />
-                                  {supplier.phone}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            {supplier.address && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <MapPin className="w-3 h-3" />
-                                <span className="truncate max-w-32">{supplier.address}</span>
-                              </div>
-                            )}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span className="text-sm font-semibold text-destructive">

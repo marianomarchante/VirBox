@@ -136,10 +136,7 @@ export default function Clients() {
                       Cliente
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Contacto
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Ubicación
+                      ID Fiscal
                     </th>
                     <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Total Compras
@@ -158,7 +155,7 @@ export default function Clients() {
                 <tbody>
                   {!clients || clients.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
                         No hay clientes registrados. 
                         {canWrite && (
                           <button 
@@ -182,33 +179,20 @@ export default function Clients() {
                             <p className="text-sm font-medium">{client.name}</p>
                             {client.contactPerson && (
                               <p className="text-xs text-muted-foreground">
-                                Contacto: {client.contactPerson}
+                                {client.contactPerson}
                               </p>
                             )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="space-y-1">
-                            {client.email && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Mail className="w-3 h-3" />
-                                {client.email}
-                              </div>
-                            )}
-                            {client.phone && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Phone className="w-3 h-3" />
-                                {client.phone}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          {client.address && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <MapPin className="w-3 h-3" />
-                              <span className="truncate max-w-32">{client.address}</span>
-                            </div>
+                          {client.idFiscal ? (
+                            <span className="text-sm font-mono text-muted-foreground">
+                              {client.idFiscal}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">
+                              Sin ID fiscal
+                            </span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-right">
