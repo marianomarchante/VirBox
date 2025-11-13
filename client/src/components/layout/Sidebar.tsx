@@ -36,6 +36,7 @@ export default function Sidebar() {
     { name: "Clientes", href: "/clientes", icon: Users },
     { name: "Proveedores", href: "/proveedores", icon: Truck },
     { name: "Informes", href: "/informes", icon: FileText },
+    { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
     { name: "Eventos", href: "/eventos", icon: CalendarDays },
   ];
 
@@ -44,7 +45,6 @@ export default function Sidebar() {
     { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
     { name: "Categorías Inventario", href: "/categorias-productos", icon: Tags },
     { name: "Categorías Documentos", href: "/categorias-documentos", icon: Tags },
-    { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
     ...(user?.isAdmin ? [
       { name: "Empresas", href: "/empresas", icon: Building2 },
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
