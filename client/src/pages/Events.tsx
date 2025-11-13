@@ -241,10 +241,11 @@ export default function Events() {
               <Input
                 id="date"
                 type="date"
-                {...form.register("date", {
-                  setValueAs: (value) => value ? new Date(value) : undefined
-                })}
-                defaultValue={form.watch('date') ? format(new Date(form.watch('date')), 'yyyy-MM-dd') : ''}
+                value={form.watch('date') ? format(new Date(form.watch('date')), 'yyyy-MM-dd') : ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  form.setValue('date', value ? new Date(value) : new Date());
+                }}
                 data-testid="input-event-date"
               />
               {form.formState.errors.date && (
