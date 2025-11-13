@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Calendar, Edit, Trash2, Search } from "lucide-react";
+import { Plus, Calendar, Edit, Trash2, Search, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -156,6 +156,9 @@ export default function Events() {
                         Descripción
                       </th>
                       <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
+                        Estado
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                         Acciones
                       </th>
                     </tr>
@@ -163,7 +166,7 @@ export default function Events() {
                   <tbody>
                     {!filteredEvents || filteredEvents.length === 0 ? (
                       <tr>
-                        <td colSpan={3} className="py-8 text-center text-muted-foreground">
+                        <td colSpan={4} className="py-8 text-center text-muted-foreground">
                           {searchFilter ? 'No se encontraron eventos que coincidan con la búsqueda.' : 'No hay eventos registrados.'}
                           {!searchFilter && canWrite && (
                             <button 
@@ -192,6 +195,21 @@ export default function Events() {
                           </td>
                           <td className="py-3 px-4">
                             <p className="text-sm text-foreground">{event.description}</p>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center justify-center">
+                              {event.isRead ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                                  <Check className="w-3 h-3" />
+                                  Leído
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                  <Calendar className="w-3 h-3" />
+                                  Pendiente
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-2">
