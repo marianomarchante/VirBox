@@ -118,12 +118,12 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
               <span className="text-primary-foreground font-semibold">
-                {user?.firstName?.[0]}{user?.lastName?.[0]}
+                {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {user?.firstName} {user?.lastName}
+                {user?.name || user?.email || 'Usuario'}
               </p>
               <p className="text-xs text-muted-foreground truncate">
                 {user?.isAdmin ? 'Administrador' : 'Usuario'}
