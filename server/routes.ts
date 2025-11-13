@@ -978,9 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden: Admin permission required" });
       }
 
-      console.log('[DEBUG] Event POST body:', JSON.stringify(req.body, null, 2));
       const validatedData = insertEventSchema.parse(req.body);
-      console.log('[DEBUG] Validated data:', JSON.stringify(validatedData, null, 2));
       const event = await storage.createEvent({
         ...validatedData,
         companyId
@@ -988,10 +986,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(event);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error('[DEBUG] Zod validation error:', JSON.stringify(error.errors, null, 2));
         res.status(400).json({ message: "Invalid event data", errors: error.errors });
       } else {
-        console.error('[DEBUG] Server error:', error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
