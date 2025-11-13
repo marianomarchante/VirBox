@@ -186,7 +186,7 @@ export default function Companies() {
                       Empresa
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      RUC/Tax ID
+                      NIF/CIF
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Contacto
@@ -329,11 +329,11 @@ export default function Companies() {
               </div>
 
               <div>
-                <Label htmlFor="taxId">RUC / Tax ID</Label>
+                <Label htmlFor="taxId">NIF / CIF</Label>
                 <Input
                   id="taxId"
                   {...form.register('taxId')}
-                  placeholder="20-1234567-8"
+                  placeholder="A12345678"
                   data-testid="input-tax-id"
                 />
               </div>

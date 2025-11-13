@@ -40,7 +40,7 @@ export const userCompanyPermissions = pgTable("user_company_permissions", {
 export const companies = pgTable("companies", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  taxId: text("tax_id"), // NIT, RUT, Tax ID, etc.
+  taxId: text("tax_id"), // NIF, CIF, Tax ID, etc.
   address: text("address"),
   phone: text("phone"),
   email: text("email"),
