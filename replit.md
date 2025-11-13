@@ -18,6 +18,11 @@ The frontend is built with React 18 and TypeScript, using Vite for fast developm
 
 The backend uses Node.js with Express.js and TypeScript. Drizzle ORM provides type-safe database interactions with PostgreSQL (hosted on Neon serverless). Zod schemas are shared for validation. The API is RESTful, with endpoints for transactions, inventory, product categories, clients, suppliers, and dashboard metrics. It uses JSON for requests/responses, centralized error handling, and request logging. Development uses Vite with HMR, while production serves static assets.
 
+**Performance & Caching:**
+- ETag generation is disabled globally (`app.set('etag', false)`) to prevent HTTP 304 responses that caused blank screens in Chrome when React Query cache was empty
+- File upload limit set to 10 MB for PDFs and images (configurable in `server/index.ts`)
+- API routes use aggressive no-cache headers to ensure fresh data delivery
+
 ### Authentication & Authorization System
 
 Authentication is handled via Replit Auth (OpenID Connect / OAuth 2.0) using Passport.js and a PostgreSQL session store with secure, httpOnly cookies. Frontend authentication uses a React Query-based state management, protecting routes and providing logout functionality.
