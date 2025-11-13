@@ -31,6 +31,7 @@ export default function Suppliers() {
     resolver: zodResolver(insertSupplierSchema),
     defaultValues: {
       name: '',
+      idFiscal: '',
       email: '',
       phone: '',
       address: '',
@@ -71,6 +72,7 @@ export default function Suppliers() {
       setEditingSupplier(supplierId);
       form.reset({
         name: supplier.name,
+        idFiscal: supplier.idFiscal || '',
         email: supplier.email || '',
         phone: supplier.phone || '',
         address: supplier.address || '',
@@ -345,6 +347,16 @@ export default function Suppliers() {
                     {form.formState.errors.name.message}
                   </p>
                 )}
+              </div>
+              
+              <div>
+                <Label htmlFor="idFiscal">ID Fiscal (NIF/CIF)</Label>
+                <Input
+                  {...form.register("idFiscal")}
+                  placeholder="Ej: B87654321"
+                  maxLength={10}
+                  data-testid="input-supplier-id-fiscal"
+                />
               </div>
               
               <div>

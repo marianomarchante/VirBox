@@ -28,6 +28,7 @@ export default function Clients() {
     resolver: zodResolver(insertClientSchema),
     defaultValues: {
       name: '',
+      idFiscal: '',
       email: '',
       phone: '',
       address: '',
@@ -57,6 +58,7 @@ export default function Clients() {
       setEditingClient(clientId);
       form.reset({
         name: client.name,
+        idFiscal: client.idFiscal || '',
         email: client.email || '',
         phone: client.phone || '',
         address: client.address || '',
@@ -293,6 +295,16 @@ export default function Clients() {
                     {form.formState.errors.name.message}
                   </p>
                 )}
+              </div>
+              
+              <div>
+                <Label htmlFor="idFiscal">ID Fiscal (NIF/CIF)</Label>
+                <Input
+                  {...form.register("idFiscal")}
+                  placeholder="Ej: A12345678"
+                  maxLength={10}
+                  data-testid="input-client-id-fiscal"
+                />
               </div>
               
               <div>
