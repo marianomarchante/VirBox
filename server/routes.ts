@@ -1015,6 +1015,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/events/:id/read", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const event = await storage.updateEvent(req.params.id, companyId, { isRead: true } as any);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    res.json(event);
+  });
+
   app.delete("/api/events/:id", isAuthenticated, async (req: any, res) => {
     const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
     if (!hasPermission) {

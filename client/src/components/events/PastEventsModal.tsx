@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, Trash2 } from "lucide-react";
+import { Calendar, Trash2, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 export function PastEventsModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
-  const { events, isLoading, deleteEvent } = useEvents();
+  const { events, isLoading, deleteEvent, markAsRead } = useEvents();
   const { toast } = useToast();
   const { currentCompany } = useCompany();
 
@@ -28,12 +28,15 @@ export function PastEventsModal() {
       
       const filteredPastEvents = events.filter((event: Event) => {
         const eventDate = new Date(event.date);
-        return eventDate <= today;
+        return eventDate <= today && !event.isRead;
       });
 
       if (filteredPastEvents.length > 0) {
         setPastEvents(filteredPastEvents);
         setIsOpen(true);
+      } else {
+        setPastEvents([]);
+        setIsOpen(false);
       }
     }
   }, [events, isLoading, currentCompany]);
@@ -60,10 +63,30 @@ export function PastEventsModal() {
     }
   };
 
-  if (!pastEvents.length || !isOpen) return null;
+  const handleMarkAsRead = async (eventId: string) => {
+    try {
+      await markAsRead.mutateAsync(eventId);
+      setPastEvents(prev => prev.filter(e => e.id !== eventId));
+      
+      if (pastEvents.length === 1) {
+        setIsOpen(false);
+      }
+
+      toast({
+        title: "Evento marcado como leído",
+        description: "El evento ya no se mostrará en las notificaciones.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo marcar el evento como leído.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen && pastEvents.length > 0} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="past-events-modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -94,17 +117,30 @@ export function PastEventsModal() {
                     {event.description}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(event.id)}
-                  disabled={deleteEvent.isPending}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  title="Eliminar evento"
-                  data-testid={`delete-past-event-${event.id}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleMarkAsRead(event.id)}
+                    disabled={markAsRead.isPending}
+                    className="text-primary hover:text-primary hover:bg-primary/10"
+                    title="Marcar como leído"
+                    data-testid={`mark-read-past-event-${event.id}`}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(event.id)}
+                    disabled={deleteEvent.isPending}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    title="Eliminar evento"
+                    data-testid={`delete-past-event-${event.id}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

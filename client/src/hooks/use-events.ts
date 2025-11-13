@@ -99,6 +99,26 @@ export function useEvents() {
     },
   });
 
+  const markAsRead = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('PATCH', `/api/events/${id}/read`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/events', { companyId: currentCompanyId }],
+        exact: false
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo marcar el evento como leído.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     events,
     isLoading,
@@ -106,6 +126,7 @@ export function useEvents() {
     createEvent,
     updateEvent,
     deleteEvent,
+    markAsRead,
   };
 }
 

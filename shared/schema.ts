@@ -166,6 +166,7 @@ export const events = pgTable("events", {
   companyId: varchar("company_id").notNull(),
   date: timestamp("date").notNull(),
   description: text("description").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -248,6 +249,7 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
 export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
   createdAt: true,
+  isRead: true,
 }).extend({
   companyId: z.string().optional(),
   date: z.coerce.date(),
