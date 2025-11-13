@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
-import { Plus, Calendar, Edit, Trash2, Search, Check } from "lucide-react";
+import { Plus, Calendar, Edit, Trash2, Search, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Sidebar from "@/components/layout/Sidebar";
@@ -23,6 +24,7 @@ export default function Events() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'read'>('all');
 
   const { events, createEvent, updateEvent, deleteEvent, isLoading } = useEvents();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
@@ -39,13 +41,32 @@ export default function Events() {
   const filteredEvents = useMemo(() => {
     if (!events) return [];
     
-    if (!searchFilter.trim()) return events;
+    let filtered = events;
 
-    const searchLower = searchFilter.toLowerCase().trim();
-    return events.filter(event => 
-      event.description.toLowerCase().includes(searchLower)
-    );
-  }, [events, searchFilter]);
+    // Filter by search
+    if (searchFilter.trim()) {
+      const searchLower = searchFilter.toLowerCase().trim();
+      filtered = filtered.filter(event => 
+        event.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by status
+    if (statusFilter === 'pending') {
+      filtered = filtered.filter(event => !event.isRead);
+    } else if (statusFilter === 'read') {
+      filtered = filtered.filter(event => event.isRead);
+    }
+
+    return filtered;
+  }, [events, searchFilter, statusFilter]);
+
+  const hasActiveFilters = searchFilter.trim() !== '' || statusFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchFilter('');
+    setStatusFilter('all');
+  };
 
   const handleSubmit = (data: InsertEvent) => {
     if (editingEvent) {
@@ -132,17 +153,46 @@ export default function Events() {
                   </Button>
                 </div>
 
-                {/* Search Filter */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Buscar eventos por descripción..."
-                    value={searchFilter}
-                    onChange={(e) => setSearchFilter(e.target.value)}
-                    className="pl-10"
-                    data-testid="input-search-events"
-                  />
+                {/* Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="relative md:col-span-2">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      placeholder="Buscar eventos por descripción..."
+                      value={searchFilter}
+                      onChange={(e) => setSearchFilter(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-search-events"
+                    />
+                  </div>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) => setStatusFilter(value as 'all' | 'pending' | 'read')}
+                  >
+                    <SelectTrigger data-testid="select-status-filter">
+                      <SelectValue placeholder="Filtrar por estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los eventos</SelectItem>
+                      <SelectItem value="pending">Pendientes</SelectItem>
+                      <SelectItem value="read">Leídos</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {/* Clear Filters Button */}
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="w-fit"
+                    data-testid="button-clear-filters"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Limpiar filtros
+                  </Button>
+                )}
               </div>
             
               <div className="overflow-x-auto" data-testid="events-table">
