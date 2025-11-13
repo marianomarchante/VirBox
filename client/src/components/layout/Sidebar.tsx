@@ -14,7 +14,8 @@ import {
   Files,
   Building2,
   UserCog,
-  LogOut
+  LogOut,
+  CalendarDays
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -35,6 +36,7 @@ export default function Sidebar() {
     { name: "Clientes", href: "/clientes", icon: Users },
     { name: "Proveedores", href: "/proveedores", icon: Truck },
     { name: "Informes", href: "/informes", icon: FileText },
+    { name: "Eventos", href: "/eventos", icon: CalendarDays },
   ];
 
   const secondaryNav = [

@@ -14,6 +14,7 @@ import Inventory from "@/pages/Inventory";
 import Clients from "@/pages/Clients";
 import Suppliers from "@/pages/Suppliers";
 import Reports from "@/pages/Reports";
+import Events from "@/pages/Events";
 import IncomeCategories from "@/pages/IncomeCategories";
 import ExpenseCategories from "@/pages/ExpenseCategories";
 import ProductCategories from "@/pages/ProductCategories";
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/clientes" component={Clients} />
       <Route path="/proveedores" component={Suppliers} />
       <Route path="/informes" component={Reports} />
+      <Route path="/eventos" component={Events} />
       <Route path="/categorias-ingresos" component={IncomeCategories} />
       <Route path="/categorias-gastos" component={ExpenseCategories} />
       <Route path="/categorias-productos" component={ProductCategories} />

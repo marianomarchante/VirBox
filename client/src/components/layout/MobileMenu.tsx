@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2, UserCog, HelpCircle, LogOut } from "lucide-react";
+import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2, UserCog, HelpCircle, LogOut, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -24,6 +24,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { name: "Clientes", href: "/clientes", icon: Users },
     { name: "Proveedores", href: "/proveedores", icon: Truck },
     { name: "Informes", href: "/informes", icon: FileText },
+    { name: "Eventos", href: "/eventos", icon: CalendarDays },
   ];
 
   const secondaryNav = [

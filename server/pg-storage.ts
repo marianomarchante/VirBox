@@ -13,6 +13,7 @@ import {
   productCategories,
   documentCategories,
   documents,
+  events,
   type User,
   type UpsertUser,
   type UserCompanyPermission,
@@ -36,7 +37,9 @@ import {
   type DocumentCategory,
   type InsertDocumentCategory,
   type Document,
-  type InsertDocument
+  type InsertDocument,
+  type Event,
+  type InsertEvent
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
@@ -626,6 +629,41 @@ export class PostgresStorage implements IStorage {
   async deleteDocument(id: string, companyId: string): Promise<boolean> {
     const result = await db.delete(documents)
       .where(and(eq(documents.id, id), eq(documents.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getEvents(companyId: string): Promise<Event[]> {
+    return await db.select().from(events)
+      .where(eq(events.companyId, companyId))
+      .orderBy(sql`${events.date} DESC`);
+  }
+
+  async getEvent(id: string, companyId: string): Promise<Event | undefined> {
+    const result = await db.select().from(events)
+      .where(and(eq(events.id, id), eq(events.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    const companyId = insertEvent.companyId || await this.getDefaultCompanyId();
+    const result = await db.insert(events).values({
+      ...insertEvent,
+      companyId,
+    }).returning();
+    return result[0];
+  }
+
+  async updateEvent(id: string, companyId: string, update: Partial<InsertEvent>): Promise<Event | undefined> {
+    const result = await db.update(events).set(update)
+      .where(and(eq(events.id, id), eq(events.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteEvent(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(events)
+      .where(and(eq(events.id, id), eq(events.companyId, companyId)));
     return result.rowCount !== null && result.rowCount > 0;
   }
 

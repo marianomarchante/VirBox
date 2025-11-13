@@ -19,6 +19,8 @@ import {
   type InsertDocumentCategory,
   type Document,
   type InsertDocument,
+  type Event,
+  type InsertEvent,
   type User,
   type UpsertUser,
   type UserCompanyPermission,
@@ -114,6 +116,13 @@ export interface IStorage {
   createDocument(document: InsertDocument): Promise<Document>;
   updateDocument(id: string, companyId: string, document: Partial<InsertDocument>): Promise<Document | undefined>;
   deleteDocument(id: string, companyId: string): Promise<boolean>;
+
+  // Events
+  getEvents(companyId: string): Promise<Event[]>;
+  getEvent(id: string, companyId: string): Promise<Event | undefined>;
+  createEvent(event: InsertEvent): Promise<Event>;
+  updateEvent(id: string, companyId: string, event: Partial<InsertEvent>): Promise<Event | undefined>;
+  deleteEvent(id: string, companyId: string): Promise<boolean>;
 
   // Dashboard metrics
   getMetrics(companyId: string): Promise<{
