@@ -4,6 +4,10 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
+// Disable ETag generation globally to prevent 304 responses
+// that cause blank screens in Chrome when React Query cache is empty
+app.set('etag', false);
+
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
@@ -16,6 +20,14 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Set no-cache headers for all API routes
+app.use('/api', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
