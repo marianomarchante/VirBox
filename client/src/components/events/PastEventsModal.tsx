@@ -17,29 +17,40 @@ import { useCompany } from "@/contexts/CompanyContext";
 export function PastEventsModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const { events, isLoading, deleteEvent, markAsRead } = useEvents();
   const { toast } = useToast();
   const { currentCompany } = useCompany();
 
+  // Ensure component is fully mounted before showing modal
   useEffect(() => {
-    if (!isLoading && events && events.length > 0 && currentCompany) {
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); // End of today
-      
-      const filteredPastEvents = events.filter((event: Event) => {
-        const eventDate = new Date(event.date);
-        return eventDate <= today && !event.isRead;
-      });
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
-      if (filteredPastEvents.length > 0) {
-        setPastEvents(filteredPastEvents);
-        setIsOpen(true);
-      } else {
-        setPastEvents([]);
-        setIsOpen(false);
-      }
+  useEffect(() => {
+    if (!isMounted || isLoading || !events || !currentCompany) {
+      return;
     }
-  }, [events, isLoading, currentCompany]);
+
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+    
+    const filteredPastEvents = events.filter((event: Event) => {
+      const eventDate = new Date(event.date);
+      return eventDate <= today && !event.isRead;
+    });
+
+    if (filteredPastEvents.length > 0) {
+      setPastEvents(filteredPastEvents);
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => setIsOpen(true), 100);
+      return () => clearTimeout(timer);
+    } else {
+      setPastEvents([]);
+      setIsOpen(false);
+    }
+  }, [events, isLoading, currentCompany, isMounted]);
 
   const handleDelete = async (eventId: string) => {
     try {
@@ -84,6 +95,11 @@ export function PastEventsModal() {
       });
     }
   };
+
+  // Don't render until fully mounted
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen && pastEvents.length > 0} onOpenChange={setIsOpen}>
