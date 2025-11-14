@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, Building2, UserCog, HelpCircle, LogOut, CalendarDays } from "lucide-react";
+import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, UserCog, HelpCircle, LogOut, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -34,7 +34,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { name: "Categorías Inventario", href: "/categorias-productos", icon: Tags },
     { name: "Categorías Documentos", href: "/categorias-documentos", icon: Tags },
     ...(user?.isAdmin ? [
-      { name: "Empresas", href: "/empresas", icon: Building2 },
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
     ] : []),
   ];

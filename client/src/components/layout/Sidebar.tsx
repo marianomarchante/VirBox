@@ -12,7 +12,6 @@ import {
   BarChart3,
   Tags,
   Files,
-  Building2,
   UserCog,
   LogOut,
   CalendarDays
@@ -46,7 +45,6 @@ export default function Sidebar() {
     { name: "Categorías Inventario", href: "/categorias-productos", icon: Tags },
     { name: "Categorías Documentos", href: "/categorias-documentos", icon: Tags },
     ...(user?.isAdmin ? [
-      { name: "Empresas", href: "/empresas", icon: Building2 },
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
     ] : []),
   ];
