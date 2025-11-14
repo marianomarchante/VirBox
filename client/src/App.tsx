@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -50,6 +51,17 @@ function Router() {
 
 function AuthenticatedApp() {
   const { user, isLoading, login } = useAuthContext();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      // Delay modal rendering to avoid portal conflicts
+      const timer = setTimeout(() => setIsReady(true), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setIsReady(false);
+    }
+  }, [isLoading, user]);
 
   if (isLoading) {
     return (
@@ -70,7 +82,7 @@ function AuthenticatedApp() {
     <CompanyProvider>
       <TooltipProvider>
         <Toaster />
-        <PastEventsModal />
+        {isReady && <PastEventsModal />}
         <Router />
       </TooltipProvider>
     </CompanyProvider>
