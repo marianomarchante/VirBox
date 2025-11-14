@@ -1,8 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
-  // HTTP 304 (Not Modified) is a valid cache response, not an error
-  if (!res.ok && res.status !== 304) {
+  if (!res.ok) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -46,12 +45,6 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    
-    // HTTP 304 responses have no body - return undefined to keep cached data
-    // Must return BEFORE calling res.json() to avoid fetch spec violation
-    if (res.status === 304) {
-      return undefined as any; // React Query will keep existing cached data
-    }
     
     return await res.json();
   };
