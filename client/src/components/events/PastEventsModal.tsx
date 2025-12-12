@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, Trash2, Check } from "lucide-react";
@@ -17,24 +17,18 @@ import { useCompany } from "@/contexts/CompanyContext";
 export function PastEventsModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
   const { events, isLoading, deleteEvent, markAsRead } = useEvents();
   const { toast } = useToast();
   const { currentCompany } = useCompany();
 
-  // Ensure component is fully mounted before showing modal
-  useEffect(() => {
-    setIsMounted(true);
-    return () => setIsMounted(false);
-  }, []);
-
-  useEffect(() => {
-    if (!isMounted || isLoading || !events || !currentCompany) {
+  const checkPastEvents = useCallback(() => {
+    if (isLoading || !events || !currentCompany || hasChecked) {
       return;
     }
 
     const today = new Date();
-    today.setHours(23, 59, 59, 999); // End of today
+    today.setHours(23, 59, 59, 999);
     
     const filteredPastEvents = events.filter((event: Event) => {
       const eventDate = new Date(event.date);
@@ -43,21 +37,29 @@ export function PastEventsModal() {
 
     if (filteredPastEvents.length > 0) {
       setPastEvents(filteredPastEvents);
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => setIsOpen(true), 100);
-      return () => clearTimeout(timer);
-    } else {
-      setPastEvents([]);
-      setIsOpen(false);
+      setIsOpen(true);
     }
-  }, [events, isLoading, currentCompany, isMounted]);
+    setHasChecked(true);
+  }, [events, isLoading, currentCompany, hasChecked]);
 
-  const handleDelete = async (eventId: string) => {
+  useEffect(() => {
+    if (!isLoading && events && currentCompany && !hasChecked) {
+      const timer = setTimeout(checkPastEvents, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, events, currentCompany, hasChecked, checkPastEvents]);
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  const handleDelete = useCallback(async (eventId: string) => {
     try {
       await deleteEvent.mutateAsync(eventId);
-      setPastEvents(prev => prev.filter(e => e.id !== eventId));
+      const newPastEvents = pastEvents.filter(e => e.id !== eventId);
+      setPastEvents(newPastEvents);
       
-      if (pastEvents.length === 1) {
+      if (newPastEvents.length === 0) {
         setIsOpen(false);
       }
 
@@ -72,14 +74,15 @@ export function PastEventsModal() {
         variant: "destructive",
       });
     }
-  };
+  }, [deleteEvent, pastEvents, toast]);
 
-  const handleMarkAsRead = async (eventId: string) => {
+  const handleMarkAsRead = useCallback(async (eventId: string) => {
     try {
       await markAsRead.mutateAsync(eventId);
-      setPastEvents(prev => prev.filter(e => e.id !== eventId));
+      const newPastEvents = pastEvents.filter(e => e.id !== eventId);
+      setPastEvents(newPastEvents);
       
-      if (pastEvents.length === 1) {
+      if (newPastEvents.length === 0) {
         setIsOpen(false);
       }
 
@@ -94,15 +97,14 @@ export function PastEventsModal() {
         variant: "destructive",
       });
     }
-  };
+  }, [markAsRead, pastEvents, toast]);
 
-  // Don't render until fully mounted
-  if (!isMounted) {
+  if (pastEvents.length === 0) {
     return null;
   }
 
   return (
-    <Dialog open={isOpen && pastEvents.length > 0} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" data-testid="past-events-modal">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -164,7 +166,7 @@ export function PastEventsModal() {
 
         <div className="flex justify-end mt-4 pt-4 border-t">
           <Button
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             variant="outline"
             data-testid="close-past-events-modal"
           >

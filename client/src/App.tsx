@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Switch, Route } from "wouter";
+import { useState, useEffect, Suspense, lazy } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,59 +7,77 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { PastEventsModal } from "@/components/events/PastEventsModal";
 import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
-import Income from "@/pages/Income";
-import Expenses from "@/pages/Expenses";
-import Inventory from "@/pages/Inventory";
-import Clients from "@/pages/Clients";
-import Suppliers from "@/pages/Suppliers";
-import Reports from "@/pages/Reports";
-import Events from "@/pages/Events";
-import IncomeCategories from "@/pages/IncomeCategories";
-import ExpenseCategories from "@/pages/ExpenseCategories";
-import ProductCategories from "@/pages/ProductCategories";
-import DocumentCategories from "@/pages/DocumentCategories";
-import DocumentManagement from "@/pages/DocumentManagement";
-import Companies from "@/pages/Companies";
-import UserManagement from "@/pages/UserManagement";
 import Landing from "@/pages/Landing";
 
-function Router() {
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Income = lazy(() => import("@/pages/Income"));
+const Expenses = lazy(() => import("@/pages/Expenses"));
+const Inventory = lazy(() => import("@/pages/Inventory"));
+const Clients = lazy(() => import("@/pages/Clients"));
+const Suppliers = lazy(() => import("@/pages/Suppliers"));
+const Reports = lazy(() => import("@/pages/Reports"));
+const Events = lazy(() => import("@/pages/Events"));
+const IncomeCategories = lazy(() => import("@/pages/IncomeCategories"));
+const ExpenseCategories = lazy(() => import("@/pages/ExpenseCategories"));
+const ProductCategories = lazy(() => import("@/pages/ProductCategories"));
+const DocumentCategories = lazy(() => import("@/pages/DocumentCategories"));
+const DocumentManagement = lazy(() => import("@/pages/DocumentManagement"));
+const Companies = lazy(() => import("@/pages/Companies"));
+const UserManagement = lazy(() => import("@/pages/UserManagement"));
+
+const PastEventsModal = lazy(() => 
+  import("@/components/events/PastEventsModal").then(mod => ({ default: mod.PastEventsModal }))
+);
+
+function LoadingFallback() {
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/ingresos" component={Income} />
-      <Route path="/gastos" component={Expenses} />
-      <Route path="/inventario" component={Inventory} />
-      <Route path="/clientes" component={Clients} />
-      <Route path="/proveedores" component={Suppliers} />
-      <Route path="/informes" component={Reports} />
-      <Route path="/eventos" component={Events} />
-      <Route path="/categorias-ingresos" component={IncomeCategories} />
-      <Route path="/categorias-gastos" component={ExpenseCategories} />
-      <Route path="/categorias-productos" component={ProductCategories} />
-      <Route path="/categorias-documentos" component={DocumentCategories} />
-      <Route path="/gestion-documental" component={DocumentManagement} />
-      <Route path="/empresas" component={Companies} />
-      <Route path="/usuarios" component={UserManagement} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+        <p className="text-sm text-muted-foreground">Cargando...</p>
+      </div>
+    </div>
+  );
+}
+
+function Router() {
+  const [location] = useLocation();
+  
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Switch key={location}>
+        <Route path="/" component={Dashboard} />
+        <Route path="/ingresos" component={Income} />
+        <Route path="/gastos" component={Expenses} />
+        <Route path="/inventario" component={Inventory} />
+        <Route path="/clientes" component={Clients} />
+        <Route path="/proveedores" component={Suppliers} />
+        <Route path="/informes" component={Reports} />
+        <Route path="/eventos" component={Events} />
+        <Route path="/categorias-ingresos" component={IncomeCategories} />
+        <Route path="/categorias-gastos" component={ExpenseCategories} />
+        <Route path="/categorias-productos" component={ProductCategories} />
+        <Route path="/categorias-documentos" component={DocumentCategories} />
+        <Route path="/gestion-documental" component={DocumentManagement} />
+        <Route path="/empresas" component={Companies} />
+        <Route path="/usuarios" component={UserManagement} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
 function AuthenticatedApp() {
   const { user, isLoading, login } = useAuthContext();
-  const [isReady, setIsReady] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (!isLoading && user) {
-      // Delay modal rendering to avoid portal conflicts
-      const timer = setTimeout(() => setIsReady(true), 500);
+      const timer = setTimeout(() => setShowModal(true), 1000);
       return () => clearTimeout(timer);
     } else {
-      setIsReady(false);
+      setShowModal(false);
     }
   }, [isLoading, user]);
 
@@ -82,7 +100,11 @@ function AuthenticatedApp() {
     <CompanyProvider>
       <TooltipProvider>
         <Toaster />
-        {isReady && <PastEventsModal />}
+        {showModal && (
+          <Suspense fallback={null}>
+            <PastEventsModal />
+          </Suspense>
+        )}
         <Router />
       </TooltipProvider>
     </CompanyProvider>
