@@ -150,7 +150,59 @@ export default function Inventory() {
     form.setValue('pdfFileName', '');
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const optimizeImage = (file: File, maxSizeKB: number = 400): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = document.createElement('img');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      img.onload = () => {
+        let { width, height } = img;
+        const maxDimension = 1200;
+        
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height / width) * maxDimension;
+            width = maxDimension;
+          } else {
+            width = (width / height) * maxDimension;
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        let quality = 0.9;
+        let result = canvas.toDataURL('image/jpeg', quality);
+        
+        while (result.length > maxSizeKB * 1024 * 1.37 && quality > 0.1) {
+          quality -= 0.1;
+          result = canvas.toDataURL('image/jpeg', quality);
+        }
+        
+        if (result.length > maxSizeKB * 1024 * 1.37 && (width > 800 || height > 800)) {
+          const scale = 0.7;
+          canvas.width = width * scale;
+          canvas.height = height * scale;
+          ctx?.drawImage(img, 0, 0, width * scale, height * scale);
+          result = canvas.toDataURL('image/jpeg', 0.8);
+        }
+        
+        resolve(result);
+      };
+      
+      img.onerror = () => reject(new Error('Error al cargar la imagen'));
+      
+      const reader = new FileReader();
+      reader.onload = () => { img.src = reader.result as string; };
+      reader.onerror = () => reject(new Error('Error al leer el archivo'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
@@ -162,14 +214,18 @@ export default function Inventory() {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setSelectedImage({ name: file.name, data: base64 });
-        form.setValue('imageDocument', base64);
+      try {
+        const optimizedBase64 = await optimizeImage(file, 400);
+        setSelectedImage({ name: file.name, data: optimizedBase64 });
+        form.setValue('imageDocument', optimizedBase64);
         form.setValue('imageFileName', file.name);
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo procesar la imagen.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
