@@ -14,13 +14,15 @@ import {
   Files,
   UserCog,
   LogOut,
-  CalendarDays
+  CalendarDays,
+  Images
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Button } from "@/components/ui/button";
 import { HelpDialog } from "@/components/shared/Help";
+import { ObjectsGallery } from "@/components/inventory/ObjectsGallery";
 
 export default function Sidebar() {
   const [location] = useLocation();
@@ -97,6 +99,18 @@ export default function Sidebar() {
             );
           })}
           
+          <ObjectsGallery
+            trigger={
+              <button 
+                className="sidebar-link w-full"
+                data-testid="nav-objetos"
+              >
+                <Images className="w-5 h-5" />
+                <span>Objetos</span>
+              </button>
+            }
+          />
+
           <HelpDialog 
             trigger={
               <button 

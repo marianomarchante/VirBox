@@ -1,10 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, UserCog, HelpCircle, LogOut, CalendarDays } from "lucide-react";
+import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, UserCog, HelpCircle, LogOut, CalendarDays, Images } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { HelpDialog } from "@/components/shared/Help";
+import { ObjectsGallery } from "@/components/inventory/ObjectsGallery";
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -99,6 +100,18 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               );
             })}
             
+            <ObjectsGallery
+              trigger={
+                <button 
+                  className="sidebar-link w-full"
+                  data-testid="mobile-nav-objetos"
+                >
+                  <Images className="w-5 h-5" />
+                  <span>Objetos</span>
+                </button>
+              }
+            />
+
             <HelpDialog 
               trigger={
                 <button 
