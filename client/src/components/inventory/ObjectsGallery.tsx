@@ -48,7 +48,7 @@ function ObjectDetailModal({ item, isOpen, onClose }: ObjectDetailModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[90vw] md:max-w-[600px] max-h-[95vh] overflow-y-auto p-0">
+      <DialogContent className="w-[100vw] h-[100dvh] max-w-none sm:max-w-[90vw] sm:h-auto md:max-w-[600px] sm:max-h-[95vh] rounded-none sm:rounded-lg overflow-y-auto p-0">
         <div className="relative">
           {item.imageDocument ? (
             <img
@@ -247,7 +247,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
       </div>
 
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[95vw] md:max-w-[900px] max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogContent className="w-[100vw] h-[100dvh] max-w-none sm:max-w-[95vw] sm:h-auto md:max-w-[900px] sm:max-h-[95vh] rounded-none sm:rounded-lg overflow-hidden flex flex-col p-3 sm:p-6">
           {isFormOpen ? (
             <>
               <DialogHeader>
@@ -509,7 +509,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4 pb-4">
                     {filteredItems.map((item) => (
                       <div
                         key={item.id}
