@@ -500,14 +500,14 @@ export default function Inventory() {
       </main>
 
       <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingItemId ? 'Editar Objeto' : 'Agregar Objeto al Inventario'}
             </DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
               <FormField
                 control={form.control}
                 name="name"
