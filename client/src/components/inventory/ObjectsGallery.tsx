@@ -81,7 +81,16 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
   const { currentCompanyId } = useCompany();
 
   const { data: inventoryItems = [], isLoading } = useQuery<Inventory[]>({
-    queryKey: ["/api/inventory", currentCompanyId],
+    queryKey: ["/api/inventory", { companyId: currentCompanyId }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append("companyId", currentCompanyId);
+      const res = await fetch(`/api/inventory?${params.toString()}`, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      return await res.json();
+    },
     enabled: !!currentCompanyId && isOpen,
   });
 
