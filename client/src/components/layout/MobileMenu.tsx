@@ -17,11 +17,13 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const { currentCompany } = useCompany();
   const { user, logout } = useAuthContext();
 
-  const navigation = [
+  const navigationBeforeInventory = [
     { name: "Estadísticas", href: "/", icon: BarChart3 },
     { name: "Ingresos", href: "/ingresos", icon: TrendingUp },
     { name: "Gastos", href: "/gastos", icon: TrendingDown },
-    { name: "Inventario", href: "/inventario", icon: Package },
+  ];
+
+  const navigationAfterInventory = [
     { name: "Clientes", href: "/clientes", icon: Users },
     { name: "Proveedores", href: "/proveedores", icon: Truck },
     { name: "Informes", href: "/informes", icon: FileText },
@@ -32,7 +34,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const secondaryNav = [
     { name: "Categorías de Ingresos", href: "/categorias-ingresos", icon: Tags },
     { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
-    { name: "Categorías Inventario", href: "/categorias-productos", icon: Tags },
     { name: "Categorías Documentos", href: "/categorias-documentos", icon: Tags },
     ...(user?.isAdmin ? [
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
@@ -66,35 +67,69 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         
         <nav className="p-4 overflow-y-auto" style={{ maxHeight: "calc(100vh - 180px)" }}>
           <div className="space-y-1">
-            {navigation.map((item) => {
+            {navigationBeforeInventory.map((item) => {
               const isActive = location === item.href;
               return (
-                <div key={item.name}>
-                  <Link 
-                    href={item.href}
-                    className={cn("sidebar-link", isActive && "active")}
-                    onClick={onClose}
-                    data-testid={`mobile-nav-${item.name.toLowerCase()}`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.name}</span>
-                  </Link>
-                  {item.name === "Inventario" && (
-                    <div className="mt-1 ml-2">
-                      <ObjectsGallery
-                        trigger={
-                          <button 
-                            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-[#800020] hover:bg-[#600018] text-white font-medium text-sm transition-colors"
-                            data-testid="mobile-nav-objetos"
-                          >
-                            <Images className="w-4 h-4" />
-                            <span>Objetos inventario</span>
-                          </button>
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
+                <Link 
+                  key={item.name}
+                  href={item.href}
+                  className={cn("sidebar-link", isActive && "active")}
+                  onClick={onClose}
+                  data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
+            <Link 
+              href="/inventario"
+              className={cn("sidebar-link", location === "/inventario" && "active")}
+              onClick={onClose}
+              data-testid="mobile-nav-inventario"
+            >
+              <Package className="w-5 h-5" />
+              <span>Inventario</span>
+            </Link>
+            <Link 
+              href="/categorias-productos"
+              className={cn("sidebar-link", location === "/categorias-productos" && "active")}
+              onClick={onClose}
+              data-testid="mobile-nav-categorías-inventario"
+            >
+              <Tags className="w-5 h-5" />
+              <span>Categorías Inventario</span>
+            </Link>
+            <ObjectsGallery
+              trigger={
+                <button 
+                  className="sidebar-link w-full bg-[#800020] hover:bg-[#600018] text-white"
+                  data-testid="mobile-nav-objetos"
+                >
+                  <Images className="w-5 h-5" />
+                  <span>Objetos Inventario</span>
+                </button>
+              }
+            />
+          </div>
+
+          <div className="space-y-1">
+            {navigationAfterInventory.map((item) => {
+              const isActive = location === item.href;
+              return (
+                <Link 
+                  key={item.name}
+                  href={item.href}
+                  className={cn("sidebar-link", isActive && "active")}
+                  onClick={onClose}
+                  data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.name}</span>
+                </Link>
               );
             })}
           </div>
