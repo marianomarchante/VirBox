@@ -30,8 +30,6 @@ export default function Sidebar() {
   const { currentCompany } = useCompany();
 
   const navigationAfterInventory = [
-    { name: "Clientes", href: "/clientes", icon: Users },
-    { name: "Proveedores", href: "/proveedores", icon: Truck },
     { name: "Informes", href: "/informes", icon: FileText },
   ];
 
@@ -88,6 +86,14 @@ export default function Sidebar() {
             <Tags className="w-5 h-5" />
             <span>Categorías de Ingresos</span>
           </Link>
+          <Link 
+            href="/clientes"
+            className={cn("sidebar-link", location === "/clientes" && "active")}
+            data-testid="nav-clientes"
+          >
+            <Users className="w-5 h-5" />
+            <span>Clientes</span>
+          </Link>
         </div>
 
         <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
@@ -106,6 +112,14 @@ export default function Sidebar() {
           >
             <Tags className="w-5 h-5" />
             <span>Categorías de Gastos</span>
+          </Link>
+          <Link 
+            href="/proveedores"
+            className={cn("sidebar-link", location === "/proveedores" && "active")}
+            data-testid="nav-proveedores"
+          >
+            <Truck className="w-5 h-5" />
+            <span>Proveedores</span>
           </Link>
         </div>
 
