@@ -65,6 +65,20 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         </div>
         
         <nav className="p-4 overflow-y-auto" style={{ maxHeight: "calc(100vh - 180px)" }}>
+          <div className="mb-4">
+            <ObjectsGallery
+              trigger={
+                <button 
+                  className="sidebar-link w-full bg-primary/10 hover:bg-primary/20 text-primary font-medium border border-primary/20"
+                  data-testid="mobile-nav-objetos"
+                >
+                  <Images className="w-5 h-5" />
+                  <span>Objetos</span>
+                </button>
+              }
+            />
+          </div>
+
           <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = location === item.href;
@@ -100,18 +114,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               );
             })}
             
-            <ObjectsGallery
-              trigger={
-                <button 
-                  className="sidebar-link w-full"
-                  data-testid="mobile-nav-objetos"
-                >
-                  <Images className="w-5 h-5" />
-                  <span>Objetos</span>
-                </button>
-              }
-            />
-
             <HelpDialog 
               trigger={
                 <button 

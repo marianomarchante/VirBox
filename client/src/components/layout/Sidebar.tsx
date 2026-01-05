@@ -66,6 +66,20 @@ export default function Sidebar() {
       </div>
       
       <nav className="flex-1 overflow-y-auto p-4">
+        <div className="mb-4">
+          <ObjectsGallery
+            trigger={
+              <button 
+                className="sidebar-link w-full bg-primary/10 hover:bg-primary/20 text-primary font-medium border border-primary/20"
+                data-testid="nav-objetos"
+              >
+                <Images className="w-5 h-5" />
+                <span>Objetos</span>
+              </button>
+            }
+          />
+        </div>
+
         <div className="space-y-1">
           {navigation.map((item) => {
             const isActive = location === item.href;
@@ -99,18 +113,6 @@ export default function Sidebar() {
             );
           })}
           
-          <ObjectsGallery
-            trigger={
-              <button 
-                className="sidebar-link w-full"
-                data-testid="nav-objetos"
-              >
-                <Images className="w-5 h-5" />
-                <span>Objetos</span>
-              </button>
-            }
-          />
-
           <HelpDialog 
             trigger={
               <button 
