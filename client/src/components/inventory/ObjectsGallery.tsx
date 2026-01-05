@@ -107,6 +107,7 @@ type InventoryFormData = InsertInventory;
 export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<Inventory | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -256,12 +257,15 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
   };
 
   const filteredItems = useMemo(() => {
-    if (!searchTerm.trim()) return inventoryItems;
-    const lowerSearch = searchTerm.toLowerCase();
-    return inventoryItems.filter((item) =>
-      item.name.toLowerCase().includes(lowerSearch)
-    );
-  }, [inventoryItems, searchTerm]);
+    return inventoryItems.filter((item) => {
+      const lowerSearch = searchTerm.trim().toLowerCase();
+      const matchesSearch = lowerSearch === "" || item.name.toLowerCase().includes(lowerSearch);
+      const matchesCategory = selectedCategoryFilter === "all" || 
+        (selectedCategoryFilter === "none" && !item.categoryId) ||
+        item.categoryId === selectedCategoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [inventoryItems, searchTerm, selectedCategoryFilter]);
 
   const handleItemClick = (item: Inventory) => {
     if (item.imageDocument) {
@@ -279,6 +283,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
     setIsOpen(open);
     if (!open) {
       setSearchTerm("");
+      setSelectedCategoryFilter("all");
       setIsFormOpen(false);
       handleCloseForm();
     }
@@ -524,26 +529,42 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
                 </Button>
               </DialogHeader>
 
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nombre..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-10"
-                  data-testid="input-search-objects"
-                />
-                {searchTerm && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setSearchTerm("")}
-                    data-testid="clear-search-objects"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-10"
+                    data-testid="input-search-objects"
+                  />
+                  {searchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setSearchTerm("")}
+                      data-testid="clear-search-objects"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-gallery-category-filter">
+                    <SelectValue placeholder="Filtrar por categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
+                    <SelectItem value="none">Sin categoría</SelectItem>
+                    {productCategories?.filter(c => c.isActive).map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex-1 overflow-y-auto overflow-x-auto mt-4 min-h-0">
@@ -555,8 +576,8 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
                   <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
                     <ImageOff className="w-12 h-12 mb-4" />
                     <p>
-                      {searchTerm
-                        ? "No se encontraron objetos con ese nombre"
+                      {searchTerm || selectedCategoryFilter !== "all"
+                        ? "No se encontraron objetos con esos filtros"
                         : "No hay objetos en el inventario"}
                     </p>
                   </div>
