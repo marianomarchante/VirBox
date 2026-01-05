@@ -71,7 +71,7 @@ export const inventory = pgTable("inventory", {
   categoryId: varchar("category_id"),
   location: text("location"), // Optional location/placement of the object
   value: decimal("value", { precision: 10, scale: 2 }).notNull(), // Value in euros
-  acquisitionDate: timestamp("acquisition_date").notNull(), // Date of acquisition
+  idContenedor: text("id_contenedor"), // Container ID
   pdfDocument: text("pdf_document"), // Optional PDF document stored as base64
   pdfFileName: text("pdf_file_name"), // Original filename of the PDF
   imageDocument: text("image_document"), // Optional image stored as base64
@@ -190,7 +190,6 @@ export const insertInventorySchema = createInsertSchema(inventory).omit({
   updatedAt: true,
 }).extend({
   companyId: z.string().optional(),
-  acquisitionDate: z.union([z.date(), z.string().transform(val => new Date(val))]),
 });
 
 export const insertClientSchema = createInsertSchema(clients).omit({

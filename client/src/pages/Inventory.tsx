@@ -48,8 +48,8 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import PdfViewer from "@/components/shared/PdfViewer";
 
-// Form type with acquisitionDate as string for HTML date input
-type InventoryFormData = Omit<InsertInventory, 'acquisitionDate'> & { acquisitionDate: string };
+// Form type for inventory
+type InventoryFormData = InsertInventory;
 
 export default function Inventory() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -90,10 +90,8 @@ export default function Inventory() {
     });
   }, [inventory, searchTerm, selectedCategoryFilter]);
 
-  // Form validation schema with acquisitionDate as string
-  const formSchema = insertInventorySchema.extend({
-    acquisitionDate: z.string().min(1, "La fecha de adquisición es obligatoria"),
-  }).omit({ acquisitionDate: true }).merge(z.object({ acquisitionDate: z.string() }));
+  // Form validation schema
+  const formSchema = insertInventorySchema;
 
   const form = useForm<InventoryFormData>({
     resolver: zodResolver(formSchema),
@@ -102,7 +100,7 @@ export default function Inventory() {
       categoryId: null,
       location: "",
       value: "0",
-      acquisitionDate: new Date().toISOString().split('T')[0],
+      idContenedor: "",
       pdfDocument: "",
       pdfFileName: "",
       imageDocument: "",
@@ -170,16 +168,10 @@ export default function Inventory() {
 
   const onSubmit = async (data: InventoryFormData) => {
     try {
-      // Convert string date to Date object
-      const formattedData: InsertInventory = {
-        ...data,
-        acquisitionDate: new Date(data.acquisitionDate),
-      };
-      
       if (editingItemId) {
-        await updateInventoryItem.mutateAsync({ id: editingItemId, item: { ...formattedData, companyId: currentCompanyId ?? undefined } });
+        await updateInventoryItem.mutateAsync({ id: editingItemId, item: { ...data, companyId: currentCompanyId ?? undefined } });
       } else {
-        await createInventoryItem.mutateAsync({ ...formattedData, companyId: currentCompanyId ?? undefined });
+        await createInventoryItem.mutateAsync({ ...data, companyId: currentCompanyId ?? undefined });
       }
       handleCloseModal();
     } catch (error) {
@@ -198,7 +190,7 @@ export default function Inventory() {
       categoryId: null,
       location: "",
       value: "0",
-      acquisitionDate: new Date().toISOString().split('T')[0],
+      idContenedor: "",
       pdfDocument: "",
       pdfFileName: "",
       imageDocument: "",
@@ -221,7 +213,7 @@ export default function Inventory() {
       categoryId: item.categoryId,
       location: item.location || "",
       value: item.value,
-      acquisitionDate: new Date(item.acquisitionDate).toISOString().split('T')[0],
+      idContenedor: item.idContenedor || "",
       pdfDocument: item.pdfDocument || "",
       pdfFileName: item.pdfFileName || "",
       imageDocument: item.imageDocument || "",
@@ -368,7 +360,7 @@ export default function Inventory() {
                       Valor
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Fecha Adquisición
+                      ID Contenedor
                     </th>
                     <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       Documento
@@ -427,7 +419,7 @@ export default function Inventory() {
                           </td>
                           <td className="py-3 px-4">
                             <span className="text-sm text-muted-foreground">
-                              {new Date(item.acquisitionDate).toLocaleDateString('es-ES')}
+                              {item.idContenedor || '-'}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-center">
@@ -601,15 +593,16 @@ export default function Inventory() {
 
                 <FormField
                   control={form.control}
-                  name="acquisitionDate"
+                  name="idContenedor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Fecha de Adquisición</FormLabel>
+                      <FormLabel>ID Contenedor (opcional)</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
-                          type="date"
-                          data-testid="input-acquisition-date"
+                          value={field.value ?? ""}
+                          placeholder="Ej: CONT-001"
+                          data-testid="input-id-contenedor"
                         />
                       </FormControl>
                       <FormMessage />
