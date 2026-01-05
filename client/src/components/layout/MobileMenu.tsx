@@ -69,7 +69,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             <ObjectsGallery
               trigger={
                 <button 
-                  className="sidebar-link w-full bg-primary/10 hover:bg-primary/20 text-primary font-medium border border-primary/20"
+                  className="sidebar-link w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-md"
                   data-testid="mobile-nav-objetos"
                 >
                   <Images className="w-5 h-5" />
