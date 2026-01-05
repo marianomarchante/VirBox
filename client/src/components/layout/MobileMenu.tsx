@@ -27,14 +27,15 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     { name: "Clientes", href: "/clientes", icon: Users },
     { name: "Proveedores", href: "/proveedores", icon: Truck },
     { name: "Informes", href: "/informes", icon: FileText },
-    { name: "Gestión Documental", href: "/gestion-documental", icon: Files },
+  ];
+
+  const navigationAfterDocuments = [
     { name: "Eventos", href: "/eventos", icon: CalendarDays },
   ];
 
   const secondaryNav = [
     { name: "Categorías de Ingresos", href: "/categorias-ingresos", icon: Tags },
     { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
-    { name: "Categorías Documentos", href: "/categorias-documentos", icon: Tags },
     ...(user?.isAdmin ? [
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
     ] : []),
@@ -118,6 +119,45 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
 
           <div className="space-y-1">
             {navigationAfterInventory.map((item) => {
+              const isActive = location === item.href;
+              return (
+                <Link 
+                  key={item.name}
+                  href={item.href}
+                  className={cn("sidebar-link", isActive && "active")}
+                  onClick={onClose}
+                  data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
+            <Link 
+              href="/gestion-documental"
+              className={cn("sidebar-link", location === "/gestion-documental" && "active")}
+              onClick={onClose}
+              data-testid="mobile-nav-gestión-documental"
+            >
+              <Files className="w-5 h-5" />
+              <span>Gestión Documental</span>
+            </Link>
+            <Link 
+              href="/categorias-documentos"
+              className={cn("sidebar-link", location === "/categorias-documentos" && "active")}
+              onClick={onClose}
+              data-testid="mobile-nav-categorías-documentos"
+            >
+              <Tags className="w-5 h-5" />
+              <span>Categorías Documentos</span>
+            </Link>
+          </div>
+
+          <div className="space-y-1">
+            {navigationAfterDocuments.map((item) => {
               const isActive = location === item.href;
               return (
                 <Link 
