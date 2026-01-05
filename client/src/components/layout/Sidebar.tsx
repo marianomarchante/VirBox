@@ -104,7 +104,7 @@ export default function Sidebar() {
           <ObjectsGallery
             trigger={
               <button 
-                className="sidebar-link w-full bg-[#800020] hover:bg-[#600018] text-white"
+                className="sidebar-link w-full bg-[#800020] hover:bg-[#600018] text-white hover:text-white"
                 data-testid="nav-objetos"
               >
                 <Images className="w-5 h-5" />
