@@ -65,34 +65,36 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
         </div>
         
         <nav className="p-4 overflow-y-auto" style={{ maxHeight: "calc(100vh - 180px)" }}>
-          <div className="mb-4">
-            <ObjectsGallery
-              trigger={
-                <button 
-                  className="sidebar-link w-full"
-                  data-testid="mobile-nav-objetos"
-                >
-                  <Images className="w-5 h-5" />
-                  <span>Objetos</span>
-                </button>
-              }
-            />
-          </div>
-
           <div className="space-y-1">
             {navigation.map((item) => {
               const isActive = location === item.href;
               return (
-                <Link 
-                  key={item.name} 
-                  href={item.href}
-                  className={cn("sidebar-link", isActive && "active")}
-                  onClick={onClose}
-                  data-testid={`mobile-nav-${item.name.toLowerCase()}`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.name}</span>
-                </Link>
+                <div key={item.name}>
+                  <Link 
+                    href={item.href}
+                    className={cn("sidebar-link", isActive && "active")}
+                    onClick={onClose}
+                    data-testid={`mobile-nav-${item.name.toLowerCase()}`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.name}</span>
+                  </Link>
+                  {item.name === "Inventario" && (
+                    <div className="mt-1 ml-2">
+                      <ObjectsGallery
+                        trigger={
+                          <button 
+                            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-[#800020] hover:bg-[#600018] text-white font-medium text-sm transition-colors"
+                            data-testid="mobile-nav-objetos"
+                          >
+                            <Images className="w-4 h-4" />
+                            <span>Objetos inventario</span>
+                          </button>
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

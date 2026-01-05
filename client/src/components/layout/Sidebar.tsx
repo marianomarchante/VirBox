@@ -66,33 +66,35 @@ export default function Sidebar() {
       </div>
       
       <nav className="flex-1 overflow-y-auto p-4">
-        <div className="mb-4">
-          <ObjectsGallery
-            trigger={
-              <button 
-                className="sidebar-link w-full"
-                data-testid="nav-objetos"
-              >
-                <Images className="w-5 h-5" />
-                <span>Objetos</span>
-              </button>
-            }
-          />
-        </div>
-
         <div className="space-y-1">
           {navigation.map((item) => {
             const isActive = location === item.href;
             return (
-              <Link 
-                key={item.name} 
-                href={item.href}
-                className={cn("sidebar-link", isActive && "active")}
-                data-testid={`nav-${item.name.toLowerCase()}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.name}</span>
-              </Link>
+              <div key={item.name}>
+                <Link 
+                  href={item.href}
+                  className={cn("sidebar-link", isActive && "active")}
+                  data-testid={`nav-${item.name.toLowerCase()}`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span>{item.name}</span>
+                </Link>
+                {item.name === "Inventario" && (
+                  <div className="mt-1 ml-2">
+                    <ObjectsGallery
+                      trigger={
+                        <button 
+                          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-[#800020] hover:bg-[#600018] text-white font-medium text-sm transition-colors"
+                          data-testid="nav-objetos"
+                        >
+                          <Images className="w-4 h-4" />
+                          <span>Objetos inventario</span>
+                        </button>
+                      }
+                    />
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
