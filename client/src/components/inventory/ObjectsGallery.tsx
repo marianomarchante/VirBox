@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, X, ImageOff, MapPin } from "lucide-react";
+import { Search, X, ImageOff, MapPin, Box } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -53,6 +53,15 @@ function ObjectDetailModal({ item, isOpen, onClose }: ObjectDetailModalProps) {
             </DialogDescription>
           </DialogHeader>
           
+          {item.idContenedor && (
+            <div className="flex items-center gap-2 text-foreground">
+              <Box className="w-5 h-5 text-primary" />
+              <span className="text-lg font-medium" data-testid={`detail-id-contenedor-${item.id}`}>
+                {item.idContenedor}
+              </span>
+            </div>
+          )}
+
           {item.location && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="w-5 h-5 text-primary" />
@@ -202,6 +211,11 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
                       <p className="text-sm font-medium truncate" title={item.name}>
                         {item.name}
                       </p>
+                      {item.idContenedor && (
+                        <p className="text-xs text-primary font-medium truncate" title={item.idContenedor}>
+                          {item.idContenedor}
+                        </p>
+                      )}
                       {item.location && (
                         <p className="text-xs text-muted-foreground truncate" title={item.location}>
                           {item.location}
