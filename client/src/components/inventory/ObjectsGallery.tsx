@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Search, X, ImageOff, MapPin, Box } from "lucide-react";
+import { useLocation } from "wouter";
+import { Search, X, ImageOff, MapPin, Box, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -88,6 +89,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
   const [selectedItem, setSelectedItem] = useState<Inventory | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const { currentCompanyId } = useCompany();
+  const [, setLocation] = useLocation();
 
   const { data: inventoryItems = [], isLoading } = useQuery<Inventory[]>({
     queryKey: ["/api/inventory", { companyId: currentCompanyId }],
@@ -130,6 +132,11 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
     }
   };
 
+  const handleAddObject = () => {
+    setIsOpen(false);
+    setLocation("/inventario?action=new");
+  };
+
   return (
     <>
       <div onClick={() => setIsOpen(true)}>
@@ -138,11 +145,22 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
 
       <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-[95vw] md:max-w-[900px] max-h-[95vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="text-xl">Galería de Objetos</DialogTitle>
-            <DialogDescription>
-              Busca y visualiza los objetos del inventario
-            </DialogDescription>
+          <DialogHeader className="flex flex-row items-start justify-between">
+            <div>
+              <DialogTitle className="text-xl">Galería de Objetos</DialogTitle>
+              <DialogDescription>
+                Busca y visualiza los objetos del inventario
+              </DialogDescription>
+            </div>
+            <Button
+              onClick={handleAddObject}
+              size="icon"
+              className="h-10 w-10 rounded-full shrink-0"
+              title="Añadir objeto"
+              data-testid="button-add-object-gallery"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
           </DialogHeader>
 
           <div className="relative">

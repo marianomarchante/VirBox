@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import { Plus, Edit, Trash2, Search, X, Upload, FileText, Image, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,6 +65,18 @@ export default function Inventory() {
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+
+  // Check URL params for action=new
+  const searchString = useSearch();
+  const [, setLocation] = useLocation();
+  
+  useEffect(() => {
+    const params = new URLSearchParams(searchString);
+    if (params.get("action") === "new") {
+      setIsModalOpen(true);
+      setLocation("/inventario", { replace: true });
+    }
+  }, [searchString, setLocation]);
   
   const { inventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory();
   const { data: productCategories } = useProductCategories();
