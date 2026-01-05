@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, Trash2, Check } from "lucide-react";
@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useEvents } from "@/hooks/use-events";
@@ -17,13 +18,13 @@ import { useCompany } from "@/contexts/CompanyContext";
 export function PastEventsModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
-  const [hasChecked, setHasChecked] = useState(false);
+  const hasCheckedRef = useRef(false);
   const { events, isLoading, deleteEvent, markAsRead } = useEvents();
   const { toast } = useToast();
   const { currentCompany } = useCompany();
 
-  const checkPastEvents = useCallback(() => {
-    if (isLoading || !events || !currentCompany || hasChecked) {
+  useEffect(() => {
+    if (hasCheckedRef.current || isLoading || !events || !currentCompany) {
       return;
     }
 
@@ -39,15 +40,8 @@ export function PastEventsModal() {
       setPastEvents(filteredPastEvents);
       setIsOpen(true);
     }
-    setHasChecked(true);
-  }, [events, isLoading, currentCompany, hasChecked]);
-
-  useEffect(() => {
-    if (!isLoading && events && currentCompany && !hasChecked) {
-      const timer = setTimeout(checkPastEvents, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, events, currentCompany, hasChecked, checkPastEvents]);
+    hasCheckedRef.current = true;
+  }, [events, isLoading, currentCompany]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
@@ -99,7 +93,7 @@ export function PastEventsModal() {
     }
   }, [markAsRead, pastEvents, toast]);
 
-  if (pastEvents.length === 0) {
+  if (!isOpen || pastEvents.length === 0) {
     return null;
   }
 
@@ -111,9 +105,9 @@ export function PastEventsModal() {
             <Calendar className="h-6 w-6 text-primary" />
             Eventos Pendientes
           </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-2">
+          <DialogDescription>
             Tienes {pastEvents.length} evento{pastEvents.length !== 1 ? 's' : ''} con fecha actual o anterior
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 mt-4">
