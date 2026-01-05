@@ -29,12 +29,6 @@ export default function Sidebar() {
   const { user, logout } = useAuthContext();
   const { currentCompany } = useCompany();
 
-  const navigationBeforeInventory = [
-    { name: "Estadísticas", href: "/", icon: BarChart3 },
-    { name: "Ingresos", href: "/ingresos", icon: TrendingUp },
-    { name: "Gastos", href: "/gastos", icon: TrendingDown },
-  ];
-
   const navigationAfterInventory = [
     { name: "Clientes", href: "/clientes", icon: Users },
     { name: "Proveedores", href: "/proveedores", icon: Truck },
@@ -46,8 +40,6 @@ export default function Sidebar() {
   ];
 
   const secondaryNav = [
-    { name: "Categorías de Ingresos", href: "/categorias-ingresos", icon: Tags },
-    { name: "Categorías de Gastos", href: "/categorias-gastos", icon: Tags },
     ...(user?.isAdmin ? [
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
     ] : []),
@@ -69,20 +61,52 @@ export default function Sidebar() {
       
       <nav className="flex-1 overflow-y-auto p-4">
         <div className="space-y-1">
-          {navigationBeforeInventory.map((item) => {
-            const isActive = location === item.href;
-            return (
-              <Link 
-                key={item.name}
-                href={item.href}
-                className={cn("sidebar-link", isActive && "active")}
-                data-testid={`nav-${item.name.toLowerCase()}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
+          <Link 
+            href="/"
+            className={cn("sidebar-link", location === "/" && "active")}
+            data-testid="nav-estadísticas"
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span>Estadísticas</span>
+          </Link>
+        </div>
+
+        <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
+          <Link 
+            href="/ingresos"
+            className={cn("sidebar-link", location === "/ingresos" && "active")}
+            data-testid="nav-ingresos"
+          >
+            <TrendingUp className="w-5 h-5" />
+            <span>Ingresos</span>
+          </Link>
+          <Link 
+            href="/categorias-ingresos"
+            className={cn("sidebar-link", location === "/categorias-ingresos" && "active")}
+            data-testid="nav-categorías-ingresos"
+          >
+            <Tags className="w-5 h-5" />
+            <span>Categorías de Ingresos</span>
+          </Link>
+        </div>
+
+        <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
+          <Link 
+            href="/gastos"
+            className={cn("sidebar-link", location === "/gastos" && "active")}
+            data-testid="nav-gastos"
+          >
+            <TrendingDown className="w-5 h-5" />
+            <span>Gastos</span>
+          </Link>
+          <Link 
+            href="/categorias-gastos"
+            className={cn("sidebar-link", location === "/categorias-gastos" && "active")}
+            data-testid="nav-categorías-gastos"
+          >
+            <Tags className="w-5 h-5" />
+            <span>Categorías de Gastos</span>
+          </Link>
         </div>
 
         <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
