@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Edit, Trash2, Search, X, Upload, FileText, Image } from "lucide-react";
+import { Plus, Edit, Trash2, Search, X, Upload, FileText, Image, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -680,41 +680,75 @@ export default function Inventory() {
                     <FormControl>
                       <div className="mt-2">
                         {!selectedImage ? (
-                          <div className="flex items-center gap-3">
+                          <div className="space-y-2">
                             <Input
-                              id="image"
+                              id="image-gallery"
                               type="file"
                               accept="image/*"
                               onChange={handleImageChange}
                               className="hidden"
                               data-testid="input-image-file"
                             />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => document.getElementById('image')?.click()}
-                              className="w-full"
-                              data-testid="button-upload-image"
-                            >
-                              <Upload className="w-4 h-4 mr-2" />
-                              Seleccionar imagen
-                            </Button>
+                            <Input
+                              id="image-camera"
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              onChange={handleImageChange}
+                              className="hidden"
+                              data-testid="input-camera-file"
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('image-gallery')?.click()}
+                                className="w-full"
+                                data-testid="button-upload-image"
+                              >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Galería
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => document.getElementById('image-camera')?.click()}
+                                className="w-full"
+                                data-testid="button-take-photo"
+                              >
+                                <Camera className="w-4 h-4 mr-2" />
+                                Cámara
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center">
+                              Selecciona desde galería o toma una foto
+                            </p>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-3 p-3 bg-muted rounded-md" data-testid="image-preview">
-                            <Image className="w-5 h-5 text-primary" />
-                            <span className="flex-1 text-sm truncate" data-testid="text-image-name">
-                              {selectedImage.name}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleRemoveImage}
-                              data-testid="button-remove-image"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3 p-3 bg-muted rounded-md" data-testid="image-preview">
+                              <Image className="w-5 h-5 text-primary" />
+                              <span className="flex-1 text-sm truncate" data-testid="text-image-name">
+                                {selectedImage.name}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleRemoveImage}
+                                data-testid="button-remove-image"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            {selectedImage.data && (
+                              <img 
+                                src={selectedImage.data} 
+                                alt="Vista previa" 
+                                className="w-full max-h-32 object-contain rounded-md border border-border"
+                                data-testid="image-thumbnail"
+                              />
+                            )}
                           </div>
                         )}
                       </div>
