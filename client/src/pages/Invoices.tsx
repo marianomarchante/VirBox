@@ -297,7 +297,8 @@ export default function Invoices() {
       doc.setFont('helvetica', 'bold');
       doc.text('FACTURA', pageWidth - 15, 20, { align: 'right' });
       doc.setFontSize(12);
-      doc.text(`${invoice.series}-${String(invoice.number).padStart(4, '0')}`, pageWidth - 15, 28, { align: 'right' });
+      const invoiceYear = invoice.year || new Date(invoice.date).getFullYear();
+      doc.text(`${invoice.series}-${invoiceYear}-${String(invoice.number).padStart(4, '0')}`, pageWidth - 15, 28, { align: 'right' });
       
       // Invoice details
       doc.setFontSize(10);
@@ -430,11 +431,11 @@ export default function Invoices() {
       }
       
       // Save
-      doc.save(`Factura_${invoice.series}-${invoice.number}.pdf`);
+      doc.save(`Factura_${invoice.series}-${invoiceYear}-${invoice.number}.pdf`);
       
       toast({
         title: "PDF generado",
-        description: `Factura ${invoice.series}-${invoice.number} descargada correctamente.`,
+        description: `Factura ${invoice.series}-${invoiceYear}-${invoice.number} descargada correctamente.`,
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -455,7 +456,8 @@ export default function Invoices() {
       const invoiceData = await response.json();
       
       // Generate Facturae 3.2.2 XML
-      const invoiceNumber = `${invoice.series}-${String(invoice.number).padStart(4, '0')}`;
+      const xmlYear = invoice.year || new Date(invoice.date).getFullYear();
+      const invoiceNumber = `${invoice.series}-${xmlYear}-${String(invoice.number).padStart(4, '0')}`;
       const invoiceDate = format(new Date(invoice.date), 'yyyy-MM-dd');
       
       // Escape XML special characters
@@ -618,7 +620,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Factura_${invoice.series}-${invoice.number}_Facturae.xml`;
+      a.download = `Factura_${invoice.series}-${xmlYear}-${invoice.number}_Facturae.xml`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -626,7 +628,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
       
       toast({
         title: "XML generado",
-        description: `Factura ${invoice.series}-${invoice.number} en formato Facturae 3.2.2 descargada.`,
+        description: `Factura ${invoice.series}-${xmlYear}-${invoice.number} en formato Facturae 3.2.2 descargada.`,
       });
     } catch (error) {
       console.error('Error generating XML:', error);
@@ -761,7 +763,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                           >
                             <td className="py-3 px-4">
                               <span className="text-sm font-mono font-medium">
-                                {invoice.series}-{String(invoice.number)}
+                                {invoice.series}-{invoice.year || new Date(invoice.date).getFullYear()}-{String(invoice.number).padStart(4, '0')}
                               </span>
                             </td>
                             <td className="py-3 px-4">

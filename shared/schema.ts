@@ -194,12 +194,26 @@ export const articles = pgTable("articles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Document Sequences (for yearly auto-reset numbering)
+export const documentSequences = pgTable("document_sequences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentType: varchar("document_type", { length: 20 }).notNull(), // 'invoice' | 'delivery_note'
+  companyId: varchar("company_id").notNull(),
+  series: varchar("series", { length: 10 }).notNull(),
+  year: integer("year").notNull(),
+  lastNumber: integer("last_number").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  unique("unique_document_sequence").on(table.documentType, table.companyId, table.series, table.year),
+]);
+
 // Delivery Notes (Albaranes)
 export const deliveryNotes = pgTable("delivery_notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull(),
   series: varchar("series", { length: 10 }).default("ALB"),
   number: integer("number").notNull(),
+  year: integer("year"), // Year for yearly sequential numbering (nullable for migration)
   date: timestamp("date").notNull(),
   clientId: varchar("client_id").notNull(),
   notes: text("notes"),
@@ -227,6 +241,7 @@ export const invoices = pgTable("invoices", {
   companyId: varchar("company_id").notNull(),
   series: varchar("series", { length: 10 }).default("FAC"),
   number: integer("number").notNull(),
+  year: integer("year"), // Year for yearly sequential numbering (nullable for migration)
   date: timestamp("date").notNull(),
   dueDate: timestamp("due_date"),
   clientId: varchar("client_id").notNull(),

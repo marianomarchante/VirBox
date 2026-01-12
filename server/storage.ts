@@ -164,7 +164,7 @@ export interface IStorage {
   updateDeliveryNote(id: string, companyId: string, deliveryNote: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
   deleteDeliveryNote(id: string, companyId: string): Promise<boolean>;
   getDeliveryNoteLines(deliveryNoteId: string): Promise<DeliveryNoteLine[]>;
-  getNextDeliveryNoteNumber(companyId: string, series: string): Promise<number>;
+  getNextDeliveryNoteNumber(companyId: string, series: string, year: number): Promise<number>;
 
   // Invoices
   getInvoices(companyId: string): Promise<Invoice[]>;
@@ -174,7 +174,7 @@ export interface IStorage {
   deleteInvoice(id: string, companyId: string): Promise<boolean>;
   getInvoiceLines(invoiceId: string): Promise<InvoiceLine[]>;
   getInvoiceVatBreakdown(invoiceId: string): Promise<InvoiceVatBreakdown[]>;
-  getNextInvoiceNumber(companyId: string, series: string): Promise<number>;
+  getNextInvoiceNumber(companyId: string, series: string, year: number): Promise<number>;
   updateInvoiceDocuments(id: string, companyId: string, pdfData: string | null, xmlData: string | null): Promise<Invoice | undefined>;
 }
 

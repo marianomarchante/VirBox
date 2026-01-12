@@ -273,7 +273,7 @@ export default function DeliveryNotes() {
                           >
                             <td className="py-3 px-4">
                               <span className="text-sm font-mono font-medium">
-                                {note.series}-{String(note.number)}
+                                {note.series}-{note.year || new Date(note.date).getFullYear()}-{String(note.number).padStart(4, '0')}
                               </span>
                             </td>
                             <td className="py-3 px-4">

@@ -1169,8 +1169,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const series = (req.query.series as string) || "ALB";
-    const nextNumber = await storage.getNextDeliveryNoteNumber(companyId, series);
-    res.json({ nextNumber, series });
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+    const nextNumber = await storage.getNextDeliveryNoteNumber(companyId, series, year);
+    res.json({ nextNumber, series, year });
   });
 
   app.get("/api/delivery-notes/:id", isAuthenticated, async (req: any, res) => {
@@ -1269,8 +1270,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const series = (req.query.series as string) || "FAC";
-    const nextNumber = await storage.getNextInvoiceNumber(companyId, series);
-    res.json({ nextNumber, series });
+    const year = parseInt(req.query.year as string) || new Date().getFullYear();
+    const nextNumber = await storage.getNextInvoiceNumber(companyId, series, year);
+    res.json({ nextNumber, series, year });
   });
 
   app.get("/api/invoices/:id", isAuthenticated, async (req: any, res) => {
