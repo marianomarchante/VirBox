@@ -431,11 +431,12 @@ export default function Invoices() {
       }
       
       // Save
-      doc.save(`Factura_${invoice.series}-${invoiceYear}-${invoice.number}.pdf`);
+      const paddedNumber = String(invoice.number).padStart(4, '0');
+      doc.save(`Factura_${invoice.series}-${invoiceYear}-${paddedNumber}.pdf`);
       
       toast({
         title: "PDF generado",
-        description: `Factura ${invoice.series}-${invoiceYear}-${invoice.number} descargada correctamente.`,
+        description: `Factura ${invoice.series}-${invoiceYear}-${paddedNumber} descargada correctamente.`,
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -620,7 +621,8 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Factura_${invoice.series}-${xmlYear}-${invoice.number}_Facturae.xml`;
+      const xmlPaddedNumber = String(invoice.number).padStart(4, '0');
+      a.download = `Factura_${invoice.series}-${xmlYear}-${xmlPaddedNumber}_Facturae.xml`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -628,7 +630,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
       
       toast({
         title: "XML generado",
-        description: `Factura ${invoice.series}-${xmlYear}-${invoice.number} en formato Facturae 3.2.2 descargada.`,
+        description: `Factura ${invoice.series}-${xmlYear}-${xmlPaddedNumber} en formato Facturae 3.2.2 descargada.`,
       });
     } catch (error) {
       console.error('Error generating XML:', error);
