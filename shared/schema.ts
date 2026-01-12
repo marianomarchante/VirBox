@@ -170,6 +170,100 @@ export const events = pgTable("events", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Articles/Products table for invoicing
+export const articles = pgTable("articles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  code: varchar("code", { length: 50 }).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  vatRate: decimal("vat_rate", { precision: 5, scale: 2 }).notNull().default("21.00"),
+  unitOfMeasure: text("unit_of_measure").default("unidad"),
+  categoryId: varchar("category_id"),
+  stock: decimal("stock", { precision: 10, scale: 2 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Delivery Notes (Albaranes)
+export const deliveryNotes = pgTable("delivery_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  series: varchar("series", { length: 10 }).default("ALB"),
+  number: integer("number").notNull(),
+  date: timestamp("date").notNull(),
+  clientId: varchar("client_id").notNull(),
+  notes: text("notes"),
+  status: text("status").default("pending").notNull(),
+  invoiceId: varchar("invoice_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Delivery Note Lines
+export const deliveryNoteLines = pgTable("delivery_note_lines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  deliveryNoteId: varchar("delivery_note_id").notNull(),
+  articleId: varchar("article_id"),
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  vatRate: decimal("vat_rate", { precision: 5, scale: 2 }).notNull(),
+  lineOrder: integer("line_order").default(0),
+});
+
+// Invoices (Facturas)
+export const invoices = pgTable("invoices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  series: varchar("series", { length: 10 }).default("FAC"),
+  number: integer("number").notNull(),
+  date: timestamp("date").notNull(),
+  dueDate: timestamp("due_date"),
+  clientId: varchar("client_id").notNull(),
+  clientName: text("client_name").notNull(),
+  clientIdFiscal: varchar("client_id_fiscal", { length: 20 }),
+  clientAddress: text("client_address"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  totalVat: decimal("total_vat", { precision: 10, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  paymentMethod: text("payment_method").default("transferencia"),
+  paymentTerms: text("payment_terms"),
+  iban: varchar("iban", { length: 34 }),
+  notes: text("notes"),
+  status: text("status").default("draft").notNull(),
+  pdfData: text("pdf_data"),
+  xmlData: text("xml_data"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Invoice Lines
+export const invoiceLines = pgTable("invoice_lines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").notNull(),
+  articleId: varchar("article_id"),
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  vatRate: decimal("vat_rate", { precision: 5, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  vatAmount: decimal("vat_amount", { precision: 10, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  lineOrder: integer("line_order").default(0),
+});
+
+// Invoice VAT Breakdown
+export const invoiceVatBreakdown = pgTable("invoice_vat_breakdown", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").notNull(),
+  vatRate: decimal("vat_rate", { precision: 5, scale: 2 }).notNull(),
+  taxableBase: decimal("taxable_base", { precision: 10, scale: 2 }).notNull(),
+  vatAmount: decimal("vat_amount", { precision: 10, scale: 2 }).notNull(),
+});
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -254,6 +348,74 @@ export const insertEventSchema = createInsertSchema(events).omit({
   date: z.coerce.date(),
 });
 
+// Article schemas
+export const insertArticleSchema = createInsertSchema(articles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  companyId: z.string().optional(),
+  unitPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
+  vatRate: z.union([z.string(), z.number()]).transform(val => String(val)).default("21.00"),
+  stock: z.union([z.string(), z.number(), z.null()]).transform(val => val === null ? null : String(val)).optional(),
+});
+
+// Delivery Note schemas
+export const insertDeliveryNoteSchema = createInsertSchema(deliveryNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  invoiceId: true,
+}).extend({
+  companyId: z.string().optional(),
+  date: z.coerce.date(),
+  status: z.enum(["pending", "invoiced"]).default("pending"),
+});
+
+export const insertDeliveryNoteLineSchema = createInsertSchema(deliveryNoteLines).omit({
+  id: true,
+}).extend({
+  quantity: z.union([z.string(), z.number()]).transform(val => String(val)),
+  unitPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
+  vatRate: z.union([z.string(), z.number()]).transform(val => String(val)),
+});
+
+// Invoice schemas
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  pdfData: true,
+  xmlData: true,
+}).extend({
+  companyId: z.string().optional(),
+  date: z.coerce.date(),
+  dueDate: z.coerce.date().optional().nullable(),
+  subtotal: z.union([z.string(), z.number()]).transform(val => String(val)),
+  totalVat: z.union([z.string(), z.number()]).transform(val => String(val)),
+  total: z.union([z.string(), z.number()]).transform(val => String(val)),
+  status: z.enum(["draft", "issued", "paid", "cancelled"]).default("draft"),
+});
+
+export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).omit({
+  id: true,
+}).extend({
+  quantity: z.union([z.string(), z.number()]).transform(val => String(val)),
+  unitPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
+  vatRate: z.union([z.string(), z.number()]).transform(val => String(val)),
+  subtotal: z.union([z.string(), z.number()]).transform(val => String(val)),
+  vatAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
+  total: z.union([z.string(), z.number()]).transform(val => String(val)),
+});
+
+export const insertInvoiceVatBreakdownSchema = createInsertSchema(invoiceVatBreakdown).omit({
+  id: true,
+}).extend({
+  vatRate: z.union([z.string(), z.number()]).transform(val => String(val)),
+  taxableBase: z.union([z.string(), z.number()]).transform(val => String(val)),
+  vatAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
+});
+
 // Types
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
@@ -287,6 +449,24 @@ export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 
 export type Event = typeof events.$inferSelect;
 export type InsertEvent = z.infer<typeof insertEventSchema>;
+
+// Article types
+export type Article = typeof articles.$inferSelect;
+export type InsertArticle = z.infer<typeof insertArticleSchema>;
+
+// Delivery Note types
+export type DeliveryNote = typeof deliveryNotes.$inferSelect;
+export type InsertDeliveryNote = z.infer<typeof insertDeliveryNoteSchema>;
+export type DeliveryNoteLine = typeof deliveryNoteLines.$inferSelect;
+export type InsertDeliveryNoteLine = z.infer<typeof insertDeliveryNoteLineSchema>;
+
+// Invoice types
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type InvoiceLine = typeof invoiceLines.$inferSelect;
+export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;
+export type InvoiceVatBreakdown = typeof invoiceVatBreakdown.$inferSelect;
+export type InsertInvoiceVatBreakdown = z.infer<typeof insertInvoiceVatBreakdownSchema>;
 
 // User schemas
 export type UpsertUser = typeof users.$inferInsert;

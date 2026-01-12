@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sql, ilike, or, inArray } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, ilike, or, inArray, desc, max } from 'drizzle-orm';
 import { db } from './db';
 import {
   users,
@@ -14,6 +14,12 @@ import {
   documentCategories,
   documents,
   events,
+  articles,
+  deliveryNotes,
+  deliveryNoteLines,
+  invoices,
+  invoiceLines,
+  invoiceVatBreakdown,
   type User,
   type UpsertUser,
   type UserCompanyPermission,
@@ -39,7 +45,19 @@ import {
   type Document,
   type InsertDocument,
   type Event,
-  type InsertEvent
+  type InsertEvent,
+  type Article,
+  type InsertArticle,
+  type DeliveryNote,
+  type InsertDeliveryNote,
+  type DeliveryNoteLine,
+  type InsertDeliveryNoteLine,
+  type Invoice,
+  type InsertInvoice,
+  type InvoiceLine,
+  type InsertInvoiceLine,
+  type InvoiceVatBreakdown,
+  type InsertInvoiceVatBreakdown
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
@@ -747,5 +765,200 @@ export class PostgresStorage implements IStorage {
     }
 
     return data;
+  }
+
+  // Articles
+  async getArticles(companyId: string): Promise<Article[]> {
+    return await db.select().from(articles)
+      .where(eq(articles.companyId, companyId))
+      .orderBy(articles.name);
+  }
+
+  async getArticle(id: string, companyId: string): Promise<Article | undefined> {
+    const result = await db.select().from(articles)
+      .where(and(eq(articles.id, id), eq(articles.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createArticle(insertArticle: InsertArticle): Promise<Article> {
+    const companyId = insertArticle.companyId || await this.getDefaultCompanyId();
+    const result = await db.insert(articles).values({
+      ...insertArticle,
+      companyId,
+    }).returning();
+    return result[0];
+  }
+
+  async updateArticle(id: string, companyId: string, update: Partial<InsertArticle>): Promise<Article | undefined> {
+    const result = await db.update(articles)
+      .set({ ...update, updatedAt: new Date() })
+      .where(and(eq(articles.id, id), eq(articles.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteArticle(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(articles)
+      .where(and(eq(articles.id, id), eq(articles.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Delivery Notes
+  async getDeliveryNotes(companyId: string): Promise<DeliveryNote[]> {
+    return await db.select().from(deliveryNotes)
+      .where(eq(deliveryNotes.companyId, companyId))
+      .orderBy(desc(deliveryNotes.date));
+  }
+
+  async getDeliveryNote(id: string, companyId: string): Promise<DeliveryNote | undefined> {
+    const result = await db.select().from(deliveryNotes)
+      .where(and(eq(deliveryNotes.id, id), eq(deliveryNotes.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createDeliveryNote(insertDeliveryNote: InsertDeliveryNote, lines: InsertDeliveryNoteLine[]): Promise<DeliveryNote> {
+    const companyId = insertDeliveryNote.companyId || await this.getDefaultCompanyId();
+    const result = await db.insert(deliveryNotes).values({
+      ...insertDeliveryNote,
+      companyId,
+    }).returning();
+    
+    const deliveryNote = result[0];
+    
+    if (lines.length > 0) {
+      const linesWithId = lines.map((line, index) => ({
+        ...line,
+        deliveryNoteId: deliveryNote.id,
+        lineOrder: index,
+      }));
+      await db.insert(deliveryNoteLines).values(linesWithId);
+    }
+    
+    return deliveryNote;
+  }
+
+  async updateDeliveryNote(id: string, companyId: string, update: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined> {
+    const result = await db.update(deliveryNotes)
+      .set({ ...update, updatedAt: new Date() })
+      .where(and(eq(deliveryNotes.id, id), eq(deliveryNotes.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDeliveryNote(id: string, companyId: string): Promise<boolean> {
+    await db.delete(deliveryNoteLines).where(eq(deliveryNoteLines.deliveryNoteId, id));
+    const result = await db.delete(deliveryNotes)
+      .where(and(eq(deliveryNotes.id, id), eq(deliveryNotes.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getDeliveryNoteLines(deliveryNoteId: string): Promise<DeliveryNoteLine[]> {
+    return await db.select().from(deliveryNoteLines)
+      .where(eq(deliveryNoteLines.deliveryNoteId, deliveryNoteId))
+      .orderBy(deliveryNoteLines.lineOrder);
+  }
+
+  async getNextDeliveryNoteNumber(companyId: string, series: string): Promise<number> {
+    const result = await db.select({ maxNumber: max(deliveryNotes.number) })
+      .from(deliveryNotes)
+      .where(and(
+        eq(deliveryNotes.companyId, companyId),
+        eq(deliveryNotes.series, series)
+      ));
+    return (result[0]?.maxNumber || 0) + 1;
+  }
+
+  // Invoices
+  async getInvoices(companyId: string): Promise<Invoice[]> {
+    return await db.select().from(invoices)
+      .where(eq(invoices.companyId, companyId))
+      .orderBy(desc(invoices.date));
+  }
+
+  async getInvoice(id: string, companyId: string): Promise<Invoice | undefined> {
+    const result = await db.select().from(invoices)
+      .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createInvoice(
+    insertInvoice: InsertInvoice, 
+    lines: InsertInvoiceLine[], 
+    vatBreakdownItems: InsertInvoiceVatBreakdown[]
+  ): Promise<Invoice> {
+    const companyId = insertInvoice.companyId || await this.getDefaultCompanyId();
+    const result = await db.insert(invoices).values({
+      ...insertInvoice,
+      companyId,
+    }).returning();
+    
+    const invoice = result[0];
+    
+    if (lines.length > 0) {
+      const linesWithId = lines.map((line, index) => ({
+        ...line,
+        invoiceId: invoice.id,
+        lineOrder: index,
+      }));
+      await db.insert(invoiceLines).values(linesWithId);
+    }
+    
+    if (vatBreakdownItems.length > 0) {
+      const breakdownWithId = vatBreakdownItems.map(item => ({
+        ...item,
+        invoiceId: invoice.id,
+      }));
+      await db.insert(invoiceVatBreakdown).values(breakdownWithId);
+    }
+    
+    return invoice;
+  }
+
+  async updateInvoice(id: string, companyId: string, update: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+    const result = await db.update(invoices)
+      .set({ ...update, updatedAt: new Date() })
+      .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteInvoice(id: string, companyId: string): Promise<boolean> {
+    await db.delete(invoiceLines).where(eq(invoiceLines.invoiceId, id));
+    await db.delete(invoiceVatBreakdown).where(eq(invoiceVatBreakdown.invoiceId, id));
+    const result = await db.delete(invoices)
+      .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getInvoiceLines(invoiceId: string): Promise<InvoiceLine[]> {
+    return await db.select().from(invoiceLines)
+      .where(eq(invoiceLines.invoiceId, invoiceId))
+      .orderBy(invoiceLines.lineOrder);
+  }
+
+  async getInvoiceVatBreakdown(invoiceId: string): Promise<InvoiceVatBreakdown[]> {
+    return await db.select().from(invoiceVatBreakdown)
+      .where(eq(invoiceVatBreakdown.invoiceId, invoiceId));
+  }
+
+  async getNextInvoiceNumber(companyId: string, series: string): Promise<number> {
+    const result = await db.select({ maxNumber: max(invoices.number) })
+      .from(invoices)
+      .where(and(
+        eq(invoices.companyId, companyId),
+        eq(invoices.series, series)
+      ));
+    return (result[0]?.maxNumber || 0) + 1;
+  }
+
+  async updateInvoiceDocuments(id: string, companyId: string, pdfData: string | null, xmlData: string | null): Promise<Invoice | undefined> {
+    const result = await db.update(invoices)
+      .set({ pdfData, xmlData, updatedAt: new Date() })
+      .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)))
+      .returning();
+    return result[0];
   }
 }

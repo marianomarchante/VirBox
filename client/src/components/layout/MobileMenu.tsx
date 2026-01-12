@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, UserCog, HelpCircle, LogOut, CalendarDays, Images } from "lucide-react";
+import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, UserCog, HelpCircle, LogOut, CalendarDays, Images, ShoppingBag, ClipboardList, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -159,6 +159,36 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                 </button>
               }
             />
+          </div>
+
+          <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
+            <Link 
+              href="/articulos"
+              className={cn("sidebar-link", location === "/articulos" && "active")}
+              onClick={onClose}
+              data-testid="mobile-nav-articulos"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              <span>Artículos</span>
+            </Link>
+            <Link 
+              href="/albaranes"
+              className={cn("sidebar-link", location === "/albaranes" && "active")}
+              onClick={onClose}
+              data-testid="mobile-nav-albaranes"
+            >
+              <ClipboardList className="w-5 h-5" />
+              <span>Albaranes</span>
+            </Link>
+            <Link 
+              href="/facturas"
+              className={cn("sidebar-link", location === "/facturas" && "active")}
+              onClick={onClose}
+              data-testid="mobile-nav-facturas"
+            >
+              <Receipt className="w-5 h-5" />
+              <span>Facturas</span>
+            </Link>
           </div>
 
           <div className="space-y-1">

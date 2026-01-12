@@ -25,6 +25,9 @@ import DocumentManagement from "@/pages/DocumentManagement";
 import Companies from "@/pages/Companies";
 import UserManagement from "@/pages/UserManagement";
 import Landing from "@/pages/Landing";
+import Articles from "@/pages/Articles";
+import DeliveryNotes from "@/pages/DeliveryNotes";
+import Invoices from "@/pages/Invoices";
 
 function Router() {
   return (
@@ -44,6 +47,9 @@ function Router() {
       <Route path="/gestion-documental" component={DocumentManagement} />
       <Route path="/empresas" component={Companies} />
       <Route path="/usuarios" component={UserManagement} />
+      <Route path="/articulos" component={Articles} />
+      <Route path="/albaranes" component={DeliveryNotes} />
+      <Route path="/facturas" component={Invoices} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -14,7 +14,13 @@ import {
   insertEventSchema,
   insertCompanySchema,
   insertUserCompanyPermissionSchema,
-  transactionFilterSchema 
+  transactionFilterSchema,
+  insertArticleSchema,
+  insertDeliveryNoteSchema,
+  insertDeliveryNoteLineSchema,
+  insertInvoiceSchema,
+  insertInvoiceLineSchema,
+  insertInvoiceVatBreakdownSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -1060,6 +1066,310 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const data = await storage.getMonthlyData(companyId);
     res.json(data);
+  });
+
+  // Articles routes
+  app.get("/api/articles", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const articles = await storage.getArticles(companyId);
+    res.json(articles);
+  });
+
+  app.get("/api/articles/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const article = await storage.getArticle(req.params.id, companyId);
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    res.json(article);
+  });
+
+  app.post("/api/articles", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const validatedData = insertArticleSchema.parse(req.body);
+      const article = await storage.createArticle({
+        ...validatedData,
+        companyId
+      });
+      res.status(201).json(article);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid article data", errors: error.errors });
+      } else {
+        console.error("Error creating article:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.put("/api/articles/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const validatedData = insertArticleSchema.partial().parse(req.body);
+      const article = await storage.updateArticle(req.params.id, companyId, validatedData);
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      res.json(article);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid article data", errors: error.errors });
+      } else {
+        console.error("Error updating article:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.delete("/api/articles/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
+    const success = await storage.deleteArticle(req.params.id, companyId);
+    if (!success) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    res.status(204).send();
+  });
+
+  // Delivery Notes routes
+  app.get("/api/delivery-notes", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const deliveryNotes = await storage.getDeliveryNotes(companyId);
+    res.json(deliveryNotes);
+  });
+
+  app.get("/api/delivery-notes/next-number", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const series = (req.query.series as string) || "ALB";
+    const nextNumber = await storage.getNextDeliveryNoteNumber(companyId, series);
+    res.json({ nextNumber, series });
+  });
+
+  app.get("/api/delivery-notes/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const deliveryNote = await storage.getDeliveryNote(req.params.id, companyId);
+    if (!deliveryNote) {
+      return res.status(404).json({ message: "Delivery note not found" });
+    }
+    
+    const lines = await storage.getDeliveryNoteLines(req.params.id);
+    res.json({ ...deliveryNote, lines });
+  });
+
+  app.post("/api/delivery-notes", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const { lines, ...deliveryNoteData } = req.body;
+      const validatedData = insertDeliveryNoteSchema.parse(deliveryNoteData);
+      const validatedLines = z.array(insertDeliveryNoteLineSchema).parse(lines || []);
+      
+      const deliveryNote = await storage.createDeliveryNote({
+        ...validatedData,
+        companyId
+      }, validatedLines);
+      
+      res.status(201).json(deliveryNote);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid delivery note data", errors: error.errors });
+      } else {
+        console.error("Error creating delivery note:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.put("/api/delivery-notes/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const validatedData = insertDeliveryNoteSchema.partial().parse(req.body);
+      const deliveryNote = await storage.updateDeliveryNote(req.params.id, companyId, validatedData);
+      if (!deliveryNote) {
+        return res.status(404).json({ message: "Delivery note not found" });
+      }
+      res.json(deliveryNote);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid delivery note data", errors: error.errors });
+      } else {
+        console.error("Error updating delivery note:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.delete("/api/delivery-notes/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
+    const success = await storage.deleteDeliveryNote(req.params.id, companyId);
+    if (!success) {
+      return res.status(404).json({ message: "Delivery note not found" });
+    }
+    res.status(204).send();
+  });
+
+  // Invoices routes
+  app.get("/api/invoices", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const invoices = await storage.getInvoices(companyId);
+    res.json(invoices);
+  });
+
+  app.get("/api/invoices/next-number", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const series = (req.query.series as string) || "FAC";
+    const nextNumber = await storage.getNextInvoiceNumber(companyId, series);
+    res.json({ nextNumber, series });
+  });
+
+  app.get("/api/invoices/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req);
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: No access to this company" });
+    }
+
+    const invoice = await storage.getInvoice(req.params.id, companyId);
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+    
+    const lines = await storage.getInvoiceLines(req.params.id);
+    const vatBreakdown = await storage.getInvoiceVatBreakdown(req.params.id);
+    res.json({ ...invoice, lines, vatBreakdown });
+  });
+
+  app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const { lines, vatBreakdown, ...invoiceData } = req.body;
+      const validatedData = insertInvoiceSchema.parse(invoiceData);
+      const validatedLines = z.array(insertInvoiceLineSchema).parse(lines || []);
+      const validatedVatBreakdown = z.array(insertInvoiceVatBreakdownSchema).parse(vatBreakdown || []);
+      
+      const invoice = await storage.createInvoice({
+        ...validatedData,
+        companyId
+      }, validatedLines, validatedVatBreakdown);
+      
+      res.status(201).json(invoice);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid invoice data", errors: error.errors });
+      } else {
+        console.error("Error creating invoice:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.put("/api/invoices/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const validatedData = insertInvoiceSchema.partial().parse(req.body);
+      const invoice = await storage.updateInvoice(req.params.id, companyId, validatedData);
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid invoice data", errors: error.errors });
+      } else {
+        console.error("Error updating invoice:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.patch("/api/invoices/:id/documents", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const { pdfData, xmlData } = req.body;
+      const invoice = await storage.updateInvoiceDocuments(req.params.id, companyId, pdfData, xmlData);
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      console.error("Error updating invoice documents:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/invoices/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
+    const success = await storage.deleteInvoice(req.params.id, companyId);
+    if (!success) {
+      return res.status(404).json({ message: "Invoice not found" });
+    }
+    res.status(204).send();
   });
 
   const httpServer = createServer(app);

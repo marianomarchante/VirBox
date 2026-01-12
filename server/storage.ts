@@ -24,7 +24,19 @@ import {
   type User,
   type UpsertUser,
   type UserCompanyPermission,
-  type InsertUserCompanyPermission
+  type InsertUserCompanyPermission,
+  type Article,
+  type InsertArticle,
+  type DeliveryNote,
+  type InsertDeliveryNote,
+  type DeliveryNoteLine,
+  type InsertDeliveryNoteLine,
+  type Invoice,
+  type InsertInvoice,
+  type InvoiceLine,
+  type InsertInvoiceLine,
+  type InvoiceVatBreakdown,
+  type InsertInvoiceVatBreakdown
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -137,6 +149,33 @@ export interface IStorage {
     income: number;
     expenses: number;
   }[]>;
+
+  // Articles
+  getArticles(companyId: string): Promise<Article[]>;
+  getArticle(id: string, companyId: string): Promise<Article | undefined>;
+  createArticle(article: InsertArticle): Promise<Article>;
+  updateArticle(id: string, companyId: string, article: Partial<InsertArticle>): Promise<Article | undefined>;
+  deleteArticle(id: string, companyId: string): Promise<boolean>;
+
+  // Delivery Notes
+  getDeliveryNotes(companyId: string): Promise<DeliveryNote[]>;
+  getDeliveryNote(id: string, companyId: string): Promise<DeliveryNote | undefined>;
+  createDeliveryNote(deliveryNote: InsertDeliveryNote, lines: InsertDeliveryNoteLine[]): Promise<DeliveryNote>;
+  updateDeliveryNote(id: string, companyId: string, deliveryNote: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined>;
+  deleteDeliveryNote(id: string, companyId: string): Promise<boolean>;
+  getDeliveryNoteLines(deliveryNoteId: string): Promise<DeliveryNoteLine[]>;
+  getNextDeliveryNoteNumber(companyId: string, series: string): Promise<number>;
+
+  // Invoices
+  getInvoices(companyId: string): Promise<Invoice[]>;
+  getInvoice(id: string, companyId: string): Promise<Invoice | undefined>;
+  createInvoice(invoice: InsertInvoice, lines: InsertInvoiceLine[], vatBreakdown: InsertInvoiceVatBreakdown[]): Promise<Invoice>;
+  updateInvoice(id: string, companyId: string, invoice: Partial<InsertInvoice>): Promise<Invoice | undefined>;
+  deleteInvoice(id: string, companyId: string): Promise<boolean>;
+  getInvoiceLines(invoiceId: string): Promise<InvoiceLine[]>;
+  getInvoiceVatBreakdown(invoiceId: string): Promise<InvoiceVatBreakdown[]>;
+  getNextInvoiceNumber(companyId: string, series: string): Promise<number>;
+  updateInvoiceDocuments(id: string, companyId: string, pdfData: string | null, xmlData: string | null): Promise<Invoice | undefined>;
 }
 
 export class MemStorage implements IStorage {
