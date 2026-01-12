@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, ClipboardList, FileText, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, ClipboardList, FileText, Eye, Printer } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +51,8 @@ export default function DeliveryNotes() {
   const { deliveryNotes, createDeliveryNote, updateDeliveryNote, deleteDeliveryNote, isLoading } = useDeliveryNotes();
   const { articles } = useArticles();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
-  const { currentCompanyId } = useCompany();
+  const { currentCompanyId, currentCompany } = useCompany();
+  const { toast } = useToast();
 
   const { data: clients } = useQuery<{ id: string; name: string; nif: string }[]>({
     queryKey: ['/api/clients', { companyId: currentCompanyId }],
@@ -138,6 +142,154 @@ export default function DeliveryNotes() {
   const handleDelete = (noteId: string) => {
     if (window.confirm('¿Está seguro de que desea eliminar este albarán?')) {
       deleteDeliveryNote.mutate(noteId);
+    }
+  };
+
+  const handleGeneratePDF = async (note: DeliveryNote) => {
+    try {
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const response = await fetch(`/api/delivery-notes/${note.id}?${params.toString()}`, { credentials: 'include' });
+      const noteData = await response.json();
+      
+      const client = clients?.find(c => c.id === note.clientId);
+      
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header with company name
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(currentCompany?.name || 'Empresa', 15, 15);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      let companyY = 22;
+      if (currentCompany?.taxId) {
+        doc.text(`NIF/CIF: ${currentCompany.taxId}`, 15, companyY);
+        companyY += 6;
+      }
+      if (currentCompany?.address) {
+        doc.text(currentCompany.address, 15, companyY);
+        companyY += 6;
+      }
+      const companyLocation = [
+        currentCompany?.postalCode,
+        currentCompany?.town,
+        currentCompany?.province ? `(${currentCompany.province})` : null
+      ].filter(Boolean).join(' ');
+      if (companyLocation) {
+        doc.text(companyLocation, 15, companyY);
+        companyY += 6;
+      }
+      if (currentCompany?.phone) {
+        doc.text(`Tel: ${currentCompany.phone}`, 15, companyY);
+        companyY += 6;
+      }
+      if (currentCompany?.email) {
+        doc.text(currentCompany.email, 15, companyY);
+      }
+      
+      // Delivery note title and number (right side)
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ALBARÁN', pageWidth - 15, 20, { align: 'right' });
+      doc.setFontSize(12);
+      const noteYear = note.year || new Date(note.date).getFullYear();
+      doc.text(`${note.series}-${noteYear}-${String(note.number).padStart(4, '0')}`, pageWidth - 15, 28, { align: 'right' });
+      
+      // Note date
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Fecha: ${format(new Date(note.date), 'dd/MM/yyyy')}`, pageWidth - 15, 38, { align: 'right' });
+      
+      // Separator line
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, 50, pageWidth - 15, 50);
+      
+      // Client info
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('DATOS DEL CLIENTE', 15, 60);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(client?.name || 'Sin cliente', 15, 67);
+      if (client?.nif) {
+        doc.text(`NIF/CIF: ${client.nif}`, 15, 73);
+      }
+      
+      // Lines table
+      const tableData = (noteData.lines || []).map((line: any) => {
+        const qty = parseFloat(line.quantity) || 0;
+        const price = parseFloat(line.unitPrice) || 0;
+        const subtotal = qty * price;
+        return [
+          line.description || '',
+          qty.toFixed(2),
+          price.toFixed(2) + ' €',
+          subtotal.toFixed(2) + ' €'
+        ];
+      });
+      
+      autoTable(doc, {
+        startY: 85,
+        head: [['Descripción', 'Cantidad', 'Precio Unitario', 'Subtotal']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [66, 139, 202], fontSize: 9 },
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 90 },
+          1: { cellWidth: 25, halign: 'right' as const },
+          2: { cellWidth: 35, halign: 'right' as const },
+          3: { cellWidth: 30, halign: 'right' as const },
+        },
+      });
+      
+      // Total
+      const totalAmount = (noteData.lines || []).reduce((sum: number, line: any) => {
+        const qty = parseFloat(line.quantity) || 0;
+        const price = parseFloat(line.unitPrice) || 0;
+        return sum + (qty * price);
+      }, 0);
+      
+      const afterLinesY = (doc as any).lastAutoTable.finalY + 10;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('TOTAL:', 130, afterLinesY);
+      doc.text(`${totalAmount.toFixed(2)} €`, pageWidth - 15, afterLinesY, { align: 'right' });
+      
+      // Notes
+      if (note.notes) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('OBSERVACIONES', 15, afterLinesY + 15);
+        doc.setFont('helvetica', 'normal');
+        doc.text(note.notes, 15, afterLinesY + 21);
+      }
+      
+      // Signature area
+      const signatureY = afterLinesY + 45;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Recibí conforme:', 15, signatureY);
+      doc.line(15, signatureY + 20, 80, signatureY + 20);
+      doc.text('Firma', 40, signatureY + 26);
+      
+      // Save
+      const paddedNumber = String(note.number).padStart(4, '0');
+      doc.save(`Albaran_${note.series}-${noteYear}-${paddedNumber}.pdf`);
+      
+      toast({
+        title: "PDF generado",
+        description: `Albarán ${note.series}-${noteYear}-${paddedNumber} descargado correctamente.`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el PDF.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -305,9 +457,11 @@ export default function DeliveryNotes() {
                                 <Button 
                                   size="sm" 
                                   variant="ghost"
-                                  data-testid={`view-delivery-note-${note.id}`}
+                                  onClick={() => handleGeneratePDF(note)}
+                                  title="Imprimir PDF"
+                                  data-testid={`print-delivery-note-${note.id}`}
                                 >
-                                  <Eye className="w-4 h-4" />
+                                  <Printer className="w-4 h-4" />
                                 </Button>
                                 <Button 
                                   size="sm" 
