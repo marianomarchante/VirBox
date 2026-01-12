@@ -1408,6 +1408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create invoice
       const invoice = await storage.createInvoice({
         ...invoiceData,
+        date: invoiceDate,
         companyId,
         clientId,
         series,
