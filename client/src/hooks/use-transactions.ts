@@ -62,14 +62,14 @@ export function useTransactions(filter?: TransactionFilter) {
         exact: false
       });
       toast({
-        title: "Transacción creada",
-        description: "La transacción se ha registrado correctamente.",
+        title: "Operación creada",
+        description: "La operación se ha registrado correctamente.",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo crear la transacción. Intenta nuevamente.",
+        description: "No se pudo crear la operación. Intenta nuevamente.",
         variant: "destructive",
       });
     },
@@ -94,14 +94,14 @@ export function useTransactions(filter?: TransactionFilter) {
         exact: false
       });
       toast({
-        title: "Transacción actualizada",
+        title: "Operación actualizada",
         description: "Los cambios se han guardado correctamente.",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo actualizar la transacción.",
+        description: "No se pudo actualizar la operación.",
         variant: "destructive",
       });
     },
@@ -127,14 +127,14 @@ export function useTransactions(filter?: TransactionFilter) {
         exact: false
       });
       toast({
-        title: "Transacción eliminada",
-        description: "La transacción se ha eliminado correctamente.",
+        title: "Operación eliminada",
+        description: "La operación se ha eliminado correctamente.",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "No se pudo eliminar la transacción.",
+        description: "No se pudo eliminar la operación.",
         variant: "destructive",
       });
     },

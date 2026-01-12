@@ -180,13 +180,13 @@ export default function TransactionModal({
       setSelectedPdf(null);
       onClose();
       toast({
-        title: "Transacción creada",
-        description: "La transacción se ha registrado correctamente.",
+        title: "Operación creada",
+        description: "La operación se ha registrado correctamente.",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudo crear la transacción. Intenta nuevamente.",
+        description: "No se pudo crear la operación. Intenta nuevamente.",
         variant: "destructive",
       });
     }
@@ -206,13 +206,13 @@ export default function TransactionModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === 'edit' ? 'Editar Transacción' : 'Nueva Transacción'}</DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Editar Operación' : 'Nueva Operación'}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6" data-testid="transaction-form">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="type">Tipo de Transacción</Label>
+              <Label htmlFor="type">Tipo de Operación</Label>
               <Select 
                 onValueChange={handleTypeChange} 
                 value={transactionType}
@@ -334,7 +334,7 @@ export default function TransactionModal({
             <Label htmlFor="notes">Notas adicionales (opcional)</Label>
             <Textarea
               rows={3}
-              placeholder="Detalles adicionales sobre la transacción..."
+              placeholder="Detalles adicionales sobre la operación..."
               className="resize-none"
               {...form.register("notes")}
               data-testid="textarea-notes"
@@ -388,7 +388,7 @@ export default function TransactionModal({
           <div className="flex items-center gap-3 pt-6 border-t border-border">
             <Button type="submit" className="flex-1" data-testid="button-save-transaction">
               <Save className="w-4 h-4 mr-2" />
-              Guardar Transacción
+              Guardar Operación
             </Button>
             <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel-transaction">
               Cancelar
