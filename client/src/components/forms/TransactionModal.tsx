@@ -13,8 +13,12 @@ import { insertTransactionSchema, type InsertTransaction } from "@shared/schema"
 import { useToast } from "@/hooks/use-toast";
 import { useCategories } from "@/hooks/use-categories";
 
-// Form type with date as string for HTML date input
-type TransactionFormData = Omit<InsertTransaction, 'date'> & { date: string };
+// Form type with date as string for HTML date input, and expense-specific fields
+type TransactionFormData = Omit<InsertTransaction, 'date'> & { 
+  date: string;
+  taxableBase?: string;
+  vatAmount?: string;
+};
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -70,6 +74,8 @@ export default function TransactionModal({
       notes: initialData.notes || '',
       pdfDocument: initialData.pdfDocument || '',
       pdfFileName: initialData.pdfFileName || '',
+      taxableBase: initialData.taxableBase || '',
+      vatAmount: initialData.vatAmount || '',
     } : {
       type: fixedType || 'income',
       date: new Date().toISOString().split('T')[0],
@@ -81,8 +87,22 @@ export default function TransactionModal({
       notes: '',
       pdfDocument: '',
       pdfFileName: '',
+      taxableBase: '',
+      vatAmount: '',
     },
   });
+
+  const watchTaxableBase = form.watch('taxableBase');
+  const watchVatAmount = form.watch('vatAmount');
+  
+  useEffect(() => {
+    if (transactionType === 'expense') {
+      const base = parseFloat(watchTaxableBase || '0') || 0;
+      const vat = parseFloat(watchVatAmount || '0') || 0;
+      const total = base + vat;
+      form.setValue('amount', total.toFixed(2));
+    }
+  }, [watchTaxableBase, watchVatAmount, transactionType, form]);
 
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -127,6 +147,8 @@ export default function TransactionModal({
         notes: initialData.notes || '',
         pdfDocument: initialData.pdfDocument || '',
         pdfFileName: initialData.pdfFileName || '',
+        taxableBase: initialData.taxableBase || '',
+        vatAmount: initialData.vatAmount || '',
       });
       setTransactionType(typeToUse);
       if (initialData.pdfFileName) {
@@ -145,6 +167,8 @@ export default function TransactionModal({
         notes: '',
         pdfDocument: '',
         pdfFileName: '',
+        taxableBase: '',
+        vatAmount: '',
       });
       setTransactionType(typeToUse);
       setSelectedPdf(null);
@@ -159,6 +183,9 @@ export default function TransactionModal({
         amount: String(data.amount),
         date: new Date(data.date),
         clientSupplierId: data.clientSupplierId || undefined,
+        taxableBase: transactionType === 'expense' ? data.taxableBase : undefined,
+        vatAmount: transactionType === 'expense' ? data.vatAmount : undefined,
+        quantity: transactionType === 'income' ? data.quantity : undefined,
       };
       onSubmit(formattedData);
       
@@ -175,6 +202,8 @@ export default function TransactionModal({
         notes: '',
         pdfDocument: '',
         pdfFileName: '',
+        taxableBase: '',
+        vatAmount: '',
       });
       setTransactionType(typeToUse);
       setSelectedPdf(null);
@@ -277,58 +306,124 @@ export default function TransactionModal({
               )}
             </div>
             
-            <div>
-              <Label htmlFor="amount">Importe</Label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  className="pl-8"
-                  {...form.register("amount")}
-                  data-testid="input-amount"
-                />
+            {transactionType === 'income' ? (
+              <div>
+                <Label htmlFor="amount">Importe</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="pl-8"
+                    {...form.register("amount")}
+                    data-testid="input-amount"
+                  />
+                </div>
+                {form.formState.errors.amount && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.amount.message}
+                  </p>
+                )}
               </div>
-              {form.formState.errors.amount && (
-                <p className="text-sm text-destructive mt-1">
-                  {form.formState.errors.amount.message}
-                </p>
-              )}
-            </div>
+            ) : (
+              <div>
+                <Label htmlFor="clientSupplierId">Proveedor (opcional)</Label>
+                <Select 
+                  onValueChange={(value) => form.setValue('clientSupplierId', value || undefined)}
+                  value={form.watch('clientSupplierId') || undefined}
+                >
+                  <SelectTrigger data-testid="select-client-supplier">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((entity) => (
+                      <SelectItem key={entity.id} value={entity.id}>
+                        {entity.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="quantity">Cantidad (opcional)</Label>
-              <Input
-                placeholder="Ej: 2500 kg, 150 unidades..."
-                {...form.register("quantity")}
-                data-testid="input-quantity"
-              />
+          {transactionType === 'expense' ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="taxableBase">Base Imponible</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="pl-8"
+                    {...form.register("taxableBase")}
+                    data-testid="input-taxable-base"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="vatAmount">IVA</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="pl-8"
+                    {...form.register("vatAmount")}
+                    data-testid="input-vat-amount"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="total">Total</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="pl-8 bg-muted"
+                    value={form.watch('amount') || '0'}
+                    readOnly
+                    data-testid="input-total"
+                  />
+                </div>
+              </div>
             </div>
-            
-            <div>
-              <Label htmlFor="clientSupplierId">
-                {transactionType === 'income' ? 'Cliente' : 'Proveedor'} (opcional)
-              </Label>
-              <Select 
-                onValueChange={(value) => form.setValue('clientSupplierId', value || undefined)}
-                value={form.watch('clientSupplierId') || undefined}
-              >
-                <SelectTrigger data-testid="select-client-supplier">
-                  <SelectValue placeholder="Seleccionar" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(transactionType === 'income' ? clients : suppliers).map((entity) => (
-                    <SelectItem key={entity.id} value={entity.id}>
-                      {entity.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="quantity">Cantidad (opcional)</Label>
+                <Input
+                  placeholder="Ej: 2500 kg, 150 unidades..."
+                  {...form.register("quantity")}
+                  data-testid="input-quantity"
+                />
+              </div>
+              <div>
+                <Label htmlFor="clientSupplierId">Cliente (opcional)</Label>
+                <Select 
+                  onValueChange={(value) => form.setValue('clientSupplierId', value || undefined)}
+                  value={form.watch('clientSupplierId') || undefined}
+                >
+                  <SelectTrigger data-testid="select-client-supplier">
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((entity) => (
+                      <SelectItem key={entity.id} value={entity.id}>
+                        {entity.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
+          )}
           
           <div>
             <Label htmlFor="notes">Notas adicionales (opcional)</Label>

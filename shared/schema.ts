@@ -59,6 +59,8 @@ export const transactions = pgTable("transactions", {
   concept: text("concept").notNull(),
   category: text("category").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  taxableBase: decimal("taxable_base", { precision: 10, scale: 2 }), // Base imponible (for expenses)
+  vatAmount: decimal("vat_amount", { precision: 10, scale: 2 }), // IVA amount (for expenses)
   quantity: text("quantity"), // Optional, e.g. "2500 kg"
   clientSupplierId: varchar("client_supplier_id"), // Reference to client or supplier
   notes: text("notes"),
