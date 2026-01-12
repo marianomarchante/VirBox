@@ -1317,12 +1317,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create invoice from delivery notes
   app.post("/api/invoices/from-delivery-notes", isAuthenticated, async (req: any, res) => {
     try {
+      const { deliveryNoteIds, invoiceData } = req.body;
+      
+      // Extract companyId from invoiceData and inject into req.body for permission check
+      req.body.companyId = invoiceData?.companyId;
+      
       const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
       if (!hasPermission) {
         return res.status(403).json({ message: "Forbidden: Admin permission required" });
       }
-
-      const { deliveryNoteIds, invoiceData } = req.body;
       
       if (!deliveryNoteIds || !Array.isArray(deliveryNoteIds) || deliveryNoteIds.length === 0) {
         return res.status(400).json({ message: "No delivery notes selected" });
