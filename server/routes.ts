@@ -1297,17 +1297,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { lines, vatBreakdown, ...invoiceData } = req.body;
-      console.log("Invoice data received:", JSON.stringify(invoiceData, null, 2));
-      console.log("Lines received:", JSON.stringify(lines, null, 2));
       
+      // Validate basic invoice data
       const validatedData = insertInvoiceSchema.parse(invoiceData);
-      const validatedLines = z.array(insertInvoiceLineSchema).parse(lines || []);
-      const validatedVatBreakdown = z.array(insertInvoiceVatBreakdownSchema).parse(vatBreakdown || []);
+      
+      // Process lines: calculate subtotal, vatAmount, total for each line
+      const rawLines = lines || [];
+      const processedLines = rawLines.map((line: any, index: number) => {
+        const quantity = parseFloat(line.quantity) || 0;
+        const unitPrice = parseFloat(line.unitPrice) || 0;
+        const vatRate = parseFloat(line.vatRate) || 0;
+        const subtotal = quantity * unitPrice;
+        const vatAmount = subtotal * vatRate / 100;
+        const total = subtotal + vatAmount;
+        
+        return {
+          invoiceId: '', // Will be set after invoice creation
+          articleId: line.articleId || null,
+          description: line.description || '',
+          quantity: String(quantity),
+          unitPrice: String(unitPrice),
+          vatRate: String(vatRate),
+          subtotal: subtotal.toFixed(2),
+          vatAmount: vatAmount.toFixed(2),
+          total: total.toFixed(2),
+          lineOrder: index,
+        };
+      });
+      
+      // Calculate invoice totals from lines
+      const subtotal = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.subtotal), 0);
+      const totalVat = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.vatAmount), 0);
+      const total = subtotal + totalVat;
+      
+      // Generate VAT breakdown from lines
+      const vatGroups: { [rate: string]: { taxableBase: number; vatAmount: number } } = {};
+      for (const line of processedLines) {
+        const rate = line.vatRate;
+        if (!vatGroups[rate]) {
+          vatGroups[rate] = { taxableBase: 0, vatAmount: 0 };
+        }
+        vatGroups[rate].taxableBase += parseFloat(line.subtotal);
+        vatGroups[rate].vatAmount += parseFloat(line.vatAmount);
+      }
+      
+      const generatedVatBreakdown = Object.entries(vatGroups).map(([rate, values]) => ({
+        invoiceId: '', // Will be set after invoice creation
+        vatRate: rate,
+        taxableBase: values.taxableBase.toFixed(2),
+        vatAmount: values.vatAmount.toFixed(2),
+      }));
       
       const invoice = await storage.createInvoice({
         ...validatedData,
-        companyId
-      }, validatedLines, validatedVatBreakdown);
+        companyId,
+        subtotal: subtotal.toFixed(2),
+        totalVat: totalVat.toFixed(2),
+        total: total.toFixed(2),
+      }, processedLines, generatedVatBreakdown);
       
       res.status(201).json(invoice);
     } catch (error) {
