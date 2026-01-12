@@ -1200,9 +1200,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertDeliveryNoteSchema.parse(deliveryNoteData);
       const validatedLines = z.array(insertDeliveryNoteLineSchema).parse(lines || []);
       
+      // Generate auto-incremental number
+      const series = validatedData.series || 'ALB';
+      const noteDate = new Date(validatedData.date);
+      const year = noteDate.getFullYear();
+      const nextNumber = await storage.getNextDeliveryNoteNumber(companyId, series, year);
+      
       const deliveryNote = await storage.createDeliveryNote({
         ...validatedData,
-        companyId
+        companyId,
+        series,
+        number: nextNumber,
+        year
       }, validatedLines);
       
       res.status(201).json(deliveryNote);
@@ -1332,6 +1341,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalVat = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.vatAmount), 0);
       const total = subtotal + totalVat;
       
+      // Generate auto-incremental number
+      const series = validatedData.series || 'FAC';
+      const invoiceDate = new Date(validatedData.date);
+      const year = invoiceDate.getFullYear();
+      const nextNumber = await storage.getNextInvoiceNumber(companyId, series, year);
+      
       // Generate VAT breakdown from lines
       const vatGroups: { [rate: string]: { taxableBase: number; vatAmount: number } } = {};
       for (const line of processedLines) {
@@ -1353,6 +1368,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invoice = await storage.createInvoice({
         ...validatedData,
         companyId,
+        series,
+        number: nextNumber,
+        year,
         subtotal: subtotal.toFixed(2),
         totalVat: totalVat.toFixed(2),
         total: total.toFixed(2),
