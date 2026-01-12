@@ -397,6 +397,9 @@ export const insertDeliveryNoteSchema = createInsertSchema(deliveryNotes).omit({
   companyId: z.string().optional(),
   date: z.coerce.date(),
   status: z.enum(["pending", "invoiced"]).default("pending"),
+  series: z.string().optional().default("ALB"),
+  number: z.number().optional(),
+  year: z.number().optional(),
 });
 
 export const insertDeliveryNoteLineSchema = createInsertSchema(deliveryNoteLines).omit({
@@ -424,6 +427,9 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   total: z.union([z.string(), z.number()]).transform(val => String(val)),
   status: z.enum(["draft", "issued", "paid", "cancelled"]).default("draft"),
   incomeCategory: z.string().default("Ventas"),
+  series: z.string().optional().default("FAC"),
+  number: z.number().optional(),
+  year: z.number().optional(),
 });
 
 export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).omit({
