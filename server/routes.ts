@@ -1314,6 +1314,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ ...invoice, lines, vatBreakdown });
   });
 
+  // Create invoice from delivery notes
+  app.post("/api/invoices/from-delivery-notes", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const { deliveryNoteIds, invoiceData } = req.body;
+      
+      if (!deliveryNoteIds || !Array.isArray(deliveryNoteIds) || deliveryNoteIds.length === 0) {
+        return res.status(400).json({ message: "No delivery notes selected" });
+      }
+
+      // Get all delivery notes and their lines
+      const allLines: any[] = [];
+      let clientId = invoiceData.clientId;
+      
+      for (const noteId of deliveryNoteIds) {
+        const note = await storage.getDeliveryNote(noteId, companyId);
+        if (!note) {
+          return res.status(404).json({ message: `Delivery note ${noteId} not found` });
+        }
+        if (note.status === 'invoiced') {
+          return res.status(400).json({ message: `Delivery note ${noteId} is already invoiced` });
+        }
+        
+        // Use the client from the first delivery note if not specified
+        if (!clientId) {
+          clientId = note.clientId;
+        }
+        
+        const noteLines = await storage.getDeliveryNoteLines(noteId);
+        allLines.push(...noteLines);
+      }
+
+      // Process lines for invoice
+      const processedLines = allLines.map((line: any, index: number) => {
+        const quantity = parseFloat(line.quantity) || 0;
+        const unitPrice = parseFloat(line.unitPrice) || 0;
+        const vatRate = parseFloat(line.vatRate) || 0;
+        const subtotal = quantity * unitPrice;
+        const vatAmount = subtotal * vatRate / 100;
+        const total = subtotal + vatAmount;
+        
+        return {
+          invoiceId: '',
+          articleId: line.articleId || null,
+          description: line.description || '',
+          quantity: String(quantity),
+          unitPrice: String(unitPrice),
+          vatRate: String(vatRate),
+          subtotal: subtotal.toFixed(2),
+          vatAmount: vatAmount.toFixed(2),
+          total: total.toFixed(2),
+          lineOrder: index,
+        };
+      });
+      
+      // Calculate invoice totals
+      const subtotal = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.subtotal), 0);
+      const totalVat = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.vatAmount), 0);
+      const total = subtotal + totalVat;
+      
+      // Generate auto-incremental number
+      const series = invoiceData.series || 'FAC';
+      const invoiceDate = new Date(invoiceData.date || new Date());
+      const year = invoiceDate.getFullYear();
+      const nextNumber = await storage.getNextInvoiceNumber(companyId, series, year);
+      
+      // Generate VAT breakdown
+      const vatGroups: { [rate: string]: { taxableBase: number; vatAmount: number } } = {};
+      for (const line of processedLines) {
+        const rate = line.vatRate;
+        if (!vatGroups[rate]) {
+          vatGroups[rate] = { taxableBase: 0, vatAmount: 0 };
+        }
+        vatGroups[rate].taxableBase += parseFloat(line.subtotal);
+        vatGroups[rate].vatAmount += parseFloat(line.vatAmount);
+      }
+      
+      const generatedVatBreakdown = Object.entries(vatGroups).map(([rate, values]) => ({
+        invoiceId: '',
+        vatRate: rate,
+        taxableBase: values.taxableBase.toFixed(2),
+        vatAmount: values.vatAmount.toFixed(2),
+      }));
+      
+      // Create invoice
+      const invoice = await storage.createInvoice({
+        ...invoiceData,
+        companyId,
+        clientId,
+        series,
+        number: nextNumber,
+        year,
+        subtotal: subtotal.toFixed(2),
+        totalVat: totalVat.toFixed(2),
+        total: total.toFixed(2),
+        status: 'draft',
+      }, processedLines, generatedVatBreakdown);
+      
+      // Mark delivery notes as invoiced
+      for (const noteId of deliveryNoteIds) {
+        await storage.updateDeliveryNote(noteId, companyId, { status: 'invoiced' });
+      }
+      
+      res.status(201).json(invoice);
+    } catch (error) {
+      console.error("Error creating invoice from delivery notes:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.post("/api/invoices", isAuthenticated, async (req: any, res) => {
     try {
       const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
