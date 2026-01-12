@@ -840,11 +840,22 @@ export class PostgresStorage implements IStorage {
     return deliveryNote;
   }
 
-  async updateDeliveryNote(id: string, companyId: string, update: Partial<InsertDeliveryNote>): Promise<DeliveryNote | undefined> {
+  async updateDeliveryNote(id: string, companyId: string, update: Partial<InsertDeliveryNote>, lines?: InsertDeliveryNoteLine[]): Promise<DeliveryNote | undefined> {
     const result = await db.update(deliveryNotes)
       .set({ ...update, updatedAt: new Date() })
       .where(and(eq(deliveryNotes.id, id), eq(deliveryNotes.companyId, companyId)))
       .returning();
+    
+    if (result[0] && lines && lines.length > 0) {
+      await db.delete(deliveryNoteLines).where(eq(deliveryNoteLines.deliveryNoteId, id));
+      const linesWithId = lines.map((line, index) => ({
+        ...line,
+        deliveryNoteId: id,
+        lineOrder: index,
+      }));
+      await db.insert(deliveryNoteLines).values(linesWithId);
+    }
+    
     return result[0];
   }
 

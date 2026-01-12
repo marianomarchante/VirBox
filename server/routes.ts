@@ -1233,8 +1233,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden: Admin permission required" });
       }
 
-      const validatedData = insertDeliveryNoteSchema.partial().parse(req.body);
-      const deliveryNote = await storage.updateDeliveryNote(req.params.id, companyId, validatedData);
+      const { lines, ...noteData } = req.body;
+      const validatedData = insertDeliveryNoteSchema.partial().parse(noteData);
+      
+      let validatedLines: any[] | undefined;
+      if (lines && Array.isArray(lines)) {
+        validatedLines = lines.map((line: any) => ({
+          articleId: line.articleId || null,
+          description: line.description || '',
+          quantity: String(line.quantity || '0'),
+          unitPrice: String(line.unitPrice || '0'),
+          vatRate: String(line.vatRate || '21.00'),
+        }));
+      }
+      
+      const deliveryNote = await storage.updateDeliveryNote(req.params.id, companyId, validatedData, validatedLines);
       if (!deliveryNote) {
         return res.status(404).json({ message: "Delivery note not found" });
       }

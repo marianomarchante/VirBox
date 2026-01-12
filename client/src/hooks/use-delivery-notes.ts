@@ -51,8 +51,8 @@ export function useDeliveryNotes() {
   });
 
   const updateDeliveryNote = useMutation({
-    mutationFn: async ({ id, deliveryNote }: { id: string; deliveryNote: Partial<InsertDeliveryNote> }) => {
-      const response = await apiRequest('PUT', `/api/delivery-notes/${id}`, deliveryNote);
+    mutationFn: async ({ id, deliveryNote, lines }: { id: string; deliveryNote: Partial<InsertDeliveryNote>; lines?: Array<{ articleId: string; quantity: string; unitPrice: string; vatRate: string; description?: string }> }) => {
+      const response = await apiRequest('PUT', `/api/delivery-notes/${id}`, { ...deliveryNote, lines });
       return response.json();
     },
     onSuccess: () => {

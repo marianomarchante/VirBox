@@ -96,7 +96,8 @@ export default function DeliveryNotes() {
     if (editingNote) {
       updateDeliveryNote.mutate({ 
         id: editingNote, 
-        deliveryNote: noteData 
+        deliveryNote: noteData,
+        lines
       });
     } else {
       createDeliveryNote.mutate({ 
@@ -106,6 +107,43 @@ export default function DeliveryNotes() {
       });
     }
     handleCloseModal();
+  };
+
+  const handleEdit = async (note: DeliveryNote) => {
+    try {
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const response = await fetch(`/api/delivery-notes/${note.id}?${params.toString()}`, { credentials: 'include' });
+      const noteData = await response.json();
+      
+      setEditingNote(note.id);
+      form.setValue('series', note.series || 'A');
+      form.setValue('date', new Date(note.date).toISOString().split('T')[0]);
+      form.setValue('clientId', note.clientId || '');
+      form.setValue('notes', note.notes || '');
+      form.setValue('status', note.status as 'pending' | 'invoiced');
+      
+      if (noteData.lines && noteData.lines.length > 0) {
+        setLines(noteData.lines.map((line: any) => ({
+          articleId: line.articleId || '',
+          quantity: String(line.quantity || '1'),
+          unitPrice: String(line.unitPrice || '0'),
+          vatRate: String(line.vatRate || '21.00'),
+          description: line.description || '',
+        })));
+      } else {
+        setLines([]);
+      }
+      
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error('Error loading delivery note:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar el albarán para editar.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCloseModal = () => {
@@ -454,6 +492,16 @@ export default function DeliveryNotes() {
                             </td>
                             <td className="py-3 px-4">
                               <div className="flex items-center justify-center gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  onClick={() => handleEdit(note)}
+                                  disabled={!canWrite || note.status === 'invoiced'}
+                                  title="Editar"
+                                  data-testid={`edit-delivery-note-${note.id}`}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
                                 <Button 
                                   size="sm" 
                                   variant="ghost"
