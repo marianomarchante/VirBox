@@ -1297,6 +1297,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { lines, vatBreakdown, ...invoiceData } = req.body;
+      console.log("Invoice data received:", JSON.stringify(invoiceData, null, 2));
+      console.log("Lines received:", JSON.stringify(lines, null, 2));
+      
       const validatedData = insertInvoiceSchema.parse(invoiceData);
       const validatedLines = z.array(insertInvoiceLineSchema).parse(lines || []);
       const validatedVatBreakdown = z.array(insertInvoiceVatBreakdownSchema).parse(vatBreakdown || []);
@@ -1309,6 +1312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(invoice);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Zod validation errors:", JSON.stringify(error.errors, null, 2));
         res.status(400).json({ message: "Invalid invoice data", errors: error.errors });
       } else {
         console.error("Error creating invoice:", error);
