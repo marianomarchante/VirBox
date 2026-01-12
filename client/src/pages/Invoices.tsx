@@ -62,7 +62,7 @@ export default function Invoices() {
   const { canWrite, hasCompanySelected } = useCompanyPermission();
   const { currentCompanyId, currentCompany } = useCompany();
 
-  const { data: clients } = useQuery<{ id: string; name: string; nif: string; address?: string; city?: string; postalCode?: string }[]>({
+  const { data: clients } = useQuery<{ id: string; name: string; idFiscal: string; address?: string; town?: string; province?: string; postalCode?: string }[]>({
     queryKey: ['/api/clients', { companyId: currentCompanyId }],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -97,8 +97,11 @@ export default function Invoices() {
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
       clientId: data.clientId,
       clientName: client?.name || '',
-      clientIdFiscal: client?.nif,
+      clientIdFiscal: client?.idFiscal,
       clientAddress: client?.address,
+      clientTown: client?.town,
+      clientProvince: client?.province,
+      clientPostalCode: client?.postalCode,
       series: data.series,
       paymentMethod: data.paymentMethod,
       notes: data.notes,
@@ -263,17 +266,30 @@ export default function Invoices() {
       doc.text(currentCompany?.name || 'Empresa', 15, 15);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
+      let companyY = 22;
       if (currentCompany?.taxId) {
-        doc.text(`NIF/CIF: ${currentCompany.taxId}`, 15, 22);
+        doc.text(`NIF/CIF: ${currentCompany.taxId}`, 15, companyY);
+        companyY += 6;
       }
       if (currentCompany?.address) {
-        doc.text(currentCompany.address, 15, 28);
+        doc.text(currentCompany.address, 15, companyY);
+        companyY += 6;
+      }
+      const companyLocation = [
+        currentCompany?.postalCode,
+        currentCompany?.town,
+        currentCompany?.province ? `(${currentCompany.province})` : null
+      ].filter(Boolean).join(' ');
+      if (companyLocation) {
+        doc.text(companyLocation, 15, companyY);
+        companyY += 6;
       }
       if (currentCompany?.phone) {
-        doc.text(`Tel: ${currentCompany.phone}`, 15, 34);
+        doc.text(`Tel: ${currentCompany.phone}`, 15, companyY);
+        companyY += 6;
       }
       if (currentCompany?.email) {
-        doc.text(currentCompany.email, 15, 40);
+        doc.text(currentCompany.email, 15, companyY);
       }
       
       // Invoice title and number (right side)
@@ -301,12 +317,24 @@ export default function Invoices() {
       doc.text('DATOS DEL CLIENTE', 15, 60);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      doc.text(invoice.clientName || '', 15, 67);
+      let clientY = 67;
+      doc.text(invoice.clientName || '', 15, clientY);
+      clientY += 6;
       if (invoice.clientIdFiscal) {
-        doc.text(`NIF/CIF: ${invoice.clientIdFiscal}`, 15, 73);
+        doc.text(`NIF/CIF: ${invoice.clientIdFiscal}`, 15, clientY);
+        clientY += 6;
       }
       if (invoice.clientAddress) {
-        doc.text(invoice.clientAddress, 15, 79);
+        doc.text(invoice.clientAddress, 15, clientY);
+        clientY += 6;
+      }
+      const clientLocation = [
+        invoiceData.clientPostalCode,
+        invoiceData.clientTown,
+        invoiceData.clientProvince ? `(${invoiceData.clientProvince})` : null
+      ].filter(Boolean).join(' ');
+      if (clientLocation) {
+        doc.text(clientLocation, 15, clientY);
       }
       
       // Invoice lines table
@@ -438,17 +466,23 @@ export default function Invoices() {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
       
-      // Company data
+      // Company data with full address
       const companyName = escapeXml(currentCompany?.name || 'Empresa no configurada');
       const companyTaxId = currentCompany?.taxId || 'NIF_NO_CONFIGURADO';
       const companyAddress = escapeXml(currentCompany?.address || '');
+      const companyTown = escapeXml(currentCompany?.town || '');
+      const companyProvince = escapeXml(currentCompany?.province || '');
+      const companyPostalCode = currentCompany?.postalCode || '';
       const companyPhone = currentCompany?.phone || '';
       const companyEmail = currentCompany?.email || '';
       
-      // Client data
+      // Client data with full address
       const clientName = escapeXml(invoice.clientName || '');
       const clientTaxId = invoice.clientIdFiscal || 'NIF_NO_PROPORCIONADO';
       const clientAddress = escapeXml(invoice.clientAddress || '');
+      const clientTown = escapeXml(invoiceData.clientTown || '');
+      const clientProvince = escapeXml(invoiceData.clientProvince || '');
+      const clientPostalCode = invoiceData.clientPostalCode || '';
       
       let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <fe:Facturae xmlns:fe="http://www.facturae.es/Facturae/2014/v3.2.2/Facturae">
@@ -480,13 +514,13 @@ export default function Invoices() {
       </TaxIdentification>
       <LegalEntity>
         <CorporateName>${companyName}</CorporateName>
-        ${companyAddress ? `<AddressInSpain>
-          <Address>${companyAddress}</Address>
-          <PostCode>00000</PostCode>
-          <Town>-</Town>
-          <Province>-</Province>
+        <AddressInSpain>
+          <Address>${companyAddress || 'Sin direccion'}</Address>
+          <PostCode>${companyPostalCode || '00000'}</PostCode>
+          <Town>${companyTown || 'Sin municipio'}</Town>
+          <Province>${companyProvince || 'Sin provincia'}</Province>
           <CountryCode>ESP</CountryCode>
-        </AddressInSpain>` : ''}
+        </AddressInSpain>
         ${companyPhone || companyEmail ? `<ContactDetails>
           ${companyPhone ? `<Telephone>${companyPhone}</Telephone>` : ''}
           ${companyEmail ? `<ElectronicMail>${companyEmail}</ElectronicMail>` : ''}
@@ -501,13 +535,13 @@ export default function Invoices() {
       </TaxIdentification>
       <LegalEntity>
         <CorporateName>${clientName}</CorporateName>
-        ${clientAddress ? `<AddressInSpain>
-          <Address>${clientAddress}</Address>
-          <PostCode>00000</PostCode>
-          <Town>-</Town>
-          <Province>-</Province>
+        <AddressInSpain>
+          <Address>${clientAddress || 'Sin direccion'}</Address>
+          <PostCode>${clientPostalCode || '00000'}</PostCode>
+          <Town>${clientTown || 'Sin municipio'}</Town>
+          <Province>${clientProvince || 'Sin provincia'}</Province>
           <CountryCode>ESP</CountryCode>
-        </AddressInSpain>` : ''}
+        </AddressInSpain>
       </LegalEntity>
     </BuyerParty>
   </Parties>

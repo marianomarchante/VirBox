@@ -41,7 +41,10 @@ export const companies = pgTable("companies", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   taxId: text("tax_id"), // NIF, CIF, Tax ID, etc.
-  address: text("address"),
+  address: text("address"), // Street address
+  town: text("town"), // Municipality / Town
+  province: text("province"), // Province
+  postalCode: text("postal_code"), // Postal code
   phone: text("phone"),
   email: text("email"),
   isActive: boolean("is_active").default(true).notNull(),
@@ -88,7 +91,10 @@ export const clients = pgTable("clients", {
   idFiscal: varchar("id_fiscal", { length: 10 }),
   email: text("email"),
   phone: text("phone"),
-  address: text("address"),
+  address: text("address"), // Street address
+  town: text("town"), // Municipality / Town
+  province: text("province"), // Province
+  postalCode: text("postal_code"), // Postal code
   contactPerson: text("contact_person"),
   totalPurchases: decimal("total_purchases", { precision: 10, scale: 2 }).default("0"),
   orderCount: integer("order_count").default(0),
@@ -227,6 +233,9 @@ export const invoices = pgTable("invoices", {
   clientName: text("client_name").notNull(),
   clientIdFiscal: varchar("client_id_fiscal", { length: 20 }),
   clientAddress: text("client_address"),
+  clientTown: text("client_town"),
+  clientProvince: text("client_province"),
+  clientPostalCode: varchar("client_postal_code", { length: 10 }),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
   totalVat: decimal("total_vat", { precision: 10, scale: 2 }).notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
