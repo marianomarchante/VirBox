@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Trash2, Receipt, Eye, Download, FileText } from "lucide-react";
+import { Plus, Trash2, Receipt, Eye, Download, FileText, CheckCircle, FileCode, Pencil } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,9 @@ import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { apiRequest } from "@/lib/queryClient";
 
 interface InvoiceLine {
   articleId?: string;
@@ -56,7 +60,7 @@ export default function Invoices() {
   const { deliveryNotes } = useDeliveryNotes();
   const { articles } = useArticles();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
-  const { currentCompanyId } = useCompany();
+  const { currentCompanyId, currentCompany } = useCompany();
 
   const { data: clients } = useQuery<{ id: string; name: string; nif: string; address?: string; city?: string; postalCode?: string }[]>({
     queryKey: ['/api/clients', { companyId: currentCompanyId }],
@@ -224,6 +228,382 @@ export default function Invoices() {
     );
   });
 
+  const { toast } = useToast();
+
+  const handleIssueInvoice = (invoice: Invoice) => {
+    if (window.confirm('¿Está seguro de que desea emitir esta factura? Una vez emitida se creará automáticamente un ingreso asociado.')) {
+      updateInvoice.mutate({ 
+        id: invoice.id, 
+        invoice: { status: 'issued', companyId: currentCompanyId ?? undefined }
+      });
+    }
+  };
+
+  const handleMarkPaid = (invoice: Invoice) => {
+    updateInvoice.mutate({ 
+      id: invoice.id, 
+      invoice: { status: 'paid', companyId: currentCompanyId ?? undefined }
+    });
+  };
+
+  const handleGeneratePDF = async (invoice: Invoice) => {
+    try {
+      // Fetch invoice details with lines
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const response = await fetch(`/api/invoices/${invoice.id}?${params.toString()}`, { credentials: 'include' });
+      const invoiceData = await response.json();
+      
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Header with company name
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(currentCompany?.name || 'Empresa', 15, 15);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      if (currentCompany?.taxId) {
+        doc.text(`NIF/CIF: ${currentCompany.taxId}`, 15, 22);
+      }
+      if (currentCompany?.address) {
+        doc.text(currentCompany.address, 15, 28);
+      }
+      if (currentCompany?.phone) {
+        doc.text(`Tel: ${currentCompany.phone}`, 15, 34);
+      }
+      if (currentCompany?.email) {
+        doc.text(currentCompany.email, 15, 40);
+      }
+      
+      // Invoice title and number (right side)
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('FACTURA', pageWidth - 15, 20, { align: 'right' });
+      doc.setFontSize(12);
+      doc.text(`${invoice.series}-${String(invoice.number).padStart(4, '0')}`, pageWidth - 15, 28, { align: 'right' });
+      
+      // Invoice details
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Fecha de emisi\u00f3n: ${format(new Date(invoice.date), 'dd/MM/yyyy')}`, pageWidth - 15, 38, { align: 'right' });
+      if (invoice.dueDate) {
+        doc.text(`Fecha de vencimiento: ${format(new Date(invoice.dueDate), 'dd/MM/yyyy')}`, pageWidth - 15, 44, { align: 'right' });
+      }
+      
+      // Separator line
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, 50, pageWidth - 15, 50);
+      
+      // Client info
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('DATOS DEL CLIENTE', 15, 60);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(invoice.clientName || '', 15, 67);
+      if (invoice.clientIdFiscal) {
+        doc.text(`NIF/CIF: ${invoice.clientIdFiscal}`, 15, 73);
+      }
+      if (invoice.clientAddress) {
+        doc.text(invoice.clientAddress, 15, 79);
+      }
+      
+      // Invoice lines table
+      const tableData = (invoiceData.lines || []).map((line: any) => [
+        line.description,
+        parseFloat(line.quantity).toFixed(2),
+        parseFloat(line.unitPrice).toFixed(2) + ' \u20AC',
+        parseFloat(line.vatRate).toFixed(0) + '%',
+        parseFloat(line.subtotal).toFixed(2) + ' \u20AC',
+        parseFloat(line.vatAmount).toFixed(2) + ' \u20AC',
+        parseFloat(line.total).toFixed(2) + ' \u20AC'
+      ]);
+      
+      autoTable(doc, {
+        startY: 90,
+        head: [['Descripci\u00f3n', 'Cant.', 'Precio', 'IVA%', 'Base', 'Cuota IVA', 'Total']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [66, 139, 202], fontSize: 9 },
+        styles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 55 },
+          1: { cellWidth: 18, halign: 'right' },
+          2: { cellWidth: 22, halign: 'right' },
+          3: { cellWidth: 15, halign: 'right' },
+          4: { cellWidth: 22, halign: 'right' },
+          5: { cellWidth: 22, halign: 'right' },
+          6: { cellWidth: 22, halign: 'right' },
+        },
+      });
+      
+      // VAT breakdown table
+      const vatData = (invoiceData.vatBreakdown || []).map((vat: any) => [
+        parseFloat(vat.vatRate).toFixed(0) + '%',
+        parseFloat(vat.taxableBase).toFixed(2) + ' \u20AC',
+        parseFloat(vat.vatAmount).toFixed(2) + ' \u20AC'
+      ]);
+      
+      const afterLinesY = (doc as any).lastAutoTable.finalY + 10;
+      
+      if (vatData.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('DESGLOSE DE IVA', 15, afterLinesY);
+        
+        autoTable(doc, {
+          startY: afterLinesY + 5,
+          head: [['Tipo IVA', 'Base Imponible', 'Cuota IVA']],
+          body: vatData,
+          theme: 'plain',
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontSize: 9 },
+          styles: { fontSize: 9 },
+          tableWidth: 80,
+        });
+      }
+      
+      // Totals (right side)
+      const totalsY = afterLinesY;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Base Imponible:', 130, totalsY);
+      doc.text(`${parseFloat(invoice.subtotal || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY, { align: 'right' });
+      doc.text('Total IVA:', 130, totalsY + 7);
+      doc.text(`${parseFloat(invoice.totalVat || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY + 7, { align: 'right' });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('TOTAL FACTURA:', 130, totalsY + 16);
+      doc.text(`${parseFloat(invoice.total || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY + 16, { align: 'right' });
+      
+      // Payment info
+      const paymentY = Math.max((doc as any).lastAutoTable?.finalY || totalsY, totalsY + 25) + 15;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text('FORMA DE PAGO', 15, paymentY);
+      doc.setFont('helvetica', 'normal');
+      const paymentLabels: Record<string, string> = {
+        'transferencia': 'Transferencia bancaria',
+        'efectivo': 'Efectivo',
+        'tarjeta': 'Tarjeta de cr\u00e9dito/d\u00e9bito',
+        'domiciliacion': 'Domiciliaci\u00f3n bancaria'
+      };
+      doc.text(paymentLabels[invoice.paymentMethod || 'transferencia'] || invoice.paymentMethod || '', 15, paymentY + 6);
+      if (invoice.iban) {
+        doc.text(`IBAN: ${invoice.iban}`, 15, paymentY + 12);
+      }
+      
+      // Notes
+      if (invoice.notes) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('OBSERVACIONES', 15, paymentY + 25);
+        doc.setFont('helvetica', 'normal');
+        doc.text(invoice.notes, 15, paymentY + 31);
+      }
+      
+      // Save
+      doc.save(`Factura_${invoice.series}-${invoice.number}.pdf`);
+      
+      toast({
+        title: "PDF generado",
+        description: `Factura ${invoice.series}-${invoice.number} descargada correctamente.`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el PDF.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGenerateXML = async (invoice: Invoice) => {
+    try {
+      // Fetch invoice details with lines
+      const params = new URLSearchParams();
+      if (currentCompanyId) params.append('companyId', currentCompanyId);
+      const response = await fetch(`/api/invoices/${invoice.id}?${params.toString()}`, { credentials: 'include' });
+      const invoiceData = await response.json();
+      
+      // Generate Facturae 3.2.2 XML
+      const invoiceNumber = `${invoice.series}-${String(invoice.number).padStart(4, '0')}`;
+      const invoiceDate = format(new Date(invoice.date), 'yyyy-MM-dd');
+      
+      // Escape XML special characters
+      const escapeXml = (str: string) => str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+      
+      // Company data
+      const companyName = escapeXml(currentCompany?.name || 'Empresa no configurada');
+      const companyTaxId = currentCompany?.taxId || 'NIF_NO_CONFIGURADO';
+      const companyAddress = escapeXml(currentCompany?.address || '');
+      const companyPhone = currentCompany?.phone || '';
+      const companyEmail = currentCompany?.email || '';
+      
+      // Client data
+      const clientName = escapeXml(invoice.clientName || '');
+      const clientTaxId = invoice.clientIdFiscal || 'NIF_NO_PROPORCIONADO';
+      const clientAddress = escapeXml(invoice.clientAddress || '');
+      
+      let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<fe:Facturae xmlns:fe="http://www.facturae.es/Facturae/2014/v3.2.2/Facturae">
+  <FileHeader>
+    <SchemaVersion>3.2.2</SchemaVersion>
+    <Modality>I</Modality>
+    <InvoiceIssuerType>EM</InvoiceIssuerType>
+    <Batch>
+      <BatchIdentifier>${invoiceNumber}</BatchIdentifier>
+      <InvoicesCount>1</InvoicesCount>
+      <TotalInvoicesAmount>
+        <TotalAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalAmount>
+      </TotalInvoicesAmount>
+      <TotalOutstandingAmount>
+        <TotalAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalAmount>
+      </TotalOutstandingAmount>
+      <TotalExecutableAmount>
+        <TotalAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalAmount>
+      </TotalExecutableAmount>
+      <InvoiceCurrencyCode>EUR</InvoiceCurrencyCode>
+    </Batch>
+  </FileHeader>
+  <Parties>
+    <SellerParty>
+      <TaxIdentification>
+        <PersonTypeCode>J</PersonTypeCode>
+        <ResidenceTypeCode>R</ResidenceTypeCode>
+        <TaxIdentificationNumber>${companyTaxId}</TaxIdentificationNumber>
+      </TaxIdentification>
+      <LegalEntity>
+        <CorporateName>${companyName}</CorporateName>
+        ${companyAddress ? `<AddressInSpain>
+          <Address>${companyAddress}</Address>
+          <PostCode>00000</PostCode>
+          <Town>-</Town>
+          <Province>-</Province>
+          <CountryCode>ESP</CountryCode>
+        </AddressInSpain>` : ''}
+        ${companyPhone || companyEmail ? `<ContactDetails>
+          ${companyPhone ? `<Telephone>${companyPhone}</Telephone>` : ''}
+          ${companyEmail ? `<ElectronicMail>${companyEmail}</ElectronicMail>` : ''}
+        </ContactDetails>` : ''}
+      </LegalEntity>
+    </SellerParty>
+    <BuyerParty>
+      <TaxIdentification>
+        <PersonTypeCode>J</PersonTypeCode>
+        <ResidenceTypeCode>R</ResidenceTypeCode>
+        <TaxIdentificationNumber>${clientTaxId}</TaxIdentificationNumber>
+      </TaxIdentification>
+      <LegalEntity>
+        <CorporateName>${clientName}</CorporateName>
+        ${clientAddress ? `<AddressInSpain>
+          <Address>${clientAddress}</Address>
+          <PostCode>00000</PostCode>
+          <Town>-</Town>
+          <Province>-</Province>
+          <CountryCode>ESP</CountryCode>
+        </AddressInSpain>` : ''}
+      </LegalEntity>
+    </BuyerParty>
+  </Parties>
+  <Invoices>
+    <Invoice>
+      <InvoiceHeader>
+        <InvoiceNumber>${invoiceNumber}</InvoiceNumber>
+        <InvoiceSeriesCode>${invoice.series || 'F'}</InvoiceSeriesCode>
+        <InvoiceDocumentType>FC</InvoiceDocumentType>
+        <InvoiceClass>OO</InvoiceClass>
+      </InvoiceHeader>
+      <InvoiceIssueData>
+        <IssueDate>${invoiceDate}</IssueDate>
+        <InvoiceCurrencyCode>EUR</InvoiceCurrencyCode>
+        <TaxCurrencyCode>EUR</TaxCurrencyCode>
+        <LanguageName>es</LanguageName>
+      </InvoiceIssueData>
+      <TaxesOutputs>
+${(invoiceData.vatBreakdown || []).map((vat: any) => `        <Tax>
+          <TaxTypeCode>01</TaxTypeCode>
+          <TaxRate>${parseFloat(vat.vatRate).toFixed(2)}</TaxRate>
+          <TaxableBase>
+            <TotalAmount>${parseFloat(vat.taxableBase).toFixed(2)}</TotalAmount>
+          </TaxableBase>
+          <TaxAmount>
+            <TotalAmount>${parseFloat(vat.vatAmount).toFixed(2)}</TotalAmount>
+          </TaxAmount>
+        </Tax>`).join('\n')}
+      </TaxesOutputs>
+      <InvoiceTotals>
+        <TotalGrossAmount>${parseFloat(invoice.subtotal || '0').toFixed(2)}</TotalGrossAmount>
+        <TotalGrossAmountBeforeTaxes>${parseFloat(invoice.subtotal || '0').toFixed(2)}</TotalGrossAmountBeforeTaxes>
+        <TotalTaxOutputs>${parseFloat(invoice.totalVat || '0').toFixed(2)}</TotalTaxOutputs>
+        <TotalTaxesWithheld>0.00</TotalTaxesWithheld>
+        <InvoiceTotal>${parseFloat(invoice.total || '0').toFixed(2)}</InvoiceTotal>
+        <TotalOutstandingAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalOutstandingAmount>
+        <TotalExecutableAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalExecutableAmount>
+      </InvoiceTotals>
+      <Items>
+${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceLine>
+          <ItemDescription>${line.description}</ItemDescription>
+          <Quantity>${parseFloat(line.quantity).toFixed(2)}</Quantity>
+          <UnitOfMeasure>01</UnitOfMeasure>
+          <UnitPriceWithoutTax>${parseFloat(line.unitPrice).toFixed(6)}</UnitPriceWithoutTax>
+          <TotalCost>${parseFloat(line.subtotal).toFixed(2)}</TotalCost>
+          <GrossAmount>${parseFloat(line.subtotal).toFixed(2)}</GrossAmount>
+          <TaxesOutputs>
+            <Tax>
+              <TaxTypeCode>01</TaxTypeCode>
+              <TaxRate>${parseFloat(line.vatRate).toFixed(2)}</TaxRate>
+              <TaxableBase>
+                <TotalAmount>${parseFloat(line.subtotal).toFixed(2)}</TotalAmount>
+              </TaxableBase>
+              <TaxAmount>
+                <TotalAmount>${parseFloat(line.vatAmount).toFixed(2)}</TotalAmount>
+              </TaxAmount>
+            </Tax>
+          </TaxesOutputs>
+        </InvoiceLine>`).join('\n')}
+      </Items>
+      <PaymentDetails>
+        <Installment>
+          <InstallmentDueDate>${invoice.dueDate ? format(new Date(invoice.dueDate), 'yyyy-MM-dd') : invoiceDate}</InstallmentDueDate>
+          <InstallmentAmount>${parseFloat(invoice.total || '0').toFixed(2)}</InstallmentAmount>
+          <PaymentMeans>${invoice.paymentMethod === 'transferencia' ? '04' : invoice.paymentMethod === 'efectivo' ? '01' : '02'}</PaymentMeans>
+        </Installment>
+      </PaymentDetails>
+    </Invoice>
+  </Invoices>
+</fe:Facturae>`;
+
+      // Download XML
+      const blob = new Blob([xmlContent], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Factura_${invoice.series}-${invoice.number}_Facturae.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "XML generado",
+        description: `Factura ${invoice.series}-${invoice.number} en formato Facturae 3.2.2 descargada.`,
+      });
+    } catch (error) {
+      console.error('Error generating XML:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el XML.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const styles = {
       draft: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
@@ -372,17 +752,38 @@ export default function Invoices() {
                               {getStatusBadge(invoice.status || 'draft')}
                             </td>
                             <td className="py-3 px-4">
-                              <div className="flex items-center justify-center gap-2">
+                              <div className="flex items-center justify-center gap-1 flex-wrap">
+                                {invoice.status === 'draft' && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    className="text-blue-600 hover:text-blue-700"
+                                    onClick={() => handleIssueInvoice(invoice)}
+                                    disabled={!canWrite}
+                                    title="Emitir factura"
+                                    data-testid={`issue-invoice-${invoice.id}`}
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {invoice.status === 'issued' && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    className="text-green-600 hover:text-green-700"
+                                    onClick={() => handleMarkPaid(invoice)}
+                                    disabled={!canWrite}
+                                    title="Marcar como pagada"
+                                    data-testid={`mark-paid-${invoice.id}`}
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                )}
                                 <Button 
                                   size="sm" 
                                   variant="ghost"
-                                  data-testid={`view-invoice-${invoice.id}`}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
+                                  onClick={() => handleGeneratePDF(invoice)}
+                                  title="Generar PDF"
                                   data-testid={`download-pdf-${invoice.id}`}
                                 >
                                   <Download className="w-4 h-4" />
@@ -390,9 +791,19 @@ export default function Invoices() {
                                 <Button 
                                   size="sm" 
                                   variant="ghost"
+                                  onClick={() => handleGenerateXML(invoice)}
+                                  title="Generar XML Facturae"
+                                  data-testid={`download-xml-${invoice.id}`}
+                                >
+                                  <FileCode className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
                                   className="text-destructive hover:text-destructive"
                                   onClick={() => handleDelete(invoice.id)}
                                   disabled={!canWrite || invoice.status === 'issued' || invoice.status === 'paid'}
+                                  title="Eliminar factura"
                                   data-testid={`delete-invoice-${invoice.id}`}
                                 >
                                   <Trash2 className="w-4 h-4" />
