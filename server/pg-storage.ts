@@ -806,10 +806,23 @@ export class PostgresStorage implements IStorage {
   }
 
   // Delivery Notes
-  async getDeliveryNotes(companyId: string): Promise<DeliveryNote[]> {
-    return await db.select().from(deliveryNotes)
+  async getDeliveryNotes(companyId: string): Promise<(DeliveryNote & { total: string })[]> {
+    const notes = await db.select().from(deliveryNotes)
       .where(eq(deliveryNotes.companyId, companyId))
       .orderBy(desc(deliveryNotes.date));
+    
+    const notesWithTotals = await Promise.all(notes.map(async (note) => {
+      const lines = await db.select().from(deliveryNoteLines)
+        .where(eq(deliveryNoteLines.deliveryNoteId, note.id));
+      const total = lines.reduce((sum, line) => {
+        const qty = parseFloat(line.quantity) || 0;
+        const price = parseFloat(line.unitPrice) || 0;
+        return sum + (qty * price);
+      }, 0);
+      return { ...note, total: total.toFixed(2) };
+    }));
+    
+    return notesWithTotals;
   }
 
   async getDeliveryNote(id: string, companyId: string): Promise<DeliveryNote | undefined> {
