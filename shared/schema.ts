@@ -404,10 +404,12 @@ export const insertDeliveryNoteSchema = createInsertSchema(deliveryNotes).omit({
 
 export const insertDeliveryNoteLineSchema = createInsertSchema(deliveryNoteLines).omit({
   id: true,
+  deliveryNoteId: true,
 }).extend({
   quantity: z.union([z.string(), z.number()]).transform(val => String(val)),
   unitPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
   vatRate: z.union([z.string(), z.number()]).transform(val => String(val)),
+  deliveryNoteId: z.string().optional(),
 });
 
 // Invoice schemas
@@ -434,6 +436,7 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
 
 export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).omit({
   id: true,
+  invoiceId: true,
 }).extend({
   quantity: z.union([z.string(), z.number()]).transform(val => String(val)),
   unitPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
@@ -441,6 +444,7 @@ export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).omit({
   subtotal: z.union([z.string(), z.number()]).transform(val => String(val)),
   vatAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
   total: z.union([z.string(), z.number()]).transform(val => String(val)),
+  invoiceId: z.string().optional(),
 });
 
 export const insertInvoiceVatBreakdownSchema = createInsertSchema(invoiceVatBreakdown).omit({
