@@ -1217,6 +1217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(deliveryNote);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Delivery note validation errors:", JSON.stringify(error.errors, null, 2));
         res.status(400).json({ message: "Invalid delivery note data", errors: error.errors });
       } else {
         console.error("Error creating delivery note:", error);
