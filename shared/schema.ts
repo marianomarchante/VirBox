@@ -61,6 +61,7 @@ export const transactions = pgTable("transactions", {
   notes: text("notes"),
   pdfDocument: text("pdf_document"), // Optional PDF document stored as base64
   pdfFileName: text("pdf_file_name"), // Original filename of the PDF
+  invoiceId: varchar("invoice_id"), // Link to invoice if auto-generated from invoice
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -234,6 +235,8 @@ export const invoices = pgTable("invoices", {
   iban: varchar("iban", { length: 34 }),
   notes: text("notes"),
   status: text("status").default("draft").notNull(),
+  transactionId: varchar("transaction_id"), // Link to auto-generated income transaction
+  incomeCategory: text("income_category").default("Ventas"), // Category for the income transaction
   pdfData: text("pdf_data"),
   xmlData: text("xml_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -387,6 +390,7 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   updatedAt: true,
   pdfData: true,
   xmlData: true,
+  transactionId: true,
 }).extend({
   companyId: z.string().optional(),
   date: z.coerce.date(),
@@ -395,6 +399,7 @@ export const insertInvoiceSchema = createInsertSchema(invoices).omit({
   totalVat: z.union([z.string(), z.number()]).transform(val => String(val)),
   total: z.union([z.string(), z.number()]).transform(val => String(val)),
   status: z.enum(["draft", "issued", "paid", "cancelled"]).default("draft"),
+  incomeCategory: z.string().default("Ventas"),
 });
 
 export const insertInvoiceLineSchema = createInsertSchema(invoiceLines).omit({

@@ -105,17 +105,22 @@ export default function Invoices() {
       companyId: currentCompanyId ?? undefined,
     };
     
+    const invoiceDataWithCategory = {
+      ...invoiceData,
+      incomeCategory: 'Ventas',
+    };
+    
     if (editingInvoice) {
       updateInvoice.mutate({ 
         id: editingInvoice, 
-        invoice: invoiceData 
+        invoice: invoiceDataWithCategory 
       });
     } else if (createMode === 'from-delivery-notes') {
       if (selectedDeliveryNotes.length === 0) return;
       createInvoiceFromDeliveryNotes.mutate({
         deliveryNoteIds: selectedDeliveryNotes,
         invoiceData: { 
-          ...invoiceData,
+          ...invoiceDataWithCategory,
           number: 0,
           subtotal: '0',
           totalVat: '0',
@@ -125,7 +130,7 @@ export default function Invoices() {
     } else {
       if (lines.length === 0) return;
       createInvoice.mutate({ 
-        ...invoiceData,
+        ...invoiceDataWithCategory,
         number: 0,
         lines 
       });

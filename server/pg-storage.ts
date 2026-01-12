@@ -895,7 +895,7 @@ export class PostgresStorage implements IStorage {
       companyId,
     }).returning();
     
-    const invoice = result[0];
+    let invoice = result[0];
     
     if (lines.length > 0) {
       const linesWithId = lines.map((line, index) => ({
@@ -914,18 +914,98 @@ export class PostgresStorage implements IStorage {
       await db.insert(invoiceVatBreakdown).values(breakdownWithId);
     }
     
+    // If invoice is issued, create the linked income transaction
+    if (insertInvoice.status === 'issued') {
+      invoice = await this.createIncomeFromInvoice(invoice);
+    }
+    
     return invoice;
+  }
+  
+  private async createIncomeFromInvoice(invoice: Invoice): Promise<Invoice> {
+    const concept = `Factura ${invoice.series || 'F'}-${invoice.number} - ${invoice.clientName}`;
+    const category = invoice.incomeCategory || 'Ventas';
+    
+    const transactionResult = await db.insert(transactions).values({
+      companyId: invoice.companyId,
+      type: 'income',
+      date: invoice.date,
+      concept,
+      category,
+      amount: invoice.total,
+      clientSupplierId: invoice.clientId,
+      notes: invoice.notes,
+      invoiceId: invoice.id,
+    }).returning();
+    
+    const transaction = transactionResult[0];
+    
+    // Update invoice with the transaction ID
+    const updatedResult = await db.update(invoices)
+      .set({ transactionId: transaction.id, updatedAt: new Date() })
+      .where(eq(invoices.id, invoice.id))
+      .returning();
+    
+    return updatedResult[0] || invoice;
   }
 
   async updateInvoice(id: string, companyId: string, update: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+    // Get the current invoice to check status changes
+    const currentInvoice = await this.getInvoice(id, companyId);
+    if (!currentInvoice) return undefined;
+    
     const result = await db.update(invoices)
       .set({ ...update, updatedAt: new Date() })
       .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)))
       .returning();
-    return result[0];
+    
+    let updatedInvoice = result[0];
+    if (!updatedInvoice) return undefined;
+    
+    // Determine effective status (use update if provided, otherwise current)
+    const effectiveStatus = update.status || currentInvoice.status;
+    const wasIssuedOrPaid = currentInvoice.status === 'issued' || currentInvoice.status === 'paid';
+    const isNowIssuedOrPaid = effectiveStatus === 'issued' || effectiveStatus === 'paid';
+    const isNowCancelled = effectiveStatus === 'cancelled';
+    
+    // Transition to cancelled: delete linked income
+    if (isNowCancelled && currentInvoice.transactionId) {
+      await db.delete(transactions).where(eq(transactions.id, currentInvoice.transactionId));
+      await db.update(invoices)
+        .set({ transactionId: null })
+        .where(eq(invoices.id, id));
+      updatedInvoice = { ...updatedInvoice, transactionId: null };
+    }
+    // Transition to issued/paid: create income if not exists
+    else if (isNowIssuedOrPaid && !currentInvoice.transactionId) {
+      updatedInvoice = await this.createIncomeFromInvoice(updatedInvoice);
+    }
+    // Update linked income if invoice has a transaction and any relevant data changed
+    else if (currentInvoice.transactionId && isNowIssuedOrPaid) {
+      const concept = `Factura ${updatedInvoice.series || 'F'}-${updatedInvoice.number} - ${updatedInvoice.clientName}`;
+      await db.update(transactions)
+        .set({
+          date: updatedInvoice.date,
+          concept,
+          amount: updatedInvoice.total,
+          notes: updatedInvoice.notes,
+          category: updatedInvoice.incomeCategory || 'Ventas',
+        })
+        .where(eq(transactions.id, currentInvoice.transactionId));
+    }
+    
+    return updatedInvoice;
   }
 
   async deleteInvoice(id: string, companyId: string): Promise<boolean> {
+    // First, get the invoice to check for linked transaction
+    const invoice = await this.getInvoice(id, companyId);
+    
+    // Delete linked transaction if exists
+    if (invoice?.transactionId) {
+      await db.delete(transactions).where(eq(transactions.id, invoice.transactionId));
+    }
+    
     await db.delete(invoiceLines).where(eq(invoiceLines.invoiceId, id));
     await db.delete(invoiceVatBreakdown).where(eq(invoiceVatBreakdown.invoiceId, id));
     const result = await db.delete(invoices)
