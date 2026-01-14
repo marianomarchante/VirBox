@@ -7,6 +7,7 @@ export interface User {
   name: string | null;
   profilePicUrl: string | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
 export function useAuth() {

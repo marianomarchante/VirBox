@@ -18,7 +18,8 @@ import {
   Images,
   ShoppingBag,
   ClipboardList,
-  Receipt
+  Receipt,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -41,7 +42,8 @@ export default function Sidebar() {
   ];
 
   const secondaryNav = [
-    ...(user?.isAdmin ? [
+    ...(user?.isSuperAdmin ? [
+      { name: "Empresas", href: "/empresas", icon: Building2 },
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
     ] : []),
   ];
@@ -278,7 +280,7 @@ export default function Sidebar() {
               {user?.name || user?.email || 'Usuario'}
             </p>
             <p className="text-xs text-muted-foreground truncate">
-              {user?.isAdmin ? 'Administrador' : 'Usuario'}
+              {user?.isSuperAdmin ? 'Superadmin' : user?.isAdmin ? 'Administrador' : 'Usuario'}
             </p>
           </div>
           <Button
