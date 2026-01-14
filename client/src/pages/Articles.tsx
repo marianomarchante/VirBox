@@ -34,7 +34,6 @@ const UNITS = [
 ];
 
 const formSchema = insertArticleSchema.extend({
-  code: z.string().min(1, "El código es obligatorio"),
   name: z.string().min(1, "El nombre es obligatorio"),
   unitPrice: z.union([z.string(), z.number()]).refine(val => {
     const num = parseFloat(String(val));
@@ -55,7 +54,6 @@ export default function Articles() {
   const form = useForm<InsertArticle>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      code: '',
       name: '',
       description: '',
       unitPrice: '0',
@@ -85,7 +83,6 @@ export default function Articles() {
     if (article) {
       setEditingArticle(articleId);
       form.reset({
-        code: article.code,
         name: article.name,
         description: article.description || '',
         unitPrice: article.unitPrice,
@@ -118,7 +115,7 @@ export default function Articles() {
     const search = searchTerm.toLowerCase();
     return (
       article.name.toLowerCase().includes(search) ||
-      article.code.toLowerCase().includes(search) ||
+      String(article.code).includes(search) ||
       (article.description && article.description.toLowerCase().includes(search))
     );
   });
@@ -310,16 +307,17 @@ export default function Articles() {
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Código *</Label>
+                <Label htmlFor="code">Código</Label>
                 <Input
                   id="code"
-                  {...form.register('code')}
-                  placeholder="ART001"
+                  value={editingArticle ? String(articles?.find(a => a.id === editingArticle)?.code || '') : 'Automático'}
+                  disabled
+                  className="bg-muted"
                   data-testid="input-article-code"
                 />
-                {form.formState.errors.code && (
-                  <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  {editingArticle ? 'No modificable' : 'Se asignará automáticamente'}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unitOfMeasure">Unidad</Label>

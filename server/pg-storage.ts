@@ -782,13 +782,65 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async getNextArticleCode(companyId: string): Promise<number> {
+    // Try atomic UPDATE first (most common case - sequence already exists)
+    const updateResult = await db.execute(sql`
+      UPDATE document_sequences 
+      SET last_number = last_number + 1, updated_at = NOW()
+      WHERE document_type = 'article' 
+        AND company_id = ${companyId} 
+        AND series = 'ART' 
+        AND year = 0
+      RETURNING last_number
+    `);
+    
+    if (updateResult.rows && updateResult.rows.length > 0) {
+      return (updateResult.rows[0] as any).last_number;
+    }
+    
+    // Sequence doesn't exist - use single atomic INSERT ON CONFLICT DO UPDATE RETURNING
+    // This ensures each caller gets a unique number even with concurrent requests
+    const maxResult = await db.select({ maxCode: sql<number>`COALESCE(MAX(${articles.code}), 0)` })
+      .from(articles)
+      .where(eq(articles.companyId, companyId));
+    
+    const startNumber = (maxResult[0]?.maxCode || 0) + 1;
+    
+    // Atomic upsert that returns the assigned number - each caller gets unique number
+    const upsertResult = await db.execute(sql`
+      INSERT INTO document_sequences (id, document_type, company_id, series, year, last_number, updated_at)
+      VALUES (gen_random_uuid(), 'article', ${companyId}, 'ART', 0, ${startNumber}, NOW())
+      ON CONFLICT (document_type, company_id, series, year) 
+      DO UPDATE SET last_number = document_sequences.last_number + 1, updated_at = NOW()
+      RETURNING last_number
+    `);
+    
+    return (upsertResult.rows[0] as any).last_number;
+  }
+
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
     const companyId = insertArticle.companyId || await this.getDefaultCompanyId();
-    const result = await db.insert(articles).values({
-      ...insertArticle,
-      companyId,
-    }).returning();
-    return result[0];
+    
+    // Retry logic for rare race conditions with unique constraint
+    const maxRetries = 3;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const nextCode = await this.getNextArticleCode(companyId);
+        const result = await db.insert(articles).values({
+          ...insertArticle,
+          companyId,
+          code: nextCode,
+        }).returning();
+        return result[0];
+      } catch (error: any) {
+        // Unique constraint violation (code 23505) - retry with new code
+        if (error?.code === '23505' && attempt < maxRetries - 1) {
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw new Error('No se pudo generar un código único para el artículo');
   }
 
   async updateArticle(id: string, companyId: string, update: Partial<InsertArticle>): Promise<Article | undefined> {
