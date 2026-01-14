@@ -68,14 +68,14 @@ export default function TransactionModal({
       date: new Date(initialData.date).toISOString().split('T')[0],
       concept: initialData.concept,
       category: initialData.category,
-      amount: String(initialData.amount || '0'),
+      amount: String(initialData.amount),
       quantity: initialData.quantity || '',
       clientSupplierId: initialData.clientSupplierId || '',
       notes: initialData.notes || '',
       pdfDocument: initialData.pdfDocument || '',
       pdfFileName: initialData.pdfFileName || '',
-      taxableBase: initialData.taxableBase ? String(initialData.taxableBase) : '',
-      vatAmount: initialData.vatAmount ? String(initialData.vatAmount) : '',
+      taxableBase: initialData.taxableBase || '',
+      vatAmount: initialData.vatAmount || '',
     } : {
       type: fixedType || 'income',
       date: new Date().toISOString().split('T')[0],
@@ -96,13 +96,11 @@ export default function TransactionModal({
   const watchVatAmount = form.watch('vatAmount');
   
   useEffect(() => {
-    if (transactionType === 'expense' && (watchTaxableBase !== '' || watchVatAmount !== '')) {
+    if (transactionType === 'expense') {
       const base = parseFloat(watchTaxableBase || '0') || 0;
       const vat = parseFloat(watchVatAmount || '0') || 0;
       const total = base + vat;
-      if (total > 0 || (watchTaxableBase !== '' && watchVatAmount !== '')) {
-        form.setValue('amount', total.toFixed(2));
-      }
+      form.setValue('amount', total.toFixed(2));
     }
   }, [watchTaxableBase, watchVatAmount, transactionType, form]);
 
@@ -143,14 +141,14 @@ export default function TransactionModal({
         date: new Date(initialData.date).toISOString().split('T')[0],
         concept: initialData.concept,
         category: initialData.category,
-        amount: String(initialData.amount || '0'),
+        amount: String(initialData.amount),
         quantity: initialData.quantity || '',
         clientSupplierId: initialData.clientSupplierId || '',
         notes: initialData.notes || '',
         pdfDocument: initialData.pdfDocument || '',
         pdfFileName: initialData.pdfFileName || '',
-        taxableBase: initialData.taxableBase ? String(initialData.taxableBase) : '',
-        vatAmount: initialData.vatAmount ? String(initialData.vatAmount) : '',
+        taxableBase: initialData.taxableBase || '',
+        vatAmount: initialData.vatAmount || '',
       });
       setTransactionType(typeToUse);
       if (initialData.pdfFileName) {
