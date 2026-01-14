@@ -353,11 +353,11 @@ export default function Articles() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
+              <Label htmlFor="description">Notas (emplazamiento, descripción, etc.)</Label>
               <Input
                 id="description"
                 {...form.register('description')}
-                placeholder="Descripción opcional"
+                placeholder="Notas opcionales"
                 data-testid="input-article-description"
               />
             </div>
