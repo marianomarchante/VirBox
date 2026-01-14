@@ -34,6 +34,7 @@ const UNITS = [
 ];
 
 const formSchema = insertArticleSchema.extend({
+  code: z.string().min(1, "El código es obligatorio"),
   name: z.string().min(1, "El nombre es obligatorio"),
   unitPrice: z.union([z.string(), z.number()]).refine(val => {
     const num = parseFloat(String(val));
@@ -54,6 +55,7 @@ export default function Articles() {
   const form = useForm<InsertArticle>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      code: '',
       name: '',
       description: '',
       unitPrice: '0',
@@ -83,6 +85,7 @@ export default function Articles() {
     if (article) {
       setEditingArticle(articleId);
       form.reset({
+        code: article.code,
         name: article.name,
         description: article.description || '',
         unitPrice: article.unitPrice,
@@ -115,7 +118,7 @@ export default function Articles() {
     const search = searchTerm.toLowerCase();
     return (
       article.name.toLowerCase().includes(search) ||
-      String(article.code).includes(search) ||
+      article.code.toLowerCase().includes(search) ||
       (article.description && article.description.toLowerCase().includes(search))
     );
   });
@@ -307,17 +310,16 @@ export default function Articles() {
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="code">Código</Label>
+                <Label htmlFor="code">Código *</Label>
                 <Input
                   id="code"
-                  value={editingArticle ? String(articles?.find(a => a.id === editingArticle)?.code || '') : 'Automático'}
-                  disabled
-                  className="bg-muted"
+                  {...form.register('code')}
+                  placeholder="ART001"
                   data-testid="input-article-code"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {editingArticle ? 'No modificable' : 'Se asignará automáticamente'}
-                </p>
+                {form.formState.errors.code && (
+                  <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unitOfMeasure">Unidad</Label>
@@ -353,11 +355,11 @@ export default function Articles() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Notas (emplazamiento, descripción, etc.)</Label>
+              <Label htmlFor="description">Descripción</Label>
               <Input
                 id="description"
                 {...form.register('description')}
-                placeholder="Notas opcionales"
+                placeholder="Descripción opcional"
                 data-testid="input-article-description"
               />
             </div>

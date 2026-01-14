@@ -184,7 +184,7 @@ export const events = pgTable("events", {
 export const articles = pgTable("articles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull(),
-  code: integer("code").notNull(),
+  code: varchar("code", { length: 50 }).notNull(),
   name: text("name").notNull(),
   description: text("description"),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
@@ -195,9 +195,7 @@ export const articles = pgTable("articles", {
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-}, (table) => [
-  unique("unique_article_code_per_company").on(table.companyId, table.code),
-]);
+});
 
 // Document Sequences (for yearly auto-reset numbering)
 export const documentSequences = pgTable("document_sequences", {
@@ -383,7 +381,6 @@ export const insertEventSchema = createInsertSchema(events).omit({
 // Article schemas
 export const insertArticleSchema = createInsertSchema(articles).omit({
   id: true,
-  code: true, // Auto-generated, not editable
   createdAt: true,
   updatedAt: true,
 }).extend({
