@@ -420,14 +420,29 @@ export default function Invoices() {
       const totalsY = afterLinesY;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
+      let totalsOffset = 0;
       doc.text('Base Imponible:', 130, totalsY);
       doc.text(`${parseFloat(invoice.subtotal || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY, { align: 'right' });
-      doc.text('Total IVA:', 130, totalsY + 7);
-      doc.text(`${parseFloat(invoice.totalVat || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY + 7, { align: 'right' });
+      totalsOffset += 7;
+      doc.text('Total IVA:', 130, totalsY + totalsOffset);
+      doc.text(`${parseFloat(invoice.totalVat || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY + totalsOffset, { align: 'right' });
+      totalsOffset += 7;
+      
+      // IRPF Retention if applicable
+      const irpfRate = parseFloat(invoice.irpfRate || '0');
+      const irpfAmount = parseFloat(invoice.irpfAmount || '0');
+      if (irpfRate > 0 && irpfAmount > 0) {
+        doc.setTextColor(180, 0, 0);
+        doc.text(`Retención IRPF (${irpfRate}%):`, 130, totalsY + totalsOffset);
+        doc.text(`-${irpfAmount.toFixed(2)} \u20AC`, pageWidth - 15, totalsY + totalsOffset, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
+        totalsOffset += 7;
+      }
+      
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
-      doc.text('TOTAL FACTURA:', 130, totalsY + 16);
-      doc.text(`${parseFloat(invoice.total || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY + 16, { align: 'right' });
+      doc.text('TOTAL FACTURA:', 130, totalsY + totalsOffset + 2);
+      doc.text(`${parseFloat(invoice.total || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY + totalsOffset + 2, { align: 'right' });
       
       // Payment info
       const paymentY = Math.max((doc as any).lastAutoTable?.finalY || totalsY, totalsY + 25) + 15;
@@ -597,12 +612,24 @@ ${(invoiceData.vatBreakdown || []).map((vat: any) => `        <Tax>
             <TotalAmount>${parseFloat(vat.vatAmount).toFixed(2)}</TotalAmount>
           </TaxAmount>
         </Tax>`).join('\n')}
-      </TaxesOutputs>
+      </TaxesOutputs>${parseFloat(invoice.irpfRate || '0') > 0 ? `
+      <TaxesWithheld>
+        <Tax>
+          <TaxTypeCode>04</TaxTypeCode>
+          <TaxRate>${parseFloat(invoice.irpfRate || '0').toFixed(2)}</TaxRate>
+          <TaxableBase>
+            <TotalAmount>${parseFloat(invoice.subtotal || '0').toFixed(2)}</TotalAmount>
+          </TaxableBase>
+          <TaxAmount>
+            <TotalAmount>${parseFloat(invoice.irpfAmount || '0').toFixed(2)}</TotalAmount>
+          </TaxAmount>
+        </Tax>
+      </TaxesWithheld>` : ''}
       <InvoiceTotals>
         <TotalGrossAmount>${parseFloat(invoice.subtotal || '0').toFixed(2)}</TotalGrossAmount>
         <TotalGrossAmountBeforeTaxes>${parseFloat(invoice.subtotal || '0').toFixed(2)}</TotalGrossAmountBeforeTaxes>
         <TotalTaxOutputs>${parseFloat(invoice.totalVat || '0').toFixed(2)}</TotalTaxOutputs>
-        <TotalTaxesWithheld>0.00</TotalTaxesWithheld>
+        <TotalTaxesWithheld>${parseFloat(invoice.irpfAmount || '0').toFixed(2)}</TotalTaxesWithheld>
         <InvoiceTotal>${parseFloat(invoice.total || '0').toFixed(2)}</InvoiceTotal>
         <TotalOutstandingAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalOutstandingAmount>
         <TotalExecutableAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalExecutableAmount>
