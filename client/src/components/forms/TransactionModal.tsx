@@ -95,14 +95,13 @@ export default function TransactionModal({
   const watchTaxableBase = form.watch('taxableBase');
   const watchVatAmount = form.watch('vatAmount');
   
+  // Auto-calculate total from taxable base + VAT for both income and expense
   useEffect(() => {
-    if (transactionType === 'expense') {
-      const base = parseFloat(watchTaxableBase || '0') || 0;
-      const vat = parseFloat(watchVatAmount || '0') || 0;
-      const total = base + vat;
-      form.setValue('amount', total.toFixed(2));
-    }
-  }, [watchTaxableBase, watchVatAmount, transactionType, form]);
+    const base = parseFloat(watchTaxableBase || '0') || 0;
+    const vat = parseFloat(watchVatAmount || '0') || 0;
+    const total = base + vat;
+    form.setValue('amount', total.toFixed(2));
+  }, [watchTaxableBase, watchVatAmount, form]);
 
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -183,8 +182,8 @@ export default function TransactionModal({
         amount: String(data.amount),
         date: new Date(data.date),
         clientSupplierId: data.clientSupplierId || undefined,
-        taxableBase: transactionType === 'expense' ? data.taxableBase : undefined,
-        vatAmount: transactionType === 'expense' ? data.vatAmount : undefined,
+        taxableBase: data.taxableBase || undefined,
+        vatAmount: data.vatAmount || undefined,
         quantity: transactionType === 'income' ? data.quantity : undefined,
       };
       onSubmit(formattedData);
@@ -306,27 +305,7 @@ export default function TransactionModal({
               )}
             </div>
             
-            {transactionType === 'income' ? (
-              <div>
-                <Label htmlFor="amount">Importe</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="pl-8"
-                    {...form.register("amount")}
-                    data-testid="input-amount"
-                  />
-                </div>
-                {form.formState.errors.amount && (
-                  <p className="text-sm text-destructive mt-1">
-                    {form.formState.errors.amount.message}
-                  </p>
-                )}
-              </div>
-            ) : (
+            {transactionType === 'expense' ? (
               <div>
                 <Label htmlFor="clientSupplierId">Proveedor (opcional)</Label>
                 <Select 
@@ -345,65 +324,7 @@ export default function TransactionModal({
                   </SelectContent>
                 </Select>
               </div>
-            )}
-          </div>
-          
-          {transactionType === 'expense' ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="taxableBase">Base Imponible</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="pl-8"
-                    {...form.register("taxableBase")}
-                    data-testid="input-taxable-base"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="vatAmount">IVA</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="pl-8"
-                    {...form.register("vatAmount")}
-                    data-testid="input-vat-amount"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="total">Total</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="pl-8 bg-muted"
-                    value={form.watch('amount') || '0'}
-                    readOnly
-                    data-testid="input-total"
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="quantity">Cantidad (opcional)</Label>
-                <Input
-                  placeholder="Ej: 2500 kg, 150 unidades..."
-                  {...form.register("quantity")}
-                  data-testid="input-quantity"
-                />
-              </div>
+            ) : (
               <div>
                 <Label htmlFor="clientSupplierId">Cliente (opcional)</Label>
                 <Select 
@@ -422,6 +343,65 @@ export default function TransactionModal({
                   </SelectContent>
                 </Select>
               </div>
+            )}
+          </div>
+          
+          {/* Base Imponible, IVA y Total - For both income and expense */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="taxableBase">Base Imponible</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="pl-8"
+                  {...form.register("taxableBase")}
+                  data-testid="input-taxable-base"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="vatAmount">IVA</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="pl-8"
+                  {...form.register("vatAmount")}
+                  data-testid="input-vat-amount"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="total">Total</Label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  className="pl-8 bg-muted"
+                  value={form.watch('amount') || '0'}
+                  readOnly
+                  data-testid="input-total"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Quantity field - Only for income */}
+          {transactionType === 'income' && (
+            <div>
+              <Label htmlFor="quantity">Cantidad (opcional)</Label>
+              <Input
+                placeholder="Ej: 2500 kg, 150 unidades..."
+                {...form.register("quantity")}
+                data-testid="input-quantity"
+              />
             </div>
           )}
           
