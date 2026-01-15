@@ -34,9 +34,6 @@ export default function Sidebar() {
   const { currentCompany } = useCompany();
 
 
-  const navigationAfterDocuments = [
-    { name: "Eventos", href: "/eventos", icon: CalendarDays },
-  ];
 
   const secondaryNav = [
     ...(user?.isAdmin ? [
@@ -68,6 +65,14 @@ export default function Sidebar() {
           >
             <BarChart3 className="w-5 h-5" />
             <span>Estadísticas</span>
+          </Link>
+          <Link 
+            href="/eventos"
+            className="sidebar-link w-full bg-[#800020] hover:bg-[#600018] text-[#FFFACD] hover:text-white border border-[#800020] hover:border-[#600018] font-semibold"
+            data-testid="nav-eventos"
+          >
+            <CalendarDays className="w-5 h-5" />
+            <span>Eventos</span>
           </Link>
         </div>
 
@@ -210,23 +215,6 @@ export default function Sidebar() {
             <Tags className="w-5 h-5" />
             <span>Categorías Documentos</span>
           </Link>
-        </div>
-
-        <div className="space-y-1">
-          {navigationAfterDocuments.map((item) => {
-            const isActive = location === item.href;
-            return (
-              <Link 
-                key={item.name}
-                href={item.href}
-                className={cn("sidebar-link", isActive && "active")}
-                data-testid={`nav-${item.name.toLowerCase()}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
         </div>
 
         <div className="mt-8 pt-8 border-t border-border">
