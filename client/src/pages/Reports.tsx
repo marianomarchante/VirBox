@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Calendar, TrendingUp, TrendingDown, DollarSign, Package, FileDown, CalendarIcon, X } from "lucide-react";
+import { Download, Calendar, TrendingUp, TrendingDown, DollarSign, Package, FileDown, CalendarIcon, X, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +49,12 @@ export default function Reports() {
 
   const { categories: incomeCategories } = useCategories('income');
   const { categories: expenseCategories } = useCategories('expense');
+
+  // Fetch invoices for IRPF retention data
+  const { data: invoices } = useQuery<any[]>({
+    queryKey: ['/api/invoices', currentCompany?.id],
+    enabled: hasCompanySelected && !!currentCompany?.id,
+  });
 
   // Generate available years from 1950 to current year
   const availableYears = useMemo(() => {
@@ -160,6 +166,59 @@ export default function Reports() {
       netVat: incomeVat - expenseVat,
     };
   }, [filteredTransactions]);
+
+  // Filter invoices with IRPF retention based on selected period
+  const irpfRetentions = useMemo(() => {
+    if (!invoices) return [];
+    
+    return invoices.filter(invoice => {
+      const irpfAmount = parseFloat(invoice.irpfAmount || '0');
+      if (irpfAmount <= 0) return false;
+      
+      const invoiceDate = new Date(invoice.date);
+      const invoiceYear = invoiceDate.getFullYear().toString();
+      const invoiceMonth = invoiceDate.getMonth();
+      const invoiceQuarter = Math.floor(invoiceMonth / 3) + 1;
+
+      // Period filter
+      if (periodType === 'month') {
+        if (invoiceYear !== selectedYear || invoiceMonth.toString() !== selectedMonth) {
+          return false;
+        }
+      } else if (periodType === 'quarter') {
+        const selectedQ = parseInt(selectedQuarter.replace('Q', ''));
+        if (invoiceYear !== selectedYear || invoiceQuarter !== selectedQ) {
+          return false;
+        }
+      } else if (periodType === 'year') {
+        if (invoiceYear !== selectedYear) {
+          return false;
+        }
+      } else if (periodType === 'dateRange') {
+        if (dateFrom) {
+          const fromDate = new Date(dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          if (invoiceDate < fromDate) {
+            return false;
+          }
+        }
+        if (dateTo) {
+          const toDate = new Date(dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (invoiceDate > toDate) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [invoices, periodType, selectedMonth, selectedQuarter, selectedYear, dateFrom, dateTo]);
+
+  // Calculate total IRPF retention
+  const totalIrpfRetention = useMemo(() => {
+    return irpfRetentions.reduce((sum, inv) => sum + parseFloat(inv.irpfAmount || '0'), 0);
+  }, [irpfRetentions]);
 
   // Generate monthly data from filtered transactions
   const monthlyData = useMemo(() => {
@@ -883,6 +942,80 @@ export default function Reports() {
                         {metrics.netVat >= 0 ? '(a pagar)' : '(a favor)'}
                       </span>
                     </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* IRPF Retentions Card */}
+          {irpfRetentions.length > 0 && (
+            <Card data-testid="irpf-retentions-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5" />
+                  Retenciones IRPF Practicadas - {getPeriodLabel()}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Summary */}
+                  <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Retenciones IRPF</p>
+                      <p className="text-xs text-muted-foreground">
+                        {irpfRetentions.length} factura{irpfRetentions.length !== 1 ? 's' : ''} con retención
+                      </p>
+                    </div>
+                    <p className="text-2xl font-bold text-amber-600">
+                      {formatCurrency(totalIrpfRetention)}
+                    </p>
+                  </div>
+
+                  {/* Retentions table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-2">Fecha</th>
+                          <th className="text-left py-2 px-2">Nº Factura</th>
+                          <th className="text-left py-2 px-2">Cliente</th>
+                          <th className="text-left py-2 px-2">NIF/CIF</th>
+                          <th className="text-right py-2 px-2">Base</th>
+                          <th className="text-right py-2 px-2">% IRPF</th>
+                          <th className="text-right py-2 px-2">Retención</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {irpfRetentions.map((invoice) => {
+                          const invoiceYear = invoice.year || new Date(invoice.date).getFullYear();
+                          const invoiceNumber = `${invoice.series}-${invoiceYear}-${String(invoice.number).padStart(4, '0')}`;
+                          return (
+                            <tr key={invoice.id} className="border-b hover:bg-muted/50">
+                              <td className="py-2 px-2">
+                                {format(new Date(invoice.date), 'dd/MM/yyyy', { locale: es })}
+                              </td>
+                              <td className="py-2 px-2 font-mono text-xs">{invoiceNumber}</td>
+                              <td className="py-2 px-2">{invoice.clientName}</td>
+                              <td className="py-2 px-2 font-mono text-xs">{invoice.clientIdFiscal || '-'}</td>
+                              <td className="py-2 px-2 text-right">{formatCurrency(parseFloat(invoice.subtotal || '0'))}</td>
+                              <td className="py-2 px-2 text-right">{parseFloat(invoice.irpfRate || '0').toFixed(0)}%</td>
+                              <td className="py-2 px-2 text-right font-semibold text-amber-600">
+                                {formatCurrency(parseFloat(invoice.irpfAmount || '0'))}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-muted/50 font-semibold">
+                          <td colSpan={6} className="py-2 px-2 text-right">Total Retenciones:</td>
+                          <td className="py-2 px-2 text-right text-amber-600">
+                            {formatCurrency(totalIrpfRetention)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
                 </div>
               </CardContent>
