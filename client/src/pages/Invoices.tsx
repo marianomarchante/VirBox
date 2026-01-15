@@ -520,14 +520,28 @@ export default function Invoices() {
       doc.setFontSize(10);
       doc.text('FORMA DE PAGO', 15, paymentY);
       doc.setFont('helvetica', 'normal');
-      const paymentLabels: Record<string, string> = {
-        'transferencia': 'Transferencia bancaria',
-        'efectivo': 'Efectivo',
-        'tarjeta': 'Tarjeta de cr\u00e9dito/d\u00e9bito',
-        'domiciliacion': 'Domiciliaci\u00f3n bancaria'
-      };
-      doc.text(paymentLabels[invoice.paymentMethod || 'transferencia'] || invoice.paymentMethod || '', 15, paymentY + 6);
-      if (invoice.iban) {
+      
+      // Build payment method text based on method type
+      let paymentMethodText = '';
+      const paymentMethod = invoice.paymentMethod || 'transferencia';
+      
+      if (paymentMethod === 'transferencia') {
+        if (currentCompany?.bankAccount) {
+          paymentMethodText = `Transferencia en la cuenta ${currentCompany.bankAccount}`;
+        } else {
+          paymentMethodText = 'Transferencia';
+        }
+      } else {
+        const paymentLabels: Record<string, string> = {
+          'efectivo': 'Efectivo',
+          'tarjeta': 'Tarjeta de crédito/débito',
+          'domiciliacion': 'Domiciliación bancaria'
+        };
+        paymentMethodText = paymentLabels[paymentMethod] || paymentMethod;
+      }
+      
+      doc.text(paymentMethodText, 15, paymentY + 6);
+      if (invoice.iban && paymentMethod !== 'transferencia') {
         doc.text(`IBAN: ${invoice.iban}`, 15, paymentY + 12);
       }
       
