@@ -68,7 +68,7 @@ export default function Sidebar() {
           </Link>
           <Link 
             href="/eventos"
-            className="sidebar-link w-full bg-[#800020] hover:bg-[#600018] text-[#FFFACD] hover:text-white border border-[#800020] hover:border-[#600018] font-semibold"
+            className="sidebar-link w-full bg-[#FFFACD] hover:bg-white text-[#800020] hover:text-[#800020] border border-[#800020] hover:border-[#800020] font-semibold"
             data-testid="nav-eventos"
           >
             <CalendarDays className="w-5 h-5" />
