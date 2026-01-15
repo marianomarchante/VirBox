@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Download, Calendar, TrendingUp, TrendingDown, DollarSign, Package, FileDown, CalendarIcon, X, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +11,7 @@ import MobileMenu from "@/components/layout/MobileMenu";
 import TopBar from "@/components/layout/TopBar";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useCategories } from "@/hooks/use-categories";
+import { useInvoices } from "@/hooks/use-invoices";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { useLocation } from "wouter";
@@ -51,15 +51,7 @@ export default function Reports() {
   const { categories: expenseCategories } = useCategories('expense');
 
   // Fetch invoices for IRPF retention data
-  const { data: invoices } = useQuery<any[]>({
-    queryKey: [`/api/invoices?companyId=${currentCompany?.id}`],
-    queryFn: async () => {
-      const response = await fetch('/api/invoices', { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch invoices');
-      return response.json();
-    },
-    enabled: hasCompanySelected && !!currentCompany?.id,
-  });
+  const { invoices } = useInvoices();
 
   // Generate available years from 1950 to current year
   const availableYears = useMemo(() => {
