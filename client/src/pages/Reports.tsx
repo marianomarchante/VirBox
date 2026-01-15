@@ -358,19 +358,30 @@ export default function Reports() {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
+    // Company logo (if available)
+    let headerY = 20;
+    if (currentCompany?.logoImage) {
+      try {
+        doc.addImage(currentCompany.logoImage, 'AUTO', 14, 10, 25, 25);
+        headerY = 40;
+      } catch (e) {
+        console.log('Error adding logo to PDF:', e);
+      }
+    }
+    
     // Title
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('Informe Financiero', pageWidth / 2, 20, { align: 'center' });
+    doc.text('Informe Financiero', pageWidth / 2, headerY, { align: 'center' });
     
     // Company and period
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Empresa: ${currentCompany?.name || 'N/A'}`, 14, 30);
-    doc.text(`Período: ${getPeriodLabel()}`, 14, 36);
+    doc.text(`Empresa: ${currentCompany?.name || 'N/A'}`, 14, headerY + 10);
+    doc.text(`Período: ${getPeriodLabel()}`, 14, headerY + 16);
     
     // Filter info
-    let yPos = 42;
+    let yPos = headerY + 22;
     if (categoryType !== 'all') {
       doc.text(`Tipo: ${categoryType === 'income' ? 'Ingresos' : 'Gastos'}`, 14, yPos);
       yPos += 6;

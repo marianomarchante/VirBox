@@ -47,6 +47,10 @@ export const companies = pgTable("companies", {
   postalCode: text("postal_code"), // Postal code
   phone: text("phone"),
   email: text("email"),
+  logoImage: text("logo_image"), // Company logo stored as base64
+  logoFileName: text("logo_file_name"), // Original filename of the logo
+  bankAccount: varchar("bank_account", { length: 24 }), // Bank account (max 24 chars)
+  website: varchar("website", { length: 155 }), // Website URL (max 155 chars)
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

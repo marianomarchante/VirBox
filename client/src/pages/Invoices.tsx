@@ -327,19 +327,31 @@ export default function Invoices() {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       
+      // Company logo (if available)
+      let logoWidth = 0;
+      if (currentCompany?.logoImage) {
+        try {
+          doc.addImage(currentCompany.logoImage, 'AUTO', 15, 10, 25, 25);
+          logoWidth = 30;
+        } catch (e) {
+          console.log('Error adding logo to PDF:', e);
+        }
+      }
+      
       // Header with company name
+      const textStartX = 15 + logoWidth;
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text(currentCompany?.name || 'Empresa', 15, 15);
+      doc.text(currentCompany?.name || 'Empresa', textStartX, 15);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       let companyY = 22;
       if (currentCompany?.taxId) {
-        doc.text(`NIF/CIF: ${currentCompany.taxId}`, 15, companyY);
+        doc.text(`NIF/CIF: ${currentCompany.taxId}`, textStartX, companyY);
         companyY += 6;
       }
       if (currentCompany?.address) {
-        doc.text(currentCompany.address, 15, companyY);
+        doc.text(currentCompany.address, textStartX, companyY);
         companyY += 6;
       }
       const companyLocation = [
@@ -348,15 +360,19 @@ export default function Invoices() {
         currentCompany?.province ? `(${currentCompany.province})` : null
       ].filter(Boolean).join(' ');
       if (companyLocation) {
-        doc.text(companyLocation, 15, companyY);
+        doc.text(companyLocation, textStartX, companyY);
         companyY += 6;
       }
       if (currentCompany?.phone) {
-        doc.text(`Tel: ${currentCompany.phone}`, 15, companyY);
+        doc.text(`Tel: ${currentCompany.phone}`, textStartX, companyY);
         companyY += 6;
       }
       if (currentCompany?.email) {
-        doc.text(currentCompany.email, 15, companyY);
+        doc.text(currentCompany.email, textStartX, companyY);
+        companyY += 6;
+      }
+      if (currentCompany?.website) {
+        doc.text(`Web: ${currentCompany.website}`, textStartX, companyY);
       }
       
       // Invoice title and number (right side)

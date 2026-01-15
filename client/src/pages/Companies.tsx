@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Building2, Mail, Phone, MapPin, Edit, Trash2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Building2, Mail, Phone, MapPin, Edit, Trash2, Upload, X, Globe, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,9 @@ export default function Companies() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<string | null>(null);
+  const [logoImage, setLogoImage] = useState<string | null>(null);
+  const [logoFileName, setLogoFileName] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: companies, isLoading } = useQuery<Company[]>({
@@ -95,15 +98,58 @@ export default function Companies() {
       address: null,
       phone: null,
       email: null,
+      bankAccount: null,
+      website: null,
       isActive: true,
     },
   });
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Por favor seleccione un archivo de imagen válido.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "La imagen no puede superar 2MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setLogoImage(event.target?.result as string);
+        setLogoFileName(file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoImage(null);
+    setLogoFileName(null);
+    if (logoInputRef.current) {
+      logoInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = (data: InsertCompany) => {
+    const companyData = {
+      ...data,
+      logoImage: logoImage,
+      logoFileName: logoFileName,
+    };
     if (editingCompany) {
-      updateCompany.mutate({ id: editingCompany, company: data });
+      updateCompany.mutate({ id: editingCompany, company: companyData });
     } else {
-      createCompany.mutate(data);
+      createCompany.mutate(companyData);
     }
     handleCloseModal();
   };
@@ -111,6 +157,8 @@ export default function Companies() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingCompany(null);
+    setLogoImage(null);
+    setLogoFileName(null);
     form.reset();
   };
 
@@ -118,12 +166,16 @@ export default function Companies() {
     const company = companies?.find(c => c.id === companyId);
     if (company) {
       setEditingCompany(companyId);
+      setLogoImage(company.logoImage || null);
+      setLogoFileName(company.logoFileName || null);
       form.reset({
         name: company.name,
         taxId: company.taxId || null,
         address: company.address || null,
         phone: company.phone || null,
         email: company.email || null,
+        bankAccount: company.bankAccount || null,
+        website: company.website || null,
         isActive: company.isActive,
       });
       setIsModalOpen(true);
@@ -367,6 +419,84 @@ export default function Companies() {
                   placeholder="Av. Principal 123, Ciudad"
                   data-testid="input-address"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="bankAccount">Cuenta Bancaria (máx. 24 car.)</Label>
+                <div className="relative">
+                  <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="bankAccount"
+                    {...form.register('bankAccount')}
+                    placeholder="ES12 3456 7890 1234"
+                    maxLength={24}
+                    className="pl-10"
+                    data-testid="input-bank-account"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="website">Página Web (máx. 155 car.)</Label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="website"
+                    {...form.register('website')}
+                    placeholder="www.miempresa.com"
+                    maxLength={155}
+                    className="pl-10"
+                    data-testid="input-website"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <Label>Logotipo de la Empresa</Label>
+                <div className="mt-2">
+                  {logoImage ? (
+                    <div className="flex items-center gap-4">
+                      <img 
+                        src={logoImage} 
+                        alt="Logo de la empresa" 
+                        className="w-24 h-24 object-contain border rounded-lg bg-white"
+                      />
+                      <div className="flex flex-col gap-2">
+                        <p className="text-sm text-muted-foreground">{logoFileName}</p>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleRemoveLogo}
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Eliminar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Haga clic para subir una imagen
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PNG, JPG hasta 2MB
+                      </p>
+                    </div>
+                  )}
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    data-testid="input-logo"
+                  />
+                </div>
               </div>
 
               <div className="md:col-span-2 flex items-center gap-2">
