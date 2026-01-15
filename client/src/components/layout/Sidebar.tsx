@@ -76,6 +76,33 @@ export default function Sidebar() {
 
         <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
           <Link 
+            href="/articulos"
+            className={cn("sidebar-link", location === "/articulos" && "active")}
+            data-testid="nav-articulos"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            <span>Artículos</span>
+          </Link>
+          <Link 
+            href="/albaranes"
+            className={cn("sidebar-link", location === "/albaranes" && "active")}
+            data-testid="nav-albaranes"
+          >
+            <ClipboardList className="w-5 h-5" />
+            <span>Albaranes</span>
+          </Link>
+          <Link 
+            href="/facturas"
+            className="sidebar-link w-full bg-[#FFFACD] hover:bg-white text-[#800020] hover:text-[#800020] border border-[#800020] hover:border-[#800020] font-semibold"
+            data-testid="nav-facturas"
+          >
+            <Receipt className="w-5 h-5" />
+            <span>Facturas</span>
+          </Link>
+        </div>
+
+        <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
+          <Link 
             href="/ingresos"
             className={cn("sidebar-link", location === "/ingresos" && "active")}
             data-testid="nav-ingresos"
@@ -156,33 +183,6 @@ export default function Sidebar() {
               </button>
             }
           />
-        </div>
-
-        <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
-          <Link 
-            href="/articulos"
-            className={cn("sidebar-link", location === "/articulos" && "active")}
-            data-testid="nav-articulos"
-          >
-            <ShoppingBag className="w-5 h-5" />
-            <span>Artículos</span>
-          </Link>
-          <Link 
-            href="/albaranes"
-            className={cn("sidebar-link", location === "/albaranes" && "active")}
-            data-testid="nav-albaranes"
-          >
-            <ClipboardList className="w-5 h-5" />
-            <span>Albaranes</span>
-          </Link>
-          <Link 
-            href="/facturas"
-            className={cn("sidebar-link", location === "/facturas" && "active")}
-            data-testid="nav-facturas"
-          >
-            <Receipt className="w-5 h-5" />
-            <span>Facturas</span>
-          </Link>
         </div>
 
         <div className="space-y-1">
