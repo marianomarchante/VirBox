@@ -313,16 +313,19 @@ export default function DeliveryNotes() {
       doc.text(`${totalAmount.toFixed(2)} €`, pageWidth - 15, afterLinesY, { align: 'right' });
       
       // Notes
+      let notesEndY = afterLinesY + 10;
       if (note.notes) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.text('OBSERVACIONES', 15, afterLinesY + 15);
         doc.setFont('helvetica', 'normal');
-        doc.text(note.notes, 15, afterLinesY + 21);
+        const notesText = doc.splitTextToSize(note.notes, pageWidth - 30);
+        doc.text(notesText, 15, afterLinesY + 21);
+        notesEndY = afterLinesY + 21 + (notesText.length * 5);
       }
       
-      // Signature area
-      const signatureY = afterLinesY + 45;
+      // Signature area - position after notes to avoid overlap
+      const signatureY = Math.max(notesEndY + 15, afterLinesY + 45);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.text('Recibí conforme:', 15, signatureY);

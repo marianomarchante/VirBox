@@ -504,18 +504,24 @@ export default function Invoices() {
       doc.text(`${parseFloat(invoice.total || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY + totalsOffset + 2, { align: 'right' });
       
       // VAT Exemption notice if applicable
+      let exemptionHeight = 0;
       if (invoiceData.vatExemptionReason) {
         totalsOffset += 12;
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
         doc.text('Exenta de aplicación del IVA:', 15, totalsY + totalsOffset);
-        doc.text(invoiceData.vatExemptionReason, 15, totalsY + totalsOffset + 5);
+        const exemptionText = doc.splitTextToSize(invoiceData.vatExemptionReason, pageWidth - 30);
+        doc.text(exemptionText, 15, totalsY + totalsOffset + 5);
+        exemptionHeight = totalsOffset + 5 + (exemptionText.length * 4);
         doc.setTextColor(0, 0, 0);
       }
       
-      // Payment info
-      const paymentY = Math.max((doc as any).lastAutoTable?.finalY || totalsY, totalsY + 25) + 15;
+      // Payment info - calculate Y position considering VAT table, totals, and exemption text
+      const vatTableEndY = (doc as any).lastAutoTable?.finalY || totalsY;
+      const totalsEndY = totalsY + totalsOffset + 10;
+      const exemptionEndY = exemptionHeight > 0 ? totalsY + exemptionHeight + 5 : 0;
+      const paymentY = Math.max(vatTableEndY, totalsEndY, exemptionEndY) + 10;
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.text('FORMA DE PAGO', 15, paymentY);
