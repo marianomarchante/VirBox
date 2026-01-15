@@ -120,13 +120,24 @@ export default function Reports() {
         }
       }
 
+      // Special filter for IRPF retention invoices
+      if (selectedCategory === 'irpf_retention') {
+        // Only show transactions linked to invoices with IRPF retention
+        if (!transaction.invoiceId) return false;
+        const linkedInvoice = invoices?.find(inv => inv.id === transaction.invoiceId);
+        if (!linkedInvoice || parseFloat(linkedInvoice.irpfAmount || '0') <= 0) {
+          return false;
+        }
+        return true;
+      }
+
       if (selectedCategory !== 'all' && transaction.category !== selectedCategory) {
         return false;
       }
 
       return true;
     });
-  }, [allTransactions, periodType, selectedMonth, selectedQuarter, selectedYear, dateFrom, dateTo, selectedCategory, categoryType]);
+  }, [allTransactions, periodType, selectedMonth, selectedQuarter, selectedYear, dateFrom, dateTo, selectedCategory, categoryType, invoices]);
 
   // Calculate metrics from filtered transactions
   const metrics = useMemo(() => {
@@ -797,6 +808,9 @@ export default function Reports() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas</SelectItem>
+                      <SelectItem value="irpf_retention" className="text-amber-600 font-medium">
+                        Facturas con retención IRPF
+                      </SelectItem>
                       {categoryType === 'income' && incomeCategories?.map(cat => (
                         <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                       ))}
@@ -954,7 +968,7 @@ export default function Reports() {
           )}
 
           {/* IRPF Retentions Card */}
-          {irpfRetentions.length > 0 && (
+          {(irpfRetentions.length > 0 || selectedCategory === 'irpf_retention') && (
             <Card data-testid="irpf-retentions-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
