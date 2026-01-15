@@ -56,6 +56,43 @@ const IRPF_RATES = [
   { value: '15', label: 'Profesionales general (15%)' },
 ];
 
+// VAT exemption reasons according to Spanish legislation (Ley 37/1992 del IVA)
+const VAT_EXEMPTION_REASONS = [
+  { value: '', label: 'Sin exención (operación sujeta a IVA)' },
+  { value: 'Art. 20.Uno.1 - Servicios médicos y sanitarios', label: 'Art. 20.Uno.1 - Servicios médicos y sanitarios' },
+  { value: 'Art. 20.Uno.2 - Hospitalización y asistencia sanitaria', label: 'Art. 20.Uno.2 - Hospitalización y asistencia sanitaria' },
+  { value: 'Art. 20.Uno.3 - Asistencia social', label: 'Art. 20.Uno.3 - Asistencia social' },
+  { value: 'Art. 20.Uno.4 - Servicios educativos', label: 'Art. 20.Uno.4 - Servicios educativos' },
+  { value: 'Art. 20.Uno.5 - Clases particulares por personas físicas', label: 'Art. 20.Uno.5 - Clases particulares por personas físicas' },
+  { value: 'Art. 20.Uno.6 - Servicios deportivos y culturales', label: 'Art. 20.Uno.6 - Servicios deportivos y culturales' },
+  { value: 'Art. 20.Uno.7 - Entidades sin fines lucrativos', label: 'Art. 20.Uno.7 - Entidades sin fines lucrativos' },
+  { value: 'Art. 20.Uno.8 - Mediación financiera', label: 'Art. 20.Uno.8 - Mediación financiera' },
+  { value: 'Art. 20.Uno.9 - Loterías y apuestas del Estado', label: 'Art. 20.Uno.9 - Loterías y apuestas del Estado' },
+  { value: 'Art. 20.Uno.10 - Entregas de sellos de correos', label: 'Art. 20.Uno.10 - Entregas de sellos de correos' },
+  { value: 'Art. 20.Uno.11 - Operaciones de seguro y reaseguro', label: 'Art. 20.Uno.11 - Operaciones de seguro y reaseguro' },
+  { value: 'Art. 20.Uno.12 - Arrendamientos de vivienda', label: 'Art. 20.Uno.12 - Arrendamientos de vivienda' },
+  { value: 'Art. 20.Uno.13 - Concesión y negociación de créditos', label: 'Art. 20.Uno.13 - Concesión y negociación de créditos' },
+  { value: 'Art. 20.Uno.14 - Depósitos en efectivo', label: 'Art. 20.Uno.14 - Depósitos en efectivo' },
+  { value: 'Art. 20.Uno.15 - Transmisión de empresas', label: 'Art. 20.Uno.15 - Transmisión de empresas' },
+  { value: 'Art. 20.Uno.16 - Operaciones financieras', label: 'Art. 20.Uno.16 - Operaciones financieras' },
+  { value: 'Art. 20.Uno.17 - Servicios de gestión de fondos', label: 'Art. 20.Uno.17 - Servicios de gestión de fondos' },
+  { value: 'Art. 20.Uno.18 - Operaciones con valores', label: 'Art. 20.Uno.18 - Operaciones con valores' },
+  { value: 'Art. 20.Uno.19 - Servicios postales', label: 'Art. 20.Uno.19 - Servicios postales' },
+  { value: 'Art. 20.Uno.20 - Entregas de terrenos rústicos', label: 'Art. 20.Uno.20 - Entregas de terrenos rústicos' },
+  { value: 'Art. 20.Uno.21 - Entregas de terrenos no edificables', label: 'Art. 20.Uno.21 - Entregas de terrenos no edificables' },
+  { value: 'Art. 20.Uno.22 - Segunda transmisión de edificaciones', label: 'Art. 20.Uno.22 - Segunda transmisión de edificaciones' },
+  { value: 'Art. 20.Uno.23 - Arrendamientos rústicos', label: 'Art. 20.Uno.23 - Arrendamientos rústicos' },
+  { value: 'Art. 20.Uno.24 - Entregas de bienes utilizados en exenciones', label: 'Art. 20.Uno.24 - Entregas de bienes utilizados en exenciones' },
+  { value: 'Art. 20.Uno.25 - Transporte de enfermos en ambulancia', label: 'Art. 20.Uno.25 - Transporte de enfermos en ambulancia' },
+  { value: 'Art. 20.Uno.26 - Servicios funerarios', label: 'Art. 20.Uno.26 - Servicios funerarios' },
+  { value: 'Art. 20.Uno.27 - Asistencia a personas en situación de dependencia', label: 'Art. 20.Uno.27 - Asistencia a personas en situación de dependencia' },
+  { value: 'Art. 21 - Exportaciones de bienes', label: 'Art. 21 - Exportaciones de bienes' },
+  { value: 'Art. 22 - Operaciones asimiladas a exportaciones', label: 'Art. 22 - Operaciones asimiladas a exportaciones' },
+  { value: 'Art. 23 - Navegación marítima y aérea internacional', label: 'Art. 23 - Navegación marítima y aérea internacional' },
+  { value: 'Art. 24 - Regímenes aduaneros suspensivos', label: 'Art. 24 - Regímenes aduaneros suspensivos' },
+  { value: 'Art. 25 - Entregas intracomunitarias de bienes', label: 'Art. 25 - Entregas intracomunitarias de bienes' },
+];
+
 export default function Invoices() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,6 +102,7 @@ export default function Invoices() {
   const [selectedDeliveryNotes, setSelectedDeliveryNotes] = useState<string[]>([]);
   const [createMode, setCreateMode] = useState<'manual' | 'from-delivery-notes'>('manual');
   const [irpfRate, setIrpfRate] = useState<string>('0');
+  const [vatExemptionReason, setVatExemptionReason] = useState<string>('');
 
   const { invoices, createInvoice, createInvoiceFromDeliveryNotes, updateInvoice, deleteInvoice, isLoading } = useInvoices();
   const { deliveryNotes } = useDeliveryNotes();
@@ -121,6 +159,7 @@ export default function Invoices() {
       totalVat: totalVat.toFixed(2),
       irpfRate: irpfRate,
       irpfAmount: irpfAmount.toFixed(2),
+      vatExemptionReason: vatExemptionReason && vatExemptionReason !== 'none' ? vatExemptionReason : null,
       total: total.toFixed(2),
       companyId: currentCompanyId ?? undefined,
     };
@@ -165,6 +204,7 @@ export default function Invoices() {
     setSelectedDeliveryNotes([]);
     setCreateMode('manual');
     setIrpfRate('0');
+    setVatExemptionReason('');
     form.reset();
   };
 
@@ -1098,6 +1138,21 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                       <div className="flex justify-end">
                         <span className="text-sm text-muted-foreground w-32">IVA:</span>
                         <span className="text-sm font-medium w-28 text-right">{formatCurrency(calculateVat().toString())}</span>
+                      </div>
+                      <div className="flex flex-col gap-2 py-2">
+                        <Label className="text-sm">Exención de IVA (Ley 37/1992)</Label>
+                        <Select value={vatExemptionReason} onValueChange={setVatExemptionReason}>
+                          <SelectTrigger className="w-full" data-testid="select-vat-exemption">
+                            <SelectValue placeholder="Sin exención (operación sujeta a IVA)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {VAT_EXEMPTION_REASONS.map(reason => (
+                              <SelectItem key={reason.value || 'none'} value={reason.value || 'none'}>
+                                {reason.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="flex justify-end items-center gap-2">
                         <span className="text-sm text-muted-foreground">Retención IRPF:</span>

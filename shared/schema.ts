@@ -259,6 +259,7 @@ export const invoices = pgTable("invoices", {
   totalVat: decimal("total_vat", { precision: 10, scale: 2 }).notNull(),
   irpfRate: decimal("irpf_rate", { precision: 5, scale: 2 }).default("0"), // IRPF retention rate (%)
   irpfAmount: decimal("irpf_amount", { precision: 10, scale: 2 }).default("0"), // IRPF retention amount
+  vatExemptionReason: text("vat_exemption_reason"), // Spanish VAT exemption reason (Art. 20-25 Ley 37/1992)
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   paymentMethod: text("payment_method").default("transferencia"),
   paymentTerms: text("payment_terms"),
