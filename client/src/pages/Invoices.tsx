@@ -539,6 +539,21 @@ export default function Invoices() {
         doc.text(invoice.notes, 15, paymentY + 31);
       }
       
+      // Data protection clause (footer)
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const footerY = pageHeight - 25;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, footerY - 5, pageWidth - 15, footerY - 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 100, 100);
+      const companyNameForClause = currentCompany?.name || 'La empresa';
+      const companyEmailForClause = currentCompany?.email || '';
+      const dataProtectionText = `De conformidad con lo dispuesto en el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD), le informamos que los datos personales facilitados serán tratados por ${companyNameForClause} con la finalidad de gestionar la relación comercial. Puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad${companyEmailForClause ? ` enviando un correo a ${companyEmailForClause}` : ''}.`;
+      const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 30);
+      doc.text(splitText, 15, footerY);
+      doc.setTextColor(0, 0, 0);
+      
       // Save
       const paddedNumber = String(invoice.number).padStart(4, '0');
       doc.save(`Factura_${invoice.series}-${invoiceYear}-${paddedNumber}.pdf`);
