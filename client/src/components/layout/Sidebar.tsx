@@ -46,9 +46,17 @@ export default function Sidebar() {
     <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-card border-r border-border">
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Calculator className="text-primary-foreground" size={20} />
-          </div>
+          {currentCompany?.logoImage ? (
+            <img 
+              src={currentCompany.logoImage} 
+              alt={currentCompany.name}
+              className="w-10 h-10 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <Calculator className="text-primary-foreground" size={20} />
+            </div>
+          )}
           <div>
             <h1 className="text-xl font-bold text-primary">{currentCompany?.name || 'MiContable'}</h1>
             <p className="text-xs text-muted-foreground">Gestión Empresarial</p>
