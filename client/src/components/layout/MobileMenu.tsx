@@ -17,13 +17,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   const { currentCompany } = useCompany();
   const { user, logout } = useAuthContext();
 
-  const navigationAfterInventory = [
-    { name: "Informes", href: "/informes", icon: FileText },
-  ];
-
-  const navigationAfterDocuments = [
-    { name: "Eventos", href: "/eventos", icon: CalendarDays },
-  ];
 
   const secondaryNav = [
     ...(user?.isAdmin ? [
@@ -75,6 +68,24 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             >
               <BarChart3 className="w-5 h-5" />
               <span>Estadísticas</span>
+            </Link>
+            <Link 
+              href="/eventos"
+              className="sidebar-link w-full bg-[#FFFACD] hover:bg-white text-[#800020] hover:text-[#800020] border border-[#800020] hover:border-[#800020] font-semibold"
+              onClick={onClose}
+              data-testid="mobile-nav-eventos"
+            >
+              <CalendarDays className="w-5 h-5" />
+              <span>Eventos</span>
+            </Link>
+            <Link 
+              href="/informes"
+              className="sidebar-link w-full bg-[#FFFACD] hover:bg-white text-[#800020] hover:text-[#800020] border border-[#800020] hover:border-[#800020] font-semibold"
+              onClick={onClose}
+              data-testid="mobile-nav-informes"
+            >
+              <FileText className="w-5 h-5" />
+              <span>Informes</span>
             </Link>
           </div>
 
@@ -200,24 +211,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </Link>
           </div>
 
-          <div className="space-y-1">
-            {navigationAfterInventory.map((item) => {
-              const isActive = location === item.href;
-              return (
-                <Link 
-                  key={item.name}
-                  href={item.href}
-                  className={cn("sidebar-link", isActive && "active")}
-                  onClick={onClose}
-                  data-testid={`mobile-nav-${item.name.toLowerCase()}`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </div>
-
           <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
             <Link 
               href="/gestion-documental"
@@ -237,24 +230,6 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               <Tags className="w-5 h-5" />
               <span>Categorías Documentos</span>
             </Link>
-          </div>
-
-          <div className="space-y-1">
-            {navigationAfterDocuments.map((item) => {
-              const isActive = location === item.href;
-              return (
-                <Link 
-                  key={item.name}
-                  href={item.href}
-                  className={cn("sidebar-link", isActive && "active")}
-                  onClick={onClose}
-                  data-testid={`mobile-nav-${item.name.toLowerCase()}`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
           </div>
 
           <div className="mt-8 pt-8 border-t border-border space-y-1">

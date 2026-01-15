@@ -82,6 +82,14 @@ export default function Sidebar() {
             <CalendarDays className="w-5 h-5" />
             <span>Eventos</span>
           </Link>
+          <Link 
+            href="/informes"
+            className="sidebar-link w-full bg-[#FFFACD] hover:bg-white text-[#800020] hover:text-[#800020] border border-[#800020] hover:border-[#800020] font-semibold"
+            data-testid="nav-informes"
+          >
+            <FileText className="w-5 h-5" />
+            <span>Informes</span>
+          </Link>
         </div>
 
         <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
@@ -162,17 +170,6 @@ export default function Sidebar() {
           >
             <Truck className="w-5 h-5" />
             <span>Proveedores</span>
-          </Link>
-        </div>
-
-        <div className="space-y-1">
-          <Link 
-            href="/informes"
-            className="sidebar-link w-full bg-[#FFFACD] hover:bg-white text-[#800020] hover:text-[#800020] border border-[#800020] hover:border-[#800020] font-semibold"
-            data-testid="nav-informes"
-          >
-            <FileText className="w-5 h-5" />
-            <span>Informes</span>
           </Link>
         </div>
 
