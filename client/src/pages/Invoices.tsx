@@ -487,6 +487,17 @@ export default function Invoices() {
       doc.text('TOTAL FACTURA:', 130, totalsY + totalsOffset + 2);
       doc.text(`${parseFloat(invoice.total || '0').toFixed(2)} \u20AC`, pageWidth - 15, totalsY + totalsOffset + 2, { align: 'right' });
       
+      // VAT Exemption notice if applicable
+      if (invoiceData.vatExemptionReason) {
+        totalsOffset += 12;
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Exenta de aplicación del IVA:', 15, totalsY + totalsOffset);
+        doc.text(invoiceData.vatExemptionReason, 15, totalsY + totalsOffset + 5);
+        doc.setTextColor(0, 0, 0);
+      }
+      
       // Payment info
       const paymentY = Math.max((doc as any).lastAutoTable?.finalY || totalsY, totalsY + 25) + 15;
       doc.setFont('helvetica', 'bold');
@@ -655,7 +666,10 @@ ${(invoiceData.vatBreakdown || []).map((vat: any) => `        <Tax>
             <TotalAmount>${parseFloat(vat.vatAmount).toFixed(2)}</TotalAmount>
           </TaxAmount>
         </Tax>`).join('\n')}
-      </TaxesOutputs>${parseFloat(invoice.irpfRate || '0') > 0 ? `
+      </TaxesOutputs>${invoiceData.vatExemptionReason ? `
+      <AdditionalData>
+        <InvoiceAdditionalInformation>Exenta de aplicación del IVA: ${escapeXml(invoiceData.vatExemptionReason)}</InvoiceAdditionalInformation>
+      </AdditionalData>` : ''}${parseFloat(invoice.irpfRate || '0') > 0 ? `
       <TaxesWithheld>
         <Tax>
           <TaxTypeCode>04</TaxTypeCode>
