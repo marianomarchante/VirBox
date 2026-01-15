@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { HelpCircle, X, Home, TrendingUp, TrendingDown, Package, Users, Truck, FileText, FolderOpen, Building2, BarChart3, Settings, Calendar, Filter, Download, Upload } from "lucide-react";
+import { HelpCircle, X, Home, TrendingUp, TrendingDown, Package, Users, Truck, FileText, FolderOpen, Building2, BarChart3, Settings, Calendar, Filter, Download, Upload, Receipt, FileCode, QrCode } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,9 +33,10 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
         </DialogHeader>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Inicio</TabsTrigger>
             <TabsTrigger value="modules">Módulos</TabsTrigger>
+            <TabsTrigger value="invoicing">Facturación</TabsTrigger>
             <TabsTrigger value="reports">Informes</TabsTrigger>
             <TabsTrigger value="admin">Admin</TabsTrigger>
           </TabsList>
@@ -191,6 +192,129 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
               </div>
             </TabsContent>
 
+            {/* INVOICING TAB */}
+            <TabsContent value="invoicing" className="space-y-4">
+              <div className="space-y-4">
+                <section>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Receipt className="h-5 w-5 text-primary" />
+                    Módulo de Facturación
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Sistema completo de facturación conforme a la normativa española, con generación de facturas en PDF y XML Facturae 3.2.2.
+                  </p>
+                </section>
+
+                <ModuleSection
+                  icon={<Package className="h-5 w-5" />}
+                  title="Artículos"
+                  description="Catálogo de productos y servicios para facturación"
+                  features={[
+                    "Registro de artículos con código, nombre y descripción",
+                    "Precio unitario y tipo de IVA configurable (21%, 10%, 4%, 0%)",
+                    "Categorización de artículos",
+                    "Búsqueda y filtrado rápido",
+                    "Los artículos se usan en albaranes y facturas"
+                  ]}
+                />
+
+                <ModuleSection
+                  icon={<FileText className="h-5 w-5" />}
+                  title="Albaranes"
+                  description="Notas de entrega para documentar entregas de productos o servicios"
+                  features={[
+                    "Numeración secuencial automática (SERIE-AÑO-NÚMERO)",
+                    "Selección de cliente y artículos del catálogo",
+                    "Cálculo automático de totales",
+                    "Generación de PDF con datos de empresa y cliente",
+                    "Área de firma para conformidad del cliente",
+                    "Cláusula de protección de datos (RGPD/LOPDGDD)",
+                    "Conversión a factura con un clic"
+                  ]}
+                />
+
+                <ModuleSection
+                  icon={<Receipt className="h-5 w-5" />}
+                  title="Facturas"
+                  description="Facturación completa conforme a normativa española"
+                  features={[
+                    "Numeración secuencial por serie y año (SERIE-AÑO-NÚMERO)",
+                    "Desglose de IVA por tipos (21%, 10%, 4%, 0%)",
+                    "Retención IRPF configurable (0%, 1%, 2%, 7%, 15%)",
+                    "Exención de IVA con motivos según Ley 37/1992",
+                    "Formas de pago: transferencia, efectivo, tarjeta, domiciliación",
+                    "Cuenta bancaria automática en transferencias",
+                    "Estados: borrador, emitida, pagada, anulada",
+                    "Creación automática de ingreso al emitir"
+                  ]}
+                />
+
+                <section className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Download className="h-4 w-4 text-primary" />
+                    Generación de Documentos
+                  </h4>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong>PDF:</strong> Factura visual con logo de empresa, datos completos y código QR de verificación</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong>XML Facturae 3.2.2:</strong> Formato oficial para facturación electrónica en España</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-1">•</span>
+                      <span><strong>Código QR:</strong> Contiene fecha, número de factura, NIF empresa y NIF cliente</span>
+                    </li>
+                  </ul>
+                </section>
+
+                <section className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <QrCode className="h-4 w-4 text-primary" />
+                    Código QR de Factura
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Cada factura incluye un código QR con un código alfanumérico de 38 caracteres:
+                  </p>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• AAAAMMDDHHMM (12 dígitos) - Fecha y hora</li>
+                    <li>• Número de factura (10 dígitos)</li>
+                    <li>• NIF/CIF de la empresa (10 dígitos)</li>
+                    <li>• NIF/CIF del cliente (10 dígitos)</li>
+                  </ul>
+                </section>
+
+                <section className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2 text-amber-600 dark:text-amber-400">📋 Exención de IVA</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    El sistema incluye más de 30 motivos de exención según la Ley 37/1992:
+                  </p>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Art. 20: Exenciones interiores (sanidad, educación, servicios sociales...)</li>
+                    <li>• Art. 21-25: Exportaciones e intracomunitarias</li>
+                    <li>• Al activar exención, el IVA se aplica al 0%</li>
+                    <li>• El motivo aparece en PDF y XML</li>
+                  </ul>
+                </section>
+
+                <section className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2 text-blue-600 dark:text-blue-400">💼 Retenciones IRPF</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Tipos de retención disponibles según legislación española:
+                  </p>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• 0% - Sin retención</li>
+                    <li>• 1% - Engorde porcino/avicultura</li>
+                    <li>• 2% - Actividades agrícolas/ganaderas</li>
+                    <li>• 7% - Inicio de actividad profesional</li>
+                    <li>• 15% - Profesionales (tipo general)</li>
+                  </ul>
+                </section>
+              </div>
+            </TabsContent>
+
             {/* REPORTS TAB */}
             <TabsContent value="reports" className="space-y-4">
               <div className="space-y-4">
@@ -336,6 +460,22 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                     </div>
                   </div>
                 </section>
+
+                <section className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                    <Receipt className="h-4 w-4" />
+                    Retenciones IRPF Practicadas
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Cuando existen facturas con retención IRPF en el período seleccionado, se muestra una sección adicional con:
+                  </p>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Total de retenciones IRPF del período</li>
+                    <li>• Número de facturas con retención</li>
+                    <li>• Tabla detallada con fecha, nº factura, cliente, NIF, base imponible, % IRPF e importe</li>
+                    <li>• Información útil para declaraciones trimestrales (modelo 111)</li>
+                  </ul>
+                </section>
               </div>
             </TabsContent>
 
@@ -357,12 +497,28 @@ export function HelpDialog({ open, onOpenChange, trigger }: HelpDialogProps) {
                   title="Gestión de Empresas"
                   description="Administración de empresas en el sistema"
                   features={[
-                    "Crear y editar empresas",
-                    "Configurar datos fiscales (NIF, dirección, contacto)",
+                    "Crear y editar empresas con datos fiscales completos",
+                    "Configurar NIF/CIF, dirección, teléfono y email",
+                    "Subir logotipo de empresa (aparece en facturas, albaranes e informes)",
+                    "Cuenta bancaria para pagos por transferencia",
+                    "Página web de la empresa",
                     "Activar/desactivar empresas",
                     "Eliminar empresas (elimina todos los datos asociados)"
                   ]}
                 />
+
+                <section className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <h4 className="font-semibold mb-2 text-blue-600 dark:text-blue-400">📄 Documentos PDF</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Todos los documentos PDF generados (facturas, albaranes, informes) incluyen:
+                  </p>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• <strong>Logo de empresa:</strong> En la esquina superior izquierda</li>
+                    <li>• <strong>Datos completos:</strong> NIF, dirección, teléfono, email y web</li>
+                    <li>• <strong>Cláusula RGPD/LOPDGDD:</strong> Protección de datos en el pie</li>
+                    <li>• <strong>Cuenta bancaria:</strong> En facturas con pago por transferencia</li>
+                  </ul>
+                </section>
 
                 <ModuleSection
                   icon={<Users className="h-5 w-5" />}
