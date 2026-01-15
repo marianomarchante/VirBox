@@ -606,82 +606,94 @@ export default function DeliveryNotes() {
               
               {lines.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  No hay líneas. Añade artículos al albarán.
+                  No hay líneas. Añade conceptos al albarán.
                 </p>
               ) : (
                 <div className="space-y-3">
                   {lines.map((line, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                      <div className="col-span-4">
-                        <Label className="text-xs">Artículo</Label>
-                        <Select 
-                          value={line.articleId}
-                          onValueChange={(value) => handleLineChange(index, 'articleId', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {articles?.filter(a => a.isActive).map(article => (
-                              <SelectItem key={article.id} value={article.id}>
-                                {article.code} - {article.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                    <div key={index} className="space-y-2 border-b pb-3">
+                      <div className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-4">
+                          <Label className="text-xs">Descripción</Label>
+                          <Input
+                            value={line.description || ''}
+                            onChange={(e) => handleLineChange(index, 'description', e.target.value)}
+                            placeholder="Descripción del concepto"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">Cantidad</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={line.quantity}
+                            onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">Precio</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={line.unitPrice}
+                            onChange={(e) => handleLineChange(index, 'unitPrice', e.target.value)}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">IVA %</Label>
+                          <Select 
+                            value={line.vatRate}
+                            onValueChange={(value) => handleLineChange(index, 'vatRate', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="21.00">21%</SelectItem>
+                              <SelectItem value="10.00">10%</SelectItem>
+                              <SelectItem value="4.00">4%</SelectItem>
+                              <SelectItem value="0.00">0%</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="col-span-1 text-right">
+                          <span className="text-sm font-medium">
+                            {formatCurrency(calculateLineTotal(line).toString())}
+                          </span>
+                        </div>
+                        <div className="col-span-1">
+                          <Button 
+                            type="button" 
+                            size="sm" 
+                            variant="ghost"
+                            className="text-destructive"
+                            onClick={() => handleRemoveLine(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="col-span-2">
-                        <Label className="text-xs">Cantidad</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={line.quantity}
-                          onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Label className="text-xs">Precio</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={line.unitPrice}
-                          onChange={(e) => handleLineChange(index, 'unitPrice', e.target.value)}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Label className="text-xs">IVA %</Label>
-                        <Select 
-                          value={line.vatRate}
-                          onValueChange={(value) => handleLineChange(index, 'vatRate', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="21.00">21%</SelectItem>
-                            <SelectItem value="10.00">10%</SelectItem>
-                            <SelectItem value="4.00">4%</SelectItem>
-                            <SelectItem value="0.00">0%</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="col-span-1 text-right">
-                        <span className="text-sm font-medium">
-                          {formatCurrency(calculateLineTotal(line).toString())}
-                        </span>
-                      </div>
-                      <div className="col-span-1">
-                        <Button 
-                          type="button" 
-                          size="sm" 
-                          variant="ghost"
-                          className="text-destructive"
-                          onClick={() => handleRemoveLine(index)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                      <div className="grid grid-cols-12 gap-2 items-end">
+                        <div className="col-span-4">
+                          <Label className="text-xs">O seleccionar Artículo</Label>
+                          <Select 
+                            value={line.articleId || ''}
+                            onValueChange={(value) => handleLineChange(index, 'articleId', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar artículo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {articles?.filter(a => a.isActive).map(article => (
+                                <SelectItem key={article.id} value={article.id}>
+                                  {article.code} - {article.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   ))}
