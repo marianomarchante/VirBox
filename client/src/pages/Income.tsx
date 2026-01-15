@@ -14,7 +14,7 @@ import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Trash2, FileText, Search, X } from "lucide-react";
+import { Pencil, Trash2, FileText, Search, X, Eye } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,7 @@ export default function Income() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [viewingTransaction, setViewingTransaction] = useState<Transaction | null>(null);
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const [viewingPdf, setViewingPdf] = useState<{ data: string; fileName: string } | null>(null);
   
@@ -81,6 +82,13 @@ export default function Income() {
 
   const handleEdit = (transaction: Transaction) => {
     setEditingTransaction(transaction);
+    setViewingTransaction(null);
+    setIsTransactionModalOpen(true);
+  };
+
+  const handleView = (transaction: Transaction) => {
+    setViewingTransaction(transaction);
+    setEditingTransaction(null);
     setIsTransactionModalOpen(true);
   };
 
@@ -95,6 +103,7 @@ export default function Income() {
   const handleCloseModal = () => {
     setIsTransactionModalOpen(false);
     setEditingTransaction(null);
+    setViewingTransaction(null);
   };
 
   const clearFilters = () => {
@@ -309,16 +318,27 @@ export default function Income() {
                                   <FileText className="h-4 w-4 text-blue-600" />
                                 </Button>
                               )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(transaction)}
-                                disabled={!canWrite || !!transaction.invoiceId}
-                                title={transaction.invoiceId ? 'No se puede editar: generado desde factura' : undefined}
-                                data-testid={`button-edit-income-${transaction.id}`}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
+                              {transaction.invoiceId ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleView(transaction)}
+                                  title="Ver detalles"
+                                  data-testid={`button-view-income-${transaction.id}`}
+                                >
+                                  <Eye className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEdit(transaction)}
+                                  disabled={!canWrite}
+                                  data-testid={`button-edit-income-${transaction.id}`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -347,8 +367,8 @@ export default function Income() {
         onSubmit={handleCreateTransaction}
         clients={clients?.map((c: any) => ({ id: c.id, name: c.name })) || []}
         suppliers={[]}
-        initialData={editingTransaction}
-        mode={editingTransaction ? 'edit' : 'create'}
+        initialData={editingTransaction || viewingTransaction}
+        mode={viewingTransaction ? 'view' : editingTransaction ? 'edit' : 'create'}
         fixedType="income"
       />
 
