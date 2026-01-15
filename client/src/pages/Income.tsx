@@ -294,6 +294,11 @@ export default function Income() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-center gap-2">
+                              {transaction.invoiceId && (
+                                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded" title="Generado desde factura">
+                                  Factura
+                                </span>
+                              )}
                               {transaction.pdfDocument && (
                                 <Button
                                   variant="ghost"
@@ -308,7 +313,8 @@ export default function Income() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEdit(transaction)}
-                                disabled={!canWrite}
+                                disabled={!canWrite || !!transaction.invoiceId}
+                                title={transaction.invoiceId ? 'No se puede editar: generado desde factura' : undefined}
                                 data-testid={`button-edit-income-${transaction.id}`}
                               >
                                 <Pencil className="h-4 w-4" />
@@ -317,7 +323,8 @@ export default function Income() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setDeletingTransactionId(transaction.id)}
-                                disabled={!canWrite}
+                                disabled={!canWrite || !!transaction.invoiceId}
+                                title={transaction.invoiceId ? 'No se puede eliminar: generado desde factura' : undefined}
                                 data-testid={`button-delete-income-${transaction.id}`}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
