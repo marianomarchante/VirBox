@@ -956,22 +956,12 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                       <div key={index} className="space-y-2 border-b pb-3">
                         <div className="grid grid-cols-12 gap-2 items-end">
                           <div className="col-span-4">
-                            <Label className="text-xs">Artículo</Label>
-                            <Select 
-                              value={line.articleId || ''}
-                              onValueChange={(value) => handleLineChange(index, 'articleId', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar artículo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {articles?.filter(a => a.isActive).map(article => (
-                                  <SelectItem key={article.id} value={article.id}>
-                                    {article.code} - {article.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Label className="text-xs">Descripción</Label>
+                            <Input
+                              value={line.description}
+                              onChange={(e) => handleLineChange(index, 'description', e.target.value)}
+                              placeholder="Descripción del concepto"
+                            />
                           </div>
                           <div className="col-span-2">
                             <Label className="text-xs">Cantidad</Label>
@@ -1027,14 +1017,24 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                             </Button>
                           </div>
                         </div>
-                        <div className="grid grid-cols-12 gap-2">
-                          <div className="col-span-11">
-                            <Label className="text-xs">Descripción</Label>
-                            <Input
-                              value={line.description}
-                              onChange={(e) => handleLineChange(index, 'description', e.target.value)}
-                              placeholder="Descripción del concepto (se rellena automáticamente al seleccionar artículo)"
-                            />
+                        <div className="grid grid-cols-12 gap-2 items-end">
+                          <div className="col-span-4">
+                            <Label className="text-xs">O seleccionar Artículo</Label>
+                            <Select 
+                              value={line.articleId || ''}
+                              onValueChange={(value) => handleLineChange(index, 'articleId', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar artículo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {articles?.filter(a => a.isActive).map(article => (
+                                  <SelectItem key={article.id} value={article.id}>
+                                    {article.code} - {article.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
                       </div>
