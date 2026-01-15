@@ -1379,7 +1379,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate invoice totals
       const subtotal = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.subtotal), 0);
       const totalVat = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.vatAmount), 0);
-      const total = subtotal + totalVat;
+      
+      // Calculate IRPF retention (applied to taxable base)
+      const irpfRate = parseFloat(invoiceData.irpfRate || '0');
+      const irpfAmount = subtotal * irpfRate / 100;
+      
+      // Total = Base + IVA - IRPF
+      const total = subtotal + totalVat - irpfAmount;
       
       // Generate auto-incremental number
       const series = invoiceData.series || 'FAC';
@@ -1416,6 +1422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         year,
         subtotal: subtotal.toFixed(2),
         totalVat: totalVat.toFixed(2),
+        irpfRate: irpfRate.toFixed(2),
+        irpfAmount: irpfAmount.toFixed(2),
         total: total.toFixed(2),
         status: 'draft',
       }, processedLines, generatedVatBreakdown);
@@ -1471,7 +1479,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate invoice totals from lines
       const subtotal = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.subtotal), 0);
       const totalVat = processedLines.reduce((sum: number, line: any) => sum + parseFloat(line.vatAmount), 0);
-      const total = subtotal + totalVat;
+      
+      // Calculate IRPF retention (applied to taxable base)
+      const irpfRate = parseFloat(validatedData.irpfRate || '0');
+      const irpfAmount = subtotal * irpfRate / 100;
+      
+      // Total = Base + IVA - IRPF
+      const total = subtotal + totalVat - irpfAmount;
       
       // Generate auto-incremental number
       const series = validatedData.series || 'FAC';
@@ -1505,6 +1519,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         year,
         subtotal: subtotal.toFixed(2),
         totalVat: totalVat.toFixed(2),
+        irpfRate: irpfRate.toFixed(2),
+        irpfAmount: irpfAmount.toFixed(2),
         total: total.toFixed(2),
       }, processedLines, generatedVatBreakdown);
       
