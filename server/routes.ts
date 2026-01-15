@@ -1588,6 +1588,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ message: "Forbidden: Admin permission required" });
     }
 
+    // Verify company CIF for confirmation
+    const confirmCif = req.query.confirmCif as string;
+    if (!confirmCif) {
+      return res.status(400).json({ message: "Se requiere confirmar el CIF de la empresa" });
+    }
+
+    const company = await storage.getCompany(companyId);
+    if (!company || company.cif?.toUpperCase() !== confirmCif.toUpperCase()) {
+      return res.status(400).json({ message: "El CIF introducido no coincide con el de la empresa" });
+    }
+
     const success = await storage.deleteInvoice(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Invoice not found" });

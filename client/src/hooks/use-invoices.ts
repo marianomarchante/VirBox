@@ -103,9 +103,10 @@ export function useInvoices() {
   });
 
   const deleteInvoice = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, confirmCif }: { id: string; confirmCif: string }) => {
       const params = new URLSearchParams();
       if (currentCompanyId) params.append('companyId', currentCompanyId);
+      params.append('confirmCif', confirmCif);
       await apiRequest('DELETE', `/api/invoices/${id}?${params.toString()}`);
     },
     onSuccess: () => {

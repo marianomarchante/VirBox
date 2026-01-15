@@ -106,6 +106,9 @@ export default function Invoices() {
   const [irpfRate, setIrpfRate] = useState<string>('0');
   const [vatExemptionEnabled, setVatExemptionEnabled] = useState(false);
   const [vatExemptionReason, setVatExemptionReason] = useState<string>('');
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
+  const [deleteConfirmCif, setDeleteConfirmCif] = useState('');
 
   const { invoices, createInvoice, createInvoiceFromDeliveryNotes, updateInvoice, deleteInvoice, isLoading } = useInvoices();
   const { deliveryNotes } = useDeliveryNotes();
@@ -237,9 +240,30 @@ export default function Invoices() {
   };
 
   const handleDelete = (invoiceId: string) => {
-    if (window.confirm('¿Está seguro de que desea eliminar esta factura?')) {
-      deleteInvoice.mutate(invoiceId);
-    }
+    setDeleteInvoiceId(invoiceId);
+    setDeleteConfirmCif('');
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteInvoiceId || !deleteConfirmCif) return;
+    deleteInvoice.mutate(
+      { id: deleteInvoiceId, confirmCif: deleteConfirmCif },
+      {
+        onSuccess: () => {
+          setDeleteConfirmOpen(false);
+          setDeleteInvoiceId(null);
+          setDeleteConfirmCif('');
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "El CIF introducido no coincide con el de la empresa o no se pudo eliminar la factura.",
+            variant: "destructive",
+          });
+        }
+      }
+    );
   };
 
   const toggleDeliveryNote = (noteId: string) => {
@@ -1365,6 +1389,48 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
               </div>
             </form>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Confirmar Eliminación de Factura</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Esta acción eliminará la factura permanentemente. El próximo número de factura que se asigne será el número de esta factura eliminada.
+            </p>
+            <p className="text-sm font-medium">
+              Para confirmar, introduzca el CIF de la empresa:
+            </p>
+            <Input
+              value={deleteConfirmCif}
+              onChange={(e) => setDeleteConfirmCif(e.target.value)}
+              placeholder="Ej: B12345678"
+              data-testid="input-delete-confirm-cif"
+            />
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setDeleteInvoiceId(null);
+                  setDeleteConfirmCif('');
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={!deleteConfirmCif || deleteInvoice.isPending}
+                data-testid="button-confirm-delete-invoice"
+              >
+                {deleteInvoice.isPending ? 'Eliminando...' : 'Eliminar Factura'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

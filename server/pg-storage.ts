@@ -1065,11 +1065,16 @@ export class PostgresStorage implements IStorage {
   }
 
   async deleteInvoice(id: string, companyId: string): Promise<boolean> {
-    // First, get the invoice to check for linked transaction
+    // First, get the invoice to check for linked transaction and sequence info
     const invoice = await this.getInvoice(id, companyId);
+    if (!invoice) return false;
+    
+    const invoiceSeries = invoice.series || 'F';
+    const invoiceYear = invoice.year || new Date().getFullYear();
+    const invoiceNumber = invoice.number;
     
     // Delete linked transaction if exists
-    if (invoice?.transactionId) {
+    if (invoice.transactionId) {
       await db.delete(transactions).where(eq(transactions.id, invoice.transactionId));
     }
     
@@ -1077,7 +1082,20 @@ export class PostgresStorage implements IStorage {
     await db.delete(invoiceVatBreakdown).where(eq(invoiceVatBreakdown.invoiceId, id));
     const result = await db.delete(invoices)
       .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)));
-    return result.rowCount !== null && result.rowCount > 0;
+    
+    if (result.rowCount !== null && result.rowCount > 0) {
+      // Reset the sequence so the next invoice gets the deleted number
+      await db.update(documentSequences)
+        .set({ lastNumber: invoiceNumber - 1, updatedAt: new Date() })
+        .where(and(
+          eq(documentSequences.documentType, 'invoice'),
+          eq(documentSequences.companyId, companyId),
+          eq(documentSequences.series, invoiceSeries),
+          eq(documentSequences.year, invoiceYear)
+        ));
+      return true;
+    }
+    return false;
   }
 
   async getInvoiceLines(invoiceId: string): Promise<InvoiceLine[]> {
