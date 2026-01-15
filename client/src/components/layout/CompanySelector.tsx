@@ -30,11 +30,19 @@ export default function CompanySelector() {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className="w-[220px] justify-between"
           data-testid="company-selector"
         >
           <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
+            {currentCompany?.logoImage ? (
+              <img 
+                src={currentCompany.logoImage} 
+                alt={currentCompany.name}
+                className="h-5 w-5 rounded object-cover"
+              />
+            ) : (
+              <Building2 className="h-4 w-4" />
+            )}
             <span className="truncate">
               {currentCompany?.name || "Seleccionar empresa"}
             </span>
@@ -64,7 +72,18 @@ export default function CompanySelector() {
                       currentCompanyId === company.id ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {company.name}
+                  <div className="flex items-center gap-2">
+                    {company.logoImage ? (
+                      <img 
+                        src={company.logoImage} 
+                        alt={company.name}
+                        className="h-4 w-4 rounded object-cover"
+                      />
+                    ) : (
+                      <Building2 className="h-3 w-3 text-muted-foreground" />
+                    )}
+                    <span>{company.name}</span>
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>
