@@ -18,7 +18,8 @@ import {
   Images,
   ShoppingBag,
   ClipboardList,
-  Receipt
+  Receipt,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -42,6 +43,7 @@ export default function Sidebar() {
 
   const secondaryNav = [
     ...(user?.isAdmin ? [
+      { name: "Empresas", href: "/empresas", icon: Building2 },
       { name: "Usuarios", href: "/usuarios", icon: UserCog }
     ] : []),
   ];
