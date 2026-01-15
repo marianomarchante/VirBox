@@ -912,7 +912,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                     <SelectContent>
                       {clients?.map(client => (
                         <SelectItem key={client.id} value={client.id}>
-                          {client.name} ({client.nif})
+                          {client.name} {client.idFiscal ? `(${client.idFiscal})` : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
