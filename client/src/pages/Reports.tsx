@@ -52,7 +52,12 @@ export default function Reports() {
 
   // Fetch invoices for IRPF retention data
   const { data: invoices } = useQuery<any[]>({
-    queryKey: ['/api/invoices', currentCompany?.id],
+    queryKey: [`/api/invoices?companyId=${currentCompany?.id}`],
+    queryFn: async () => {
+      const response = await fetch('/api/invoices', { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch invoices');
+      return response.json();
+    },
     enabled: hasCompanySelected && !!currentCompany?.id,
   });
 
