@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import QRCode from 'qrcode';
 import { apiRequest } from "@/lib/queryClient";
 
 interface InvoiceLine {
@@ -559,6 +560,22 @@ export default function Invoices() {
         doc.text(invoice.notes, 15, paymentY + 31);
       }
       
+      // Generate alphanumeric code for QR
+      // Format: YYYYMMDD + HHMM + invoice number (10 digits) + company NIF (10 digits) + client NIF (10 digits)
+      const now = new Date();
+      const qrYear = String(invoiceYear).padStart(4, '0');
+      const qrMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const qrDay = String(now.getDate()).padStart(2, '0');
+      const qrHour = String(now.getHours()).padStart(2, '0');
+      const qrMinute = String(now.getMinutes()).padStart(2, '0');
+      const qrInvoiceNum = String(invoice.number).padStart(10, '0');
+      const qrCompanyNif = (currentCompany?.taxId || '').replace(/[^A-Za-z0-9]/g, '').padStart(10, '0').slice(-10);
+      const qrClientNif = (invoice.clientIdFiscal || '').replace(/[^A-Za-z0-9]/g, '').padStart(10, '0').slice(-10);
+      const qrCode = `${qrYear}${qrMonth}${qrDay}${qrHour}${qrMinute}${qrInvoiceNum}${qrCompanyNif}${qrClientNif}`;
+      
+      // Generate QR code as data URL
+      const qrDataUrl = await QRCode.toDataURL(qrCode, { width: 80, margin: 1 });
+      
       // Data protection clause (footer)
       const pageHeight = doc.internal.pageSize.getHeight();
       const footerY = pageHeight - 25;
@@ -570,9 +587,16 @@ export default function Invoices() {
       const companyNameForClause = currentCompany?.name || 'La empresa';
       const companyEmailForClause = currentCompany?.email || '';
       const dataProtectionText = `De conformidad con lo dispuesto en el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD), le informamos que los datos personales facilitados serán tratados por ${companyNameForClause} con la finalidad de gestionar la relación comercial. Puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad${companyEmailForClause ? ` enviando un correo a ${companyEmailForClause}` : ''}.`;
-      const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 30);
+      const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 60);
       doc.text(splitText, 15, footerY);
       doc.setTextColor(0, 0, 0);
+      
+      // Add QR code to bottom right corner
+      try {
+        doc.addImage(qrDataUrl, 'PNG', pageWidth - 40, footerY - 10, 25, 25);
+      } catch (e) {
+        console.log('Error adding QR code to PDF:', e);
+      }
       
       // Save
       const paddedNumber = String(invoice.number).padStart(4, '0');
