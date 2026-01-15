@@ -933,7 +933,7 @@ export class PostgresStorage implements IStorage {
   async getInvoices(companyId: string): Promise<Invoice[]> {
     return await db.select().from(invoices)
       .where(eq(invoices.companyId, companyId))
-      .orderBy(desc(invoices.date));
+      .orderBy(desc(invoices.createdAt));
   }
 
   async getInvoice(id: string, companyId: string): Promise<Invoice | undefined> {
