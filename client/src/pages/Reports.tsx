@@ -510,8 +510,117 @@ export default function Reports() {
       },
     });
 
+    // IRPF Retentions section (when filtering by IRPF retention)
+    if (selectedCategory === 'irpf_retention' && irpfRetentions.length > 0) {
+      yPos = (doc as any).lastAutoTable.finalY + 10;
+      
+      // Check if we need a new page
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Retenciones IRPF Practicadas', 14, yPos);
+      yPos += 2;
+      
+      // Detail table with all invoices
+      const irpfDetailData = irpfRetentions.map(invoice => {
+        const invoiceYear = invoice.year || new Date(invoice.date).getFullYear();
+        const invoiceNumber = `${invoice.series}-${invoiceYear}-${String(invoice.number).padStart(4, '0')}`;
+        return [
+          new Date(invoice.date).toLocaleDateString('es-ES'),
+          invoiceNumber,
+          invoice.clientName,
+          invoice.clientIdFiscal || '-',
+          formatCurrency(parseFloat(invoice.subtotal || '0')),
+          `${parseFloat(invoice.irpfRate || '0').toFixed(0)}%`,
+          formatCurrency(parseFloat(invoice.irpfAmount || '0')),
+        ];
+      });
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Fecha', 'Nº Factura', 'Cliente', 'NIF/CIF', 'Base', '% IRPF', 'Retención']],
+        body: irpfDetailData,
+        theme: 'striped',
+        headStyles: { fillColor: [217, 119, 6] },
+        margin: { left: 14, right: 14 },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 32 },
+          2: { cellWidth: 35 },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 25, halign: 'right' },
+          5: { cellWidth: 18, halign: 'right' },
+          6: { cellWidth: 25, halign: 'right' },
+        },
+      });
+
+      // Group by client for summary
+      yPos = (doc as any).lastAutoTable.finalY + 10;
+      
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Resumen de Retenciones IRPF por Cliente', 14, yPos);
+      yPos += 2;
+      
+      // Group invoices by client
+      const clientRetentions: Record<string, { clientName: string; clientIdFiscal: string; totalBase: number; totalRetention: number; invoiceCount: number }> = {};
+      
+      irpfRetentions.forEach(invoice => {
+        const clientKey = invoice.clientIdFiscal || invoice.clientName;
+        if (!clientRetentions[clientKey]) {
+          clientRetentions[clientKey] = {
+            clientName: invoice.clientName,
+            clientIdFiscal: invoice.clientIdFiscal || '-',
+            totalBase: 0,
+            totalRetention: 0,
+            invoiceCount: 0,
+          };
+        }
+        clientRetentions[clientKey].totalBase += parseFloat(invoice.subtotal || '0');
+        clientRetentions[clientKey].totalRetention += parseFloat(invoice.irpfAmount || '0');
+        clientRetentions[clientKey].invoiceCount += 1;
+      });
+      
+      const clientSummaryData = Object.values(clientRetentions).map(client => [
+        client.clientName,
+        client.clientIdFiscal,
+        client.invoiceCount.toString(),
+        formatCurrency(client.totalBase),
+        formatCurrency(client.totalRetention),
+      ]);
+      
+      // Add total row
+      const totalRetentionSum = Object.values(clientRetentions).reduce((sum, c) => sum + c.totalRetention, 0);
+      const totalBaseSum = Object.values(clientRetentions).reduce((sum, c) => sum + c.totalBase, 0);
+      
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Cliente', 'NIF/CIF', 'Nº Facturas', 'Base Total', 'Total Retención IRPF']],
+        body: clientSummaryData,
+        foot: [['TOTAL', '', irpfRetentions.length.toString(), formatCurrency(totalBaseSum), formatCurrency(totalRetentionSum)]],
+        theme: 'striped',
+        headStyles: { fillColor: [217, 119, 6] },
+        footStyles: { fillColor: [254, 243, 199], textColor: [0, 0, 0], fontStyle: 'bold' },
+        margin: { left: 14, right: 14 },
+        columnStyles: {
+          2: { halign: 'center' },
+          3: { halign: 'right' },
+          4: { halign: 'right' },
+        },
+      });
+    }
+
     // Category breakdown if available
-    if (categoryChartData.length > 0) {
+    if (categoryChartData.length > 0 && selectedCategory !== 'irpf_retention') {
       yPos = (doc as any).lastAutoTable.finalY + 10;
       
       // Check if we need a new page
