@@ -1424,11 +1424,6 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
               placeholder="Introduzca el código"
               data-testid="input-delete-confirm-code"
             />
-            {!deleteUnlocked && (
-              <p className="text-xs text-muted-foreground italic">
-                Pulse Ctrl+K para habilitar la eliminación
-              </p>
-            )}
             <div className="flex justify-end gap-2">
               <Button 
                 variant="outline" 
