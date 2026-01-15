@@ -1100,11 +1100,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = insertArticleSchema.parse(req.body);
+      // Create article first, then update with auto-generated code from ID
       const article = await storage.createArticle({
         ...validatedData,
         companyId
       });
-      res.status(201).json(article);
+      // Auto-generate code from ID (first 8 characters of UUID uppercase)
+      const autoCode = `ART-${article.id.substring(0, 8).toUpperCase()}`;
+      const updatedArticle = await storage.updateArticle(article.id, companyId, { code: autoCode });
+      res.status(201).json(updatedArticle || article);
     } catch (error) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ message: "Invalid article data", errors: error.errors });

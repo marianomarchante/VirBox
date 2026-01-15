@@ -189,7 +189,7 @@ export const events = pgTable("events", {
 export const articles = pgTable("articles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull(),
-  code: varchar("code", { length: 50 }).notNull(),
+  code: varchar("code", { length: 50 }),
   name: text("name").notNull(),
   description: text("description"),
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),

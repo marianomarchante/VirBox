@@ -34,7 +34,6 @@ const UNITS = [
 ];
 
 const formSchema = insertArticleSchema.extend({
-  code: z.string().min(1, "El código es obligatorio"),
   name: z.string().min(1, "El nombre es obligatorio"),
   unitPrice: z.union([z.string(), z.number()]).refine(val => {
     const num = parseFloat(String(val));
@@ -55,7 +54,6 @@ export default function Articles() {
   const form = useForm<InsertArticle>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      code: '',
       name: '',
       description: '',
       unitPrice: '0',
@@ -85,7 +83,6 @@ export default function Articles() {
     if (article) {
       setEditingArticle(articleId);
       form.reset({
-        code: article.code,
         name: article.name,
         description: article.description || '',
         unitPrice: article.unitPrice,
@@ -118,7 +115,7 @@ export default function Articles() {
     const search = searchTerm.toLowerCase();
     return (
       article.name.toLowerCase().includes(search) ||
-      article.code.toLowerCase().includes(search) ||
+      (article.code && article.code.toLowerCase().includes(search)) ||
       (article.description && article.description.toLowerCase().includes(search))
     );
   });
@@ -227,7 +224,7 @@ export default function Articles() {
                         >
                           <td className="py-3 px-4">
                             <span className="text-sm font-mono text-muted-foreground">
-                              {article.code}
+                              {article.code || '-'}
                             </span>
                           </td>
                           <td className="py-3 px-4">
@@ -308,38 +305,14 @@ export default function Articles() {
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            {editingArticle && (
               <div className="space-y-2">
-                <Label htmlFor="code">Código *</Label>
-                <Input
-                  id="code"
-                  {...form.register('code')}
-                  placeholder="ART001"
-                  data-testid="input-article-code"
-                />
-                {form.formState.errors.code && (
-                  <p className="text-xs text-destructive">{form.formState.errors.code.message}</p>
-                )}
+                <Label>Código (automático)</Label>
+                <div className="px-3 py-2 rounded-md border border-border bg-muted text-sm font-mono text-muted-foreground">
+                  {articles?.find(a => a.id === editingArticle)?.code || '-'}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="unitOfMeasure">Unidad</Label>
-                <Select 
-                  value={form.watch('unitOfMeasure') || 'unidad'}
-                  onValueChange={(value) => form.setValue('unitOfMeasure', value)}
-                >
-                  <SelectTrigger data-testid="select-unit">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNITS.map(unit => (
-                      <SelectItem key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="name">Nombre *</Label>
@@ -381,23 +354,42 @@ export default function Articles() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="vatRate">Tipo de IVA</Label>
+                <Label htmlFor="unitOfMeasure">Unidad</Label>
                 <Select 
-                  value={form.watch('vatRate') || '21.00'}
-                  onValueChange={(value) => form.setValue('vatRate', value)}
+                  value={form.watch('unitOfMeasure') || 'unidad'}
+                  onValueChange={(value) => form.setValue('unitOfMeasure', value)}
                 >
-                  <SelectTrigger data-testid="select-vat">
+                  <SelectTrigger data-testid="select-unit">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {VAT_RATES.map(rate => (
-                      <SelectItem key={rate.value} value={rate.value}>
-                        {rate.label}
+                    {UNITS.map(unit => (
+                      <SelectItem key={unit.value} value={unit.value}>
+                        {unit.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="vatRate">Tipo de IVA</Label>
+              <Select 
+                value={form.watch('vatRate') || '21.00'}
+                onValueChange={(value) => form.setValue('vatRate', value)}
+              >
+                <SelectTrigger data-testid="select-vat">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VAT_RATES.map(rate => (
+                    <SelectItem key={rate.value} value={rate.value}>
+                      {rate.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center gap-2">
