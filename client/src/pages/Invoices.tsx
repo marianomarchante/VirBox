@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -102,6 +103,7 @@ export default function Invoices() {
   const [selectedDeliveryNotes, setSelectedDeliveryNotes] = useState<string[]>([]);
   const [createMode, setCreateMode] = useState<'manual' | 'from-delivery-notes'>('manual');
   const [irpfRate, setIrpfRate] = useState<string>('0');
+  const [vatExemptionEnabled, setVatExemptionEnabled] = useState(false);
   const [vatExemptionReason, setVatExemptionReason] = useState<string>('');
 
   const { invoices, createInvoice, createInvoiceFromDeliveryNotes, updateInvoice, deleteInvoice, isLoading } = useInvoices();
@@ -159,7 +161,7 @@ export default function Invoices() {
       totalVat: totalVat.toFixed(2),
       irpfRate: irpfRate,
       irpfAmount: irpfAmount.toFixed(2),
-      vatExemptionReason: vatExemptionReason && vatExemptionReason !== 'none' ? vatExemptionReason : null,
+      vatExemptionReason: vatExemptionEnabled && vatExemptionReason && vatExemptionReason !== 'none' ? vatExemptionReason : null,
       total: total.toFixed(2),
       companyId: currentCompanyId ?? undefined,
     };
@@ -204,6 +206,7 @@ export default function Invoices() {
     setSelectedDeliveryNotes([]);
     setCreateMode('manual');
     setIrpfRate('0');
+    setVatExemptionEnabled(false);
     setVatExemptionReason('');
     form.reset();
   };
@@ -1140,14 +1143,31 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                         <span className="text-sm font-medium w-28 text-right">{formatCurrency(calculateVat().toString())}</span>
                       </div>
                       <div className="flex flex-col gap-2 py-2">
-                        <Label className="text-sm">Exención de IVA (Ley 37/1992)</Label>
-                        <Select value={vatExemptionReason} onValueChange={setVatExemptionReason}>
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            id="vat-exemption-checkbox"
+                            checked={vatExemptionEnabled}
+                            onCheckedChange={(checked) => {
+                              setVatExemptionEnabled(checked === true);
+                              if (!checked) setVatExemptionReason('');
+                            }}
+                            data-testid="checkbox-vat-exemption"
+                          />
+                          <Label htmlFor="vat-exemption-checkbox" className="text-sm cursor-pointer">
+                            Exención de IVA (Ley 37/1992)
+                          </Label>
+                        </div>
+                        <Select 
+                          value={vatExemptionReason} 
+                          onValueChange={setVatExemptionReason}
+                          disabled={!vatExemptionEnabled}
+                        >
                           <SelectTrigger className="w-full" data-testid="select-vat-exemption">
-                            <SelectValue placeholder="Sin exención (operación sujeta a IVA)" />
+                            <SelectValue placeholder="Seleccionar motivo de exención" />
                           </SelectTrigger>
                           <SelectContent>
-                            {VAT_EXEMPTION_REASONS.map(reason => (
-                              <SelectItem key={reason.value || 'none'} value={reason.value || 'none'}>
+                            {VAT_EXEMPTION_REASONS.filter(r => r.value !== '').map(reason => (
+                              <SelectItem key={reason.value} value={reason.value}>
                                 {reason.label}
                               </SelectItem>
                             ))}
