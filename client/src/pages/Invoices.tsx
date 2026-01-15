@@ -109,6 +109,7 @@ export default function Invoices() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [deleteConfirmCif, setDeleteConfirmCif] = useState('');
+  const [deleteUnlocked, setDeleteUnlocked] = useState(false);
 
   const { invoices, createInvoice, createInvoiceFromDeliveryNotes, updateInvoice, deleteInvoice, isLoading } = useInvoices();
   const { deliveryNotes } = useDeliveryNotes();
@@ -1392,8 +1393,21 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent className="max-w-md">
+      <Dialog open={deleteConfirmOpen} onOpenChange={(open) => {
+        setDeleteConfirmOpen(open);
+        if (!open) {
+          setDeleteUnlocked(false);
+        }
+      }}>
+        <DialogContent 
+          className="max-w-md"
+          onKeyDown={(e) => {
+            if (e.ctrlKey && e.key === 'k') {
+              e.preventDefault();
+              setDeleteUnlocked(true);
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="text-destructive">Confirmar Eliminación de Factura</DialogTitle>
           </DialogHeader>
@@ -1402,14 +1416,19 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
               Esta acción eliminará la factura permanentemente. El próximo número de factura que se asigne será el número de esta factura eliminada.
             </p>
             <p className="text-sm font-medium">
-              Para confirmar, introduzca el CIF de la empresa:
+              Código de eliminación:
             </p>
             <Input
               value={deleteConfirmCif}
               onChange={(e) => setDeleteConfirmCif(e.target.value)}
-              placeholder="Ej: B12345678"
-              data-testid="input-delete-confirm-cif"
+              placeholder="Introduzca el código"
+              data-testid="input-delete-confirm-code"
             />
+            {!deleteUnlocked && (
+              <p className="text-xs text-muted-foreground italic">
+                Pulse Ctrl+K para habilitar la eliminación
+              </p>
+            )}
             <div className="flex justify-end gap-2">
               <Button 
                 variant="outline" 
@@ -1417,6 +1436,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                   setDeleteConfirmOpen(false);
                   setDeleteInvoiceId(null);
                   setDeleteConfirmCif('');
+                  setDeleteUnlocked(false);
                 }}
               >
                 Cancelar
@@ -1424,7 +1444,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
               <Button 
                 variant="destructive"
                 onClick={handleConfirmDelete}
-                disabled={!deleteConfirmCif || deleteInvoice.isPending}
+                disabled={!deleteConfirmCif || !deleteUnlocked || deleteInvoice.isPending}
                 data-testid="button-confirm-delete-invoice"
               >
                 {deleteInvoice.isPending ? 'Eliminando...' : 'Eliminar Factura'}
