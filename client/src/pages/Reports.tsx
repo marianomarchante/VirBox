@@ -119,19 +119,45 @@ export default function Reports() {
 
   // Calculate metrics from filtered transactions
   const metrics = useMemo(() => {
-    const totalIncome = filteredTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const incomeTransactions = filteredTransactions.filter(t => t.type === 'income');
+    const expenseTransactions = filteredTransactions.filter(t => t.type === 'expense');
     
-    const totalExpenses = filteredTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const totalIncome = incomeTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const totalExpenses = expenseTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    // Calculate taxable base and VAT for expenses
+    const expenseTaxableBase = expenseTransactions.reduce((sum, t) => {
+      const taxableBase = t.taxableBase ? parseFloat(t.taxableBase) : parseFloat(t.amount);
+      return sum + taxableBase;
+    }, 0);
+    
+    const expenseVat = expenseTransactions.reduce((sum, t) => {
+      const vatAmount = t.vatAmount ? parseFloat(t.vatAmount) : 0;
+      return sum + vatAmount;
+    }, 0);
+    
+    // Calculate taxable base and VAT for income (if available)
+    const incomeTaxableBase = incomeTransactions.reduce((sum, t) => {
+      const taxableBase = t.taxableBase ? parseFloat(t.taxableBase) : parseFloat(t.amount);
+      return sum + taxableBase;
+    }, 0);
+    
+    const incomeVat = incomeTransactions.reduce((sum, t) => {
+      const vatAmount = t.vatAmount ? parseFloat(t.vatAmount) : 0;
+      return sum + vatAmount;
+    }, 0);
 
     return {
       totalIncome,
       totalExpenses,
       balance: totalIncome - totalExpenses,
       pendingPayments: 0,
+      expenseTaxableBase,
+      expenseVat,
+      incomeTaxableBase,
+      incomeVat,
+      // Net VAT (IVA a pagar/devolver) = IVA repercutido (ingresos) - IVA soportado (gastos)
+      netVat: incomeVat - expenseVat,
     };
   }, [filteredTransactions]);
 
@@ -769,7 +795,7 @@ export default function Reports() {
               
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Transacciones</CardTitle>
+                  <CardTitle className="text-sm font-medium">Operaciones</CardTitle>
                   <Package className="h-4 w-4 text-accent" />
                 </CardHeader>
                 <CardContent>
@@ -782,6 +808,74 @@ export default function Reports() {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* VAT Breakdown Card */}
+          {metrics && (
+            <Card data-testid="vat-breakdown-card">
+              <CardHeader>
+                <CardTitle>Desglose Base Imponible e IVA - {getPeriodLabel()}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Ingresos */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-primary border-b pb-2">Ingresos (IVA Repercutido)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Base Imponible</p>
+                        <p className="text-lg font-semibold">{formatCurrency(metrics.incomeTaxableBase)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">IVA Repercutido</p>
+                        <p className="text-lg font-semibold text-primary">{formatCurrency(metrics.incomeVat)}</p>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-muted-foreground">Total Ingresos</p>
+                      <p className="text-xl font-bold text-primary">{formatCurrency(metrics.totalIncome)}</p>
+                    </div>
+                  </div>
+
+                  {/* Gastos */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-destructive border-b pb-2">Gastos (IVA Soportado)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Base Imponible</p>
+                        <p className="text-lg font-semibold">{formatCurrency(metrics.expenseTaxableBase)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">IVA Soportado</p>
+                        <p className="text-lg font-semibold text-destructive">{formatCurrency(metrics.expenseVat)}</p>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-muted-foreground">Total Gastos</p>
+                      <p className="text-xl font-bold text-destructive">{formatCurrency(metrics.totalExpenses)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Net VAT Summary */}
+                <div className="mt-6 pt-4 border-t-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Liquidación IVA (Repercutido - Soportado)</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {metrics.netVat >= 0 ? 'A ingresar a Hacienda' : 'A compensar/devolver'}
+                      </p>
+                    </div>
+                    <p className={`text-2xl font-bold ${metrics.netVat >= 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                      {formatCurrency(Math.abs(metrics.netVat))}
+                      <span className="text-sm font-normal ml-1">
+                        {metrics.netVat >= 0 ? '(a pagar)' : '(a favor)'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Charts Section */}
