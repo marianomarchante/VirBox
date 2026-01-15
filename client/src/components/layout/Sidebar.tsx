@@ -33,9 +33,6 @@ export default function Sidebar() {
   const { user, logout } = useAuthContext();
   const { currentCompany } = useCompany();
 
-  const navigationAfterInventory = [
-    { name: "Informes", href: "/informes", icon: FileText },
-  ];
 
   const navigationAfterDocuments = [
     { name: "Eventos", href: "/eventos", icon: CalendarDays },
@@ -186,20 +183,14 @@ export default function Sidebar() {
         </div>
 
         <div className="space-y-1">
-          {navigationAfterInventory.map((item) => {
-            const isActive = location === item.href;
-            return (
-              <Link 
-                key={item.name}
-                href={item.href}
-                className={cn("sidebar-link", isActive && "active")}
-                data-testid={`nav-${item.name.toLowerCase()}`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
+          <Link 
+            href="/informes"
+            className="sidebar-link w-full bg-[#FFFACD] hover:bg-white text-[#800020] hover:text-[#800020] border border-[#800020] hover:border-[#800020] font-semibold"
+            data-testid="nav-informes"
+          >
+            <FileText className="w-5 h-5" />
+            <span>Informes</span>
+          </Link>
         </div>
 
         <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
