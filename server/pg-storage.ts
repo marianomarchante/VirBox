@@ -320,7 +320,7 @@ export class PostgresStorage implements IStorage {
 
     return await db.select().from(transactions)
       .where(and(...conditions))
-      .orderBy(sql`${transactions.date} DESC`);
+      .orderBy(sql`${transactions.date} DESC, ${transactions.id} DESC`);
   }
 
   async getTransaction(id: string, companyId: string): Promise<Transaction | undefined> {
