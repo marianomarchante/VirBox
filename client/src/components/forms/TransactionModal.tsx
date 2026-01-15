@@ -13,12 +13,23 @@ import { insertTransactionSchema, type InsertTransaction } from "@shared/schema"
 import { useToast } from "@/hooks/use-toast";
 import { useCategories } from "@/hooks/use-categories";
 
-// Form type with date as string for HTML date input, and expense-specific fields
+// Form type with date as string for HTML date input
 type TransactionFormData = Omit<InsertTransaction, 'date'> & { 
   date: string;
   taxableBase?: string;
   vatAmount?: string;
+  irpfRate?: string;
+  irpfAmount?: string;
 };
+
+// IRPF retention rates according to Spanish legislation
+const IRPF_RATES = [
+  { value: '0', label: 'Sin retención (0%)' },
+  { value: '1', label: 'Engorde porcino/avicultura (1%)' },
+  { value: '2', label: 'Actividades agrícolas/ganaderas (2%)' },
+  { value: '7', label: 'Nuevos autónomos/Artísticas (7%)' },
+  { value: '15', label: 'Profesionales general (15%)' },
+];
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -76,6 +87,8 @@ export default function TransactionModal({
       pdfFileName: initialData.pdfFileName || '',
       taxableBase: initialData.taxableBase || '',
       vatAmount: initialData.vatAmount || '',
+      irpfRate: initialData.irpfRate || '0',
+      irpfAmount: initialData.irpfAmount || '',
     } : {
       type: fixedType || 'income',
       date: new Date().toISOString().split('T')[0],
@@ -89,19 +102,34 @@ export default function TransactionModal({
       pdfFileName: '',
       taxableBase: '',
       vatAmount: '',
+      irpfRate: '0',
+      irpfAmount: '',
     },
   });
 
   const watchTaxableBase = form.watch('taxableBase');
   const watchVatAmount = form.watch('vatAmount');
+  const watchIrpfRate = form.watch('irpfRate');
   
-  // Auto-calculate total from taxable base + VAT for both income and expense
+  // Auto-calculate IRPF amount when rate or taxable base changes
+  useEffect(() => {
+    if (transactionType === 'income') {
+      const base = parseFloat(watchTaxableBase || '0') || 0;
+      const rate = parseFloat(watchIrpfRate || '0') || 0;
+      const irpfAmount = base * rate / 100;
+      form.setValue('irpfAmount', irpfAmount.toFixed(2));
+    }
+  }, [watchTaxableBase, watchIrpfRate, transactionType, form]);
+  
+  // Auto-calculate total from taxable base + VAT - IRPF for both income and expense
   useEffect(() => {
     const base = parseFloat(watchTaxableBase || '0') || 0;
     const vat = parseFloat(watchVatAmount || '0') || 0;
-    const total = base + vat;
+    const irpfRate = parseFloat(watchIrpfRate || '0') || 0;
+    const irpf = transactionType === 'income' ? (base * irpfRate / 100) : 0;
+    const total = base + vat - irpf;
     form.setValue('amount', total.toFixed(2));
-  }, [watchTaxableBase, watchVatAmount, form]);
+  }, [watchTaxableBase, watchVatAmount, watchIrpfRate, transactionType, form]);
 
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -148,6 +176,8 @@ export default function TransactionModal({
         pdfFileName: initialData.pdfFileName || '',
         taxableBase: initialData.taxableBase || '',
         vatAmount: initialData.vatAmount || '',
+        irpfRate: initialData.irpfRate || '0',
+        irpfAmount: initialData.irpfAmount || '',
       });
       setTransactionType(typeToUse);
       if (initialData.pdfFileName) {
@@ -168,6 +198,8 @@ export default function TransactionModal({
         pdfFileName: '',
         taxableBase: '',
         vatAmount: '',
+        irpfRate: '0',
+        irpfAmount: '',
       });
       setTransactionType(typeToUse);
       setSelectedPdf(null);
@@ -184,6 +216,8 @@ export default function TransactionModal({
         clientSupplierId: data.clientSupplierId || undefined,
         taxableBase: data.taxableBase || undefined,
         vatAmount: data.vatAmount || undefined,
+        irpfRate: transactionType === 'income' ? data.irpfRate : undefined,
+        irpfAmount: transactionType === 'income' ? data.irpfAmount : undefined,
         quantity: transactionType === 'income' ? data.quantity : undefined,
       };
       onSubmit(formattedData);
@@ -203,6 +237,8 @@ export default function TransactionModal({
         pdfFileName: '',
         taxableBase: '',
         vatAmount: '',
+        irpfRate: '0',
+        irpfAmount: '',
       });
       setTransactionType(typeToUse);
       setSelectedPdf(null);
@@ -392,6 +428,45 @@ export default function TransactionModal({
               </div>
             </div>
           </div>
+
+          {/* IRPF Retention - Only for income */}
+          {transactionType === 'income' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="irpfRate">Retención IRPF</Label>
+                <Select 
+                  value={form.watch('irpfRate') || '0'}
+                  onValueChange={(value) => form.setValue('irpfRate', value)}
+                >
+                  <SelectTrigger data-testid="select-irpf-rate">
+                    <SelectValue placeholder="Sin retención" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IRPF_RATES.map(rate => (
+                      <SelectItem key={rate.value} value={rate.value}>
+                        {rate.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="irpfAmount">Importe IRPF</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="pl-8 bg-muted"
+                    value={form.watch('irpfAmount') || '0'}
+                    readOnly
+                    data-testid="input-irpf-amount"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Quantity field - Only for income */}
           {transactionType === 'income' && (

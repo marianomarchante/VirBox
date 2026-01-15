@@ -59,8 +59,10 @@ export const transactions = pgTable("transactions", {
   concept: text("concept").notNull(),
   category: text("category").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  taxableBase: decimal("taxable_base", { precision: 10, scale: 2 }), // Base imponible (for expenses)
-  vatAmount: decimal("vat_amount", { precision: 10, scale: 2 }), // IVA amount (for expenses)
+  taxableBase: decimal("taxable_base", { precision: 10, scale: 2 }), // Base imponible
+  vatAmount: decimal("vat_amount", { precision: 10, scale: 2 }), // IVA amount
+  irpfRate: decimal("irpf_rate", { precision: 5, scale: 2 }), // IRPF retention rate (%)
+  irpfAmount: decimal("irpf_amount", { precision: 10, scale: 2 }), // IRPF retention amount
   quantity: text("quantity"), // Optional, e.g. "2500 kg"
   clientSupplierId: varchar("client_supplier_id"), // Reference to client or supplier
   notes: text("notes"),
@@ -255,6 +257,8 @@ export const invoices = pgTable("invoices", {
   clientPostalCode: varchar("client_postal_code", { length: 10 }),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
   totalVat: decimal("total_vat", { precision: 10, scale: 2 }).notNull(),
+  irpfRate: decimal("irpf_rate", { precision: 5, scale: 2 }).default("0"), // IRPF retention rate (%)
+  irpfAmount: decimal("irpf_amount", { precision: 10, scale: 2 }).default("0"), // IRPF retention amount
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   paymentMethod: text("payment_method").default("transferencia"),
   paymentTerms: text("payment_terms"),

@@ -47,6 +47,15 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+// IRPF retention rates according to Spanish legislation
+const IRPF_RATES = [
+  { value: '0', label: 'Sin retención (0%)' },
+  { value: '1', label: 'Engorde porcino/avicultura (1%)' },
+  { value: '2', label: 'Actividades agrícolas/ganaderas (2%)' },
+  { value: '7', label: 'Nuevos autónomos/Artísticas (7%)' },
+  { value: '15', label: 'Profesionales general (15%)' },
+];
+
 export default function Invoices() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -55,6 +64,7 @@ export default function Invoices() {
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const [selectedDeliveryNotes, setSelectedDeliveryNotes] = useState<string[]>([]);
   const [createMode, setCreateMode] = useState<'manual' | 'from-delivery-notes'>('manual');
+  const [irpfRate, setIrpfRate] = useState<string>('0');
 
   const { invoices, createInvoice, createInvoiceFromDeliveryNotes, updateInvoice, deleteInvoice, isLoading } = useInvoices();
   const { deliveryNotes } = useDeliveryNotes();
@@ -90,7 +100,8 @@ export default function Invoices() {
     const client = clients?.find(c => c.id === data.clientId);
     const subtotal = calculateSubtotal();
     const totalVat = calculateVat();
-    const total = subtotal + totalVat;
+    const irpfAmount = calculateIrpf();
+    const total = subtotal + totalVat - irpfAmount;
     
     const invoiceData = {
       date: new Date(data.date),
@@ -108,6 +119,8 @@ export default function Invoices() {
       status: data.status,
       subtotal: subtotal.toFixed(2),
       totalVat: totalVat.toFixed(2),
+      irpfRate: irpfRate,
+      irpfAmount: irpfAmount.toFixed(2),
       total: total.toFixed(2),
       companyId: currentCompanyId ?? undefined,
     };
@@ -151,6 +164,7 @@ export default function Invoices() {
     setLines([]);
     setSelectedDeliveryNotes([]);
     setCreateMode('manual');
+    setIrpfRate('0');
     form.reset();
   };
 
@@ -218,6 +232,16 @@ export default function Invoices() {
       const vatRate = parseFloat(line.vatRate) || 0;
       return sum + (base * vatRate / 100);
     }, 0);
+  };
+
+  const calculateIrpf = () => {
+    const subtotal = calculateSubtotal();
+    const rate = parseFloat(irpfRate) || 0;
+    return subtotal * rate / 100;
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateVat() - calculateIrpf();
   };
 
   const pendingDeliveryNotes = deliveryNotes?.filter(dn => dn.status === 'pending') || [];
@@ -1048,9 +1072,27 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                         <span className="text-sm text-muted-foreground w-32">IVA:</span>
                         <span className="text-sm font-medium w-28 text-right">{formatCurrency(calculateVat().toString())}</span>
                       </div>
-                      <div className="flex justify-end">
+                      <div className="flex justify-end items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Retención IRPF:</span>
+                        <Select value={irpfRate} onValueChange={setIrpfRate}>
+                          <SelectTrigger className="w-48" data-testid="select-irpf-rate">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {IRPF_RATES.map(rate => (
+                              <SelectItem key={rate.value} value={rate.value}>
+                                {rate.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-sm font-medium w-28 text-right text-destructive">
+                          -{formatCurrency(calculateIrpf().toString())}
+                        </span>
+                      </div>
+                      <div className="flex justify-end border-t pt-2 mt-2">
                         <span className="text-sm font-semibold w-32">Total:</span>
-                        <span className="text-lg font-bold w-28 text-right">{formatCurrency((calculateSubtotal() + calculateVat()).toString())}</span>
+                        <span className="text-lg font-bold w-28 text-right">{formatCurrency(calculateTotal().toString())}</span>
                       </div>
                     </div>
                   </div>
