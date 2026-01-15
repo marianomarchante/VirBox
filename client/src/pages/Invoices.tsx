@@ -109,7 +109,6 @@ export default function Invoices() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [deleteConfirmCif, setDeleteConfirmCif] = useState('');
-  const [deleteUnlocked, setDeleteUnlocked] = useState(false);
 
   const { invoices, createInvoice, createInvoiceFromDeliveryNotes, updateInvoice, deleteInvoice, isLoading } = useInvoices();
   const { deliveryNotes } = useDeliveryNotes();
@@ -1393,21 +1392,8 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteConfirmOpen} onOpenChange={(open) => {
-        setDeleteConfirmOpen(open);
-        if (!open) {
-          setDeleteUnlocked(false);
-        }
-      }}>
-        <DialogContent 
-          className="max-w-md"
-          onKeyDown={(e) => {
-            if (e.ctrlKey && e.key === 'k') {
-              e.preventDefault();
-              setDeleteUnlocked(true);
-            }
-          }}
-        >
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-destructive">Confirmar Eliminación de Factura</DialogTitle>
           </DialogHeader>
@@ -1431,7 +1417,6 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                   setDeleteConfirmOpen(false);
                   setDeleteInvoiceId(null);
                   setDeleteConfirmCif('');
-                  setDeleteUnlocked(false);
                 }}
               >
                 Cancelar
@@ -1439,7 +1424,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
               <Button 
                 variant="destructive"
                 onClick={handleConfirmDelete}
-                disabled={!deleteConfirmCif || !deleteUnlocked || deleteInvoice.isPending}
+                disabled={!deleteConfirmCif || deleteInvoice.isPending}
                 data-testid="button-confirm-delete-invoice"
               >
                 {deleteInvoice.isPending ? 'Eliminando...' : 'Eliminar Factura'}
