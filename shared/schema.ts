@@ -276,7 +276,9 @@ export const invoices = pgTable("invoices", {
   xmlData: text("xml_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  unique("unique_invoice_number").on(table.companyId, table.series, table.year, table.number),
+]);
 
 // Invoice Lines
 export const invoiceLines = pgTable("invoice_lines", {
