@@ -1595,8 +1595,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const company = await storage.getCompany(companyId);
-    if (!company || company.cif?.toUpperCase() !== confirmCif.toUpperCase()) {
-      return res.status(400).json({ message: "El CIF introducido no coincide con el de la empresa" });
+    if (!company || company.taxId?.toUpperCase() !== confirmCif.toUpperCase()) {
+      return res.status(400).json({ message: "El código de eliminación no es correcto" });
     }
 
     const success = await storage.deleteInvoice(req.params.id, companyId);
