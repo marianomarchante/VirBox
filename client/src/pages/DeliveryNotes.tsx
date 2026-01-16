@@ -372,14 +372,14 @@ export default function DeliveryNotes() {
 • Conservación: Los datos se conservarán mientras se mantenga la relación comercial y, posteriormente, durante los años necesarios para cumplir con las obligaciones legales de prescripción (generalmente 4 años por normativa fiscal y 6 años por normativa mercantil).
 Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI), se hace constar que los medios de contacto directo y efectivo son la dirección física y el correo electrónico detallados en el apartado del Responsable.`;
 
-      // Data protection footer on first page
+      // Data protection footer on first page (no QR for delivery notes, full width)
       const footerY = pageHeight - 55;
       doc.setDrawColor(200, 200, 200);
       doc.line(15, footerY - 3, pageWidth - 15, footerY - 3);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(5);
       doc.setTextColor(80, 80, 80);
-      const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 30);
+      const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 25);
       doc.text(splitText, 15, footerY);
       doc.setTextColor(0, 0, 0);
       

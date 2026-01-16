@@ -670,18 +670,20 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
 
       // Data protection footer on first page
       const footerY = pageHeight - 55;
+      const qrSize = 25;
+      const qrX = pageWidth - qrSize - 10;
       doc.setDrawColor(200, 200, 200);
       doc.line(15, footerY - 3, pageWidth - 15, footerY - 3);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(5);
       doc.setTextColor(80, 80, 80);
-      const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 45);
+      const splitText = doc.splitTextToSize(dataProtectionText, qrX - 20);
       doc.text(splitText, 15, footerY);
       doc.setTextColor(0, 0, 0);
       
       // Add QR code to bottom right corner
       try {
-        doc.addImage(qrDataUrl, 'PNG', pageWidth - 35, footerY - 5, 22, 22);
+        doc.addImage(qrDataUrl, 'PNG', qrX, footerY - 3, qrSize, qrSize);
       } catch (e) {
         console.log('Error adding QR code to PDF:', e);
       }
