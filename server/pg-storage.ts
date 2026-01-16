@@ -1124,7 +1124,13 @@ export class PostgresStorage implements IStorage {
       return existing.length > 0;
     };
 
-    // First, try to get/update from the sequences table
+    // Start from 1 and find the first available number
+    let nextNumber = 1;
+    while (await invoiceExists(nextNumber)) {
+      nextNumber++;
+    }
+    
+    // Update or create the sequence entry with the final number
     const existingSequence = await db.select()
       .from(documentSequences)
       .where(and(
@@ -1135,28 +1141,6 @@ export class PostgresStorage implements IStorage {
       ))
       .limit(1);
     
-    let nextNumber: number;
-    
-    if (existingSequence.length > 0) {
-      nextNumber = existingSequence[0].lastNumber + 1;
-    } else {
-      // No sequence exists - check for existing invoices from before sequences table
-      const maxResult = await db.select({ maxNumber: max(invoices.number) })
-        .from(invoices)
-        .where(and(
-          eq(invoices.companyId, companyId),
-          eq(invoices.series, series),
-          eq(invoices.year, year)
-        ));
-      nextNumber = (maxResult[0]?.maxNumber || 0) + 1;
-    }
-    
-    // Check if the number already exists, increment until we find a free one
-    while (await invoiceExists(nextNumber)) {
-      nextNumber++;
-    }
-    
-    // Update or create the sequence entry with the final number
     if (existingSequence.length > 0) {
       await db.update(documentSequences)
         .set({ lastNumber: nextNumber, updatedAt: new Date() })
