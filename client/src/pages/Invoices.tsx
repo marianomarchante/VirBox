@@ -1047,7 +1047,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                                   variant="ghost"
                                   className="text-destructive hover:text-destructive"
                                   onClick={() => handleDelete(invoice.id)}
-                                  disabled={!canWrite || invoice.status === 'issued' || invoice.status === 'paid'}
+                                  disabled={!canWrite}
                                   title="Eliminar factura"
                                   data-testid={`delete-invoice-${invoice.id}`}
                                 >
