@@ -1110,6 +1110,20 @@ export class PostgresStorage implements IStorage {
   }
 
   async getNextInvoiceNumber(companyId: string, series: string, year: number): Promise<number> {
+    // Helper function to check if invoice number already exists
+    const invoiceExists = async (num: number): Promise<boolean> => {
+      const existing = await db.select({ id: invoices.id })
+        .from(invoices)
+        .where(and(
+          eq(invoices.companyId, companyId),
+          eq(invoices.series, series),
+          eq(invoices.year, year),
+          eq(invoices.number, num)
+        ))
+        .limit(1);
+      return existing.length > 0;
+    };
+
     // First, try to get/update from the sequences table
     const existingSequence = await db.select()
       .from(documentSequences)
@@ -1121,34 +1135,41 @@ export class PostgresStorage implements IStorage {
       ))
       .limit(1);
     
+    let nextNumber: number;
+    
     if (existingSequence.length > 0) {
-      // Update and return next number
-      const nextNumber = existingSequence[0].lastNumber + 1;
+      nextNumber = existingSequence[0].lastNumber + 1;
+    } else {
+      // No sequence exists - check for existing invoices from before sequences table
+      const maxResult = await db.select({ maxNumber: max(invoices.number) })
+        .from(invoices)
+        .where(and(
+          eq(invoices.companyId, companyId),
+          eq(invoices.series, series),
+          eq(invoices.year, year)
+        ));
+      nextNumber = (maxResult[0]?.maxNumber || 0) + 1;
+    }
+    
+    // Check if the number already exists, increment until we find a free one
+    while (await invoiceExists(nextNumber)) {
+      nextNumber++;
+    }
+    
+    // Update or create the sequence entry with the final number
+    if (existingSequence.length > 0) {
       await db.update(documentSequences)
         .set({ lastNumber: nextNumber, updatedAt: new Date() })
         .where(eq(documentSequences.id, existingSequence[0].id));
-      return nextNumber;
+    } else {
+      await db.insert(documentSequences).values({
+        documentType: 'invoice',
+        companyId,
+        series,
+        year,
+        lastNumber: nextNumber,
+      });
     }
-    
-    // No sequence exists - check for existing invoices from before sequences table
-    const maxResult = await db.select({ maxNumber: max(invoices.number) })
-      .from(invoices)
-      .where(and(
-        eq(invoices.companyId, companyId),
-        eq(invoices.series, series),
-        eq(invoices.year, year)
-      ));
-    
-    const nextNumber = (maxResult[0]?.maxNumber || 0) + 1;
-    
-    // Create the sequence entry
-    await db.insert(documentSequences).values({
-      documentType: 'invoice',
-      companyId,
-      series,
-      year,
-      lastNumber: nextNumber,
-    });
     
     return nextNumber;
   }
