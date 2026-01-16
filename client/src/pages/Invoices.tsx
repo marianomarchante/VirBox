@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2, Receipt, Eye, Download, FileText, CheckCircle, FileCode, Pencil, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -111,6 +111,19 @@ export default function Invoices() {
   const [deleteConfirmCif, setDeleteConfirmCif] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
+  const [showDeleteButtons, setShowDeleteButtons] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === '-') {
+        e.preventDefault();
+        setShowDeleteButtons(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const { invoices, createInvoice, createInvoiceFromDeliveryNotes, updateInvoice, deleteInvoice, isLoading } = useInvoices();
   const { deliveryNotes } = useDeliveryNotes();
@@ -1065,17 +1078,19 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                                 >
                                   <FileCode className="w-4 h-4" />
                                 </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => handleDelete(invoice.id)}
-                                  disabled={!canWrite}
-                                  title="Eliminar factura"
-                                  data-testid={`delete-invoice-${invoice.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                {showDeleteButtons && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => handleDelete(invoice.id)}
+                                    disabled={!canWrite}
+                                    title="Eliminar factura"
+                                    data-testid={`delete-invoice-${invoice.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>
