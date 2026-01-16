@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,8 @@ export default function Suppliers() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
 
   const { suppliers, createSupplier, updateSupplier, deleteSupplier, isLoading } = useSuppliers();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
@@ -52,6 +54,18 @@ export default function Suppliers() {
   ];
 
   const handleSubmit = (data: InsertSupplier) => {
+    const errors: string[] = [];
+    
+    if (!data.name || data.name.trim() === '') {
+      errors.push('Nombre del proveedor');
+    }
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setValidationModalOpen(true);
+      return;
+    }
+    
     if (editingSupplier) {
       updateSupplier.mutate({ id: editingSupplier, supplier: { ...data, companyId: currentCompanyId ?? undefined } });
     } else {
@@ -424,6 +438,34 @@ export default function Suppliers() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Datos obligatorios incompletos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Para guardar es necesario completar los siguientes campos:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-sm font-medium text-destructive">
+                  {error}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end">
+              <Button onClick={() => setValidationModalOpen(false)}>
+                Entendido
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

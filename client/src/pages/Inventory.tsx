@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
-import { Plus, Edit, Trash2, Search, X, Upload, FileText, Image, Camera } from "lucide-react";
+import { Plus, Edit, Trash2, Search, X, Upload, FileText, Image, Camera, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -65,6 +65,8 @@ export default function Inventory() {
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
 
   // Check URL params for action=new
   const searchString = useSearch();
@@ -236,6 +238,18 @@ export default function Inventory() {
   };
 
   const onSubmit = async (data: InventoryFormData) => {
+    const errors: string[] = [];
+    
+    if (!data.name || data.name.trim() === '') {
+      errors.push('Nombre del elemento');
+    }
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setValidationModalOpen(true);
+      return;
+    }
+    
     try {
       if (editingItemId) {
         await updateInventoryItem.mutateAsync({ id: editingItemId, item: { ...data, companyId: currentCompanyId ?? undefined } });
@@ -889,6 +903,34 @@ export default function Inventory() {
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Datos obligatorios incompletos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Para guardar es necesario completar los siguientes campos:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-sm font-medium text-destructive">
+                  {error}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end">
+              <Button onClick={() => setValidationModalOpen(false)}>
+                Entendido
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

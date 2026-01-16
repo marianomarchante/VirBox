@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Calendar, Edit, Trash2, Search, Check, X } from "lucide-react";
+import { Plus, Calendar, Edit, Trash2, Search, Check, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,8 @@ export default function Events() {
   const [editingEvent, setEditingEvent] = useState<string | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'read'>('all');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
 
   const { events, createEvent, updateEvent, deleteEvent, isLoading } = useEvents();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
@@ -69,6 +71,21 @@ export default function Events() {
   };
 
   const handleSubmit = (data: InsertEvent) => {
+    const errors: string[] = [];
+    
+    if (!data.description || data.description.trim() === '') {
+      errors.push('Título del evento');
+    }
+    if (!data.date) {
+      errors.push('Fecha del evento');
+    }
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setValidationModalOpen(true);
+      return;
+    }
+    
     if (editingEvent) {
       updateEvent.mutate({ id: editingEvent, event: { ...data, companyId: currentCompanyId ?? undefined } });
     } else {
@@ -356,6 +373,34 @@ export default function Events() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Datos obligatorios incompletos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Para guardar es necesario completar los siguientes campos:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-sm font-medium text-destructive">
+                  {error}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end">
+              <Button onClick={() => setValidationModalOpen(false)}>
+                Entendido
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

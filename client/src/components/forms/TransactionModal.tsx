@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X, Save, Upload, FileText } from "lucide-react";
+import { X, Save, Upload, FileText, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +60,8 @@ export default function TransactionModal({
   const [selectedPdf, setSelectedPdf] = useState<{ name: string; data: string } | null>(
     initialData?.pdfFileName ? { name: initialData.pdfFileName, data: initialData.pdfDocument } : null
   );
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
   
   const { categories: incomeCategories } = useCategories('income');
   const { categories: expenseCategories } = useCategories('expense');
@@ -207,6 +209,24 @@ export default function TransactionModal({
   }, [initialData, form, fixedType]);
 
   const handleSubmit = (data: TransactionFormData) => {
+    const errors: string[] = [];
+    
+    if (!data.date || data.date.trim() === '') {
+      errors.push('Fecha');
+    }
+    if (!data.concept || data.concept.trim() === '') {
+      errors.push('Concepto');
+    }
+    if (!data.amount || parseFloat(data.amount) <= 0) {
+      errors.push('Importe');
+    }
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setValidationModalOpen(true);
+      return;
+    }
+    
     try {
       // Convert string date to Date object and ensure amount is a string
       const formattedData: InsertTransaction = {
@@ -268,6 +288,7 @@ export default function TransactionModal({
   const isViewMode = mode === 'view';
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -566,5 +587,34 @@ export default function TransactionModal({
         </form>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-amber-600 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            Datos obligatorios incompletos
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Para guardar es necesario completar los siguientes campos:
+          </p>
+          <ul className="list-disc list-inside space-y-1">
+            {validationErrors.map((error, index) => (
+              <li key={index} className="text-sm font-medium text-destructive">
+                {error}
+              </li>
+            ))}
+          </ul>
+          <div className="flex justify-end">
+            <Button onClick={() => setValidationModalOpen(false)}>
+              Entendido
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

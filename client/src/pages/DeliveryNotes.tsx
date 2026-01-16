@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, ClipboardList, FileText, Eye, Printer } from "lucide-react";
+import { Plus, Edit, Trash2, ClipboardList, FileText, Eye, Printer, AlertTriangle } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +47,8 @@ export default function DeliveryNotes() {
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [lines, setLines] = useState<DeliveryNoteLine[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
 
   const { deliveryNotes, createDeliveryNote, updateDeliveryNote, deleteDeliveryNote, isLoading } = useDeliveryNotes();
   const { articles } = useArticles();
@@ -80,7 +82,21 @@ export default function DeliveryNotes() {
   });
 
   const handleSubmit = (data: FormData) => {
+    const errors: string[] = [];
+    
+    if (!data.date || data.date.trim() === '') {
+      errors.push('Fecha');
+    }
+    if (!data.clientId || data.clientId.trim() === '') {
+      errors.push('Cliente');
+    }
     if (lines.length === 0) {
+      errors.push('Al menos una línea');
+    }
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setValidationModalOpen(true);
       return;
     }
     
@@ -764,6 +780,34 @@ export default function DeliveryNotes() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Datos obligatorios incompletos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Para guardar es necesario completar los siguientes campos:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-sm font-medium text-destructive">
+                  {error}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end">
+              <Button onClick={() => setValidationModalOpen(false)}>
+                Entendido
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit, Trash2, Package } from "lucide-react";
+import { Plus, Edit, Trash2, Package, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,8 @@ export default function Articles() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
 
   const { articles, createArticle, updateArticle, deleteArticle, isLoading } = useArticles();
   const { canWrite, hasCompanySelected } = useCompanyPermission();
@@ -64,6 +66,21 @@ export default function Articles() {
   });
 
   const handleSubmit = (data: InsertArticle) => {
+    const errors: string[] = [];
+    
+    if (!data.name || data.name.trim() === '') {
+      errors.push('Nombre del artículo');
+    }
+    if (!data.unitPrice || parseFloat(String(data.unitPrice)) <= 0) {
+      errors.push('Precio unitario');
+    }
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setValidationModalOpen(true);
+      return;
+    }
+    
     if (editingArticle) {
       updateArticle.mutate({ id: editingArticle, article: { ...data, companyId: currentCompanyId ?? undefined } });
     } else {
@@ -416,6 +433,34 @@ export default function Articles() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Datos obligatorios incompletos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Para guardar es necesario completar los siguientes campos:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-sm font-medium text-destructive">
+                  {error}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end">
+              <Button onClick={() => setValidationModalOpen(false)}>
+                Entendido
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
