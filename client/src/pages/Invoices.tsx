@@ -258,7 +258,7 @@ export default function Invoices() {
         onError: () => {
           toast({
             title: "Error",
-            description: "El CIF introducido no coincide con el de la empresa o no se pudo eliminar la factura.",
+            description: "El código de eliminación no es correcto o no se pudo eliminar la factura.",
             variant: "destructive",
           });
         }
