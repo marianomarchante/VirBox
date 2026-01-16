@@ -370,16 +370,17 @@ export default function DeliveryNotes() {
 • Destinatarios: Los datos podrán ser comunicados a la Administración Tributaria y a entidades bancarias para la gestión del cobro. Asimismo, tendrán acceso a la información los prestadores de servicios de asesoramiento contable y fiscal en su condición de encargados del tratamiento. No se realizarán otras cesiones salvo obligación legal.
 • Derechos: Usted tiene derecho a acceder, rectificar y suprimir sus datos, así como a la limitación de su tratamiento, portabilidad y oposición. Puede ejercer estos derechos enviando una solicitud por escrito a la dirección postal arriba indicada${companyEmailForClause ? ` o al correo electrónico: ${companyEmailForClause}` : ''}. En caso de dudas razonables sobre su identidad, el responsable podrá solicitar información adicional para confirmarla.
 • Conservación: Los datos se conservarán mientras se mantenga la relación comercial y, posteriormente, durante los años necesarios para cumplir con las obligaciones legales de prescripción (generalmente 4 años por normativa fiscal y 6 años por normativa mercantil).
-────────────────────────────────────────────────────────────────────────────────
 Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI), se hace constar que los medios de contacto directo y efectivo son la dirección física y el correo electrónico detallados en el apartado del Responsable.`;
 
-      // Add new page for data protection text
-      doc.addPage();
+      // Data protection footer on first page
+      const footerY = pageHeight - 55;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, footerY - 3, pageWidth - 15, footerY - 3);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(5);
+      doc.setTextColor(80, 80, 80);
       const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 30);
-      doc.text(splitText, 15, 20);
+      doc.text(splitText, 15, footerY);
       doc.setTextColor(0, 0, 0);
       
       // Save
