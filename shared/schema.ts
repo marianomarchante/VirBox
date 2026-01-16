@@ -272,6 +272,7 @@ export const invoices = pgTable("invoices", {
   status: text("status").default("draft").notNull(),
   transactionId: varchar("transaction_id"), // Link to auto-generated income transaction
   incomeCategory: text("income_category").default("Ventas"), // Category for the income transaction
+  isRentalInvoice: boolean("is_rental_invoice").default(false), // Property rental invoice (arrendamiento)
   pdfData: text("pdf_data"),
   xmlData: text("xml_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

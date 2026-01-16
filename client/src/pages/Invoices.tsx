@@ -211,6 +211,7 @@ export default function Invoices() {
       vatExemptionReason: vatExemptionEnabled && vatExemptionReason && vatExemptionReason !== 'none' ? vatExemptionReason : null,
       total: total.toFixed(2),
       companyId: currentCompanyId ?? undefined,
+      isRentalInvoice: isRentalInvoice,
     };
     
     const invoiceDataWithCategory = {
@@ -411,7 +412,10 @@ export default function Invoices() {
       const textStartX = 15 + logoWidth;
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text(currentCompany?.name || 'Empresa', textStartX, 15);
+      const companyNameDisplay = invoiceData.isRentalInvoice 
+        ? `${currentCompany?.name || 'Empresa'} (Arrendador)` 
+        : (currentCompany?.name || 'Empresa');
+      doc.text(companyNameDisplay, textStartX, 15);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       let companyY = 22;
@@ -467,7 +471,7 @@ export default function Invoices() {
       // Client info
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      doc.text('DATOS DEL CLIENTE', 15, 60);
+      doc.text(invoiceData.isRentalInvoice ? 'DATOS DEL ARRENDATARIO' : 'DATOS DEL CLIENTE', 15, 60);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       let clientY = 67;
