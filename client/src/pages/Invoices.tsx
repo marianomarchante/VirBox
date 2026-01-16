@@ -58,6 +58,12 @@ const IRPF_RATES = [
   { value: '15', label: 'Profesionales general (15%)' },
 ];
 
+// IRPF retention rates for property rental (arrendamiento de inmuebles)
+const IRPF_RENTAL_RATES = [
+  { value: '0', label: 'Sin retención (0%)' },
+  { value: '19', label: 'Arrendamiento inmuebles (19%)' },
+];
+
 // VAT exemption reasons according to Spanish legislation (Ley 37/1992 del IVA)
 const VAT_EXEMPTION_REASONS = [
   { value: '', label: 'Sin exención (operación sujeta a IVA)' },
@@ -112,6 +118,7 @@ export default function Invoices() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
   const [showDeleteButtons, setShowDeleteButtons] = useState(false);
+  const [isRentalInvoice, setIsRentalInvoice] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -248,6 +255,7 @@ export default function Invoices() {
     setIrpfRate('0');
     setVatExemptionEnabled(false);
     setVatExemptionReason('');
+    setIsRentalInvoice(false);
     form.reset();
   };
 
@@ -1110,8 +1118,33 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
           <DialogHeader>
             <DialogTitle>
               {editingInvoice ? 'Editar Factura' : 'Nueva Factura'}
+              {isRentalInvoice && <span className="text-muted-foreground font-normal text-sm ml-2">- Alquiler de inmueble</span>}
             </DialogTitle>
           </DialogHeader>
+
+          <div className="flex items-center gap-2 py-2 border-b">
+            <Checkbox 
+              id="rental-invoice-checkbox"
+              checked={isRentalInvoice}
+              onCheckedChange={(checked) => {
+                setIsRentalInvoice(checked === true);
+                if (checked) {
+                  setIrpfRate('19');
+                } else {
+                  setIrpfRate('0');
+                }
+              }}
+              data-testid="checkbox-rental-invoice"
+            />
+            <Label htmlFor="rental-invoice-checkbox" className="text-sm cursor-pointer">
+              Factura por alquiler de inmueble
+            </Label>
+            {isRentalInvoice && (
+              <span className="text-xs text-muted-foreground ml-auto">
+                Emisor: {currentCompany?.name} <span className="text-primary">(arrendador)</span>
+              </span>
+            )}
+          </div>
           
           <Tabs value={createMode} onValueChange={(v) => setCreateMode(v as 'manual' | 'from-delivery-notes')}>
             <TabsList className="grid w-full grid-cols-2">
@@ -1146,7 +1179,9 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="clientId">Cliente *</Label>
+                  <Label htmlFor="clientId">
+                    Cliente {isRentalInvoice && <span className="text-muted-foreground">(arrendatario)</span>} *
+                  </Label>
                   <Select 
                     value={form.watch('clientId') || ''}
                     onValueChange={(value) => form.setValue('clientId', value)}
@@ -1332,7 +1367,7 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {IRPF_RATES.map(rate => (
+                            {(isRentalInvoice ? IRPF_RENTAL_RATES : IRPF_RATES).map(rate => (
                               <SelectItem key={rate.value} value={rate.value}>
                                 {rate.label}
                               </SelectItem>
