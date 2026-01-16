@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Receipt, Eye, Download, FileText, CheckCircle, FileCode, Pencil } from "lucide-react";
+import { Plus, Trash2, Receipt, Eye, Download, FileText, CheckCircle, FileCode, Pencil, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,6 +109,8 @@ export default function Invoices() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [deleteConfirmCif, setDeleteConfirmCif] = useState('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [validationModalOpen, setValidationModalOpen] = useState(false);
 
   const { invoices, createInvoice, createInvoiceFromDeliveryNotes, updateInvoice, deleteInvoice, isLoading } = useInvoices();
   const { deliveryNotes } = useDeliveryNotes();
@@ -141,6 +143,27 @@ export default function Invoices() {
   });
 
   const handleSubmit = (data: FormData) => {
+    const errors: string[] = [];
+    
+    if (!data.date) {
+      errors.push('Fecha de emisión');
+    }
+    if (!data.clientId) {
+      errors.push('Cliente');
+    }
+    if (createMode === 'manual' && lines.length === 0) {
+      errors.push('Al menos una línea de factura');
+    }
+    if (createMode === 'from-delivery-notes' && selectedDeliveryNotes.length === 0) {
+      errors.push('Al menos un albarán seleccionado');
+    }
+    
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      setValidationModalOpen(true);
+      return;
+    }
+    
     const client = clients?.find(c => c.id === data.clientId);
     const subtotal = calculateSubtotal();
     const totalVat = calculateVat();
@@ -1428,6 +1451,34 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                 data-testid="button-confirm-delete-invoice"
               >
                 {deleteInvoice.isPending ? 'Eliminando...' : 'Eliminar Factura'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Datos obligatorios incompletos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Para crear la factura es necesario completar los siguientes campos:
+            </p>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index} className="text-sm font-medium text-destructive">
+                  {error}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-end">
+              <Button onClick={() => setValidationModalOpen(false)}>
+                Entendido
               </Button>
             </div>
           </div>
