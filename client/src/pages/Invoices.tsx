@@ -644,24 +644,43 @@ export default function Invoices() {
       // Generate QR code as data URL
       const qrDataUrl = await QRCode.toDataURL(qrCode, { width: 80, margin: 1 });
       
-      // Data protection clause (footer)
+      // Data protection clause (footer) - new page if needed
       const pageHeight = doc.internal.pageSize.getHeight();
-      const footerY = pageHeight - 25;
-      doc.setDrawColor(200, 200, 200);
-      doc.line(15, footerY - 5, pageWidth - 15, footerY - 5);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
+      
+      // Company data for data protection text
       const companyNameForClause = currentCompany?.name || 'La empresa';
+      const companyTaxIdForClause = currentCompany?.taxId || 'NIF/CIF no indicado';
+      const companyAddressParts = [
+        currentCompany?.address,
+        currentCompany?.postalCode,
+        currentCompany?.town,
+        currentCompany?.province
+      ].filter(Boolean);
+      const companyAddressForClause = companyAddressParts.join(', ') || 'Domicilio no indicado';
       const companyEmailForClause = currentCompany?.email || '';
-      const dataProtectionText = `De conformidad con lo dispuesto en el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD), le informamos que los datos personales facilitados serán tratados por ${companyNameForClause} con la finalidad de gestionar la relación comercial. Puede ejercer sus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad${companyEmailForClause ? ` enviando un correo a ${companyEmailForClause}` : ''}.`;
-      const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 60);
-      doc.text(splitText, 15, footerY);
+      
+      const dataProtectionText = `INFORMACIÓN BÁSICA SOBRE PROTECCIÓN DE DATOS
+• Responsable del tratamiento: ${companyNameForClause}, con NIF/CIF ${companyTaxIdForClause} y domicilio ${companyAddressForClause}.
+• Finalidad: Gestión administrativa, contable, fiscal y comercial derivada de la entrega de mercancías o prestación de servicios, incluyendo el control de cobros y facturación.
+• Legitimación: El tratamiento es necesario para la ejecución de un contrato en el que el interesado es parte y para el cumplimiento de obligaciones legales aplicables al responsable (especialmente en materia tributaria y mercantil).
+• Destinatarios: Los datos podrán ser comunicados a la Administración Tributaria y a entidades bancarias para la gestión del cobro. Asimismo, tendrán acceso a la información los prestadores de servicios de asesoramiento contable y fiscal en su condición de encargados del tratamiento. No se realizarán otras cesiones salvo obligación legal.
+• Derechos: Usted tiene derecho a acceder, rectificar y suprimir sus datos, así como a la limitación de su tratamiento, portabilidad y oposición. Puede ejercer estos derechos enviando una solicitud por escrito a la dirección postal arriba indicada${companyEmailForClause ? ` o al correo electrónico: ${companyEmailForClause}` : ''}. En caso de dudas razonables sobre su identidad, el responsable podrá solicitar información adicional para confirmarla.
+• Conservación: Los datos se conservarán mientras se mantenga la relación comercial y, posteriormente, durante los años necesarios para cumplir con las obligaciones legales de prescripción (generalmente 4 años por normativa fiscal y 6 años por normativa mercantil).
+────────────────────────────────────────────────────────────────────────────────
+Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI), se hace constar que los medios de contacto directo y efectivo son la dirección física y el correo electrónico detallados en el apartado del Responsable.`;
+
+      // Add new page for data protection text
+      doc.addPage();
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(60, 60, 60);
+      const splitText = doc.splitTextToSize(dataProtectionText, pageWidth - 30);
+      doc.text(splitText, 15, 20);
       doc.setTextColor(0, 0, 0);
       
-      // Add QR code to bottom right corner
+      // Add QR code to bottom right corner of last page
       try {
-        doc.addImage(qrDataUrl, 'PNG', pageWidth - 40, footerY - 10, 25, 25);
+        doc.addImage(qrDataUrl, 'PNG', pageWidth - 40, pageHeight - 40, 25, 25);
       } catch (e) {
         console.log('Error adding QR code to PDF:', e);
       }
