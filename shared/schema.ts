@@ -51,6 +51,7 @@ export const companies = pgTable("companies", {
   logoFileName: text("logo_file_name"), // Original filename of the logo
   bankAccount: varchar("bank_account", { length: 24 }),
   website: varchar("website", { length: 155 }),
+  canIssueAgriculturalReceipts: boolean("can_issue_agricultural_receipts").default(false).notNull(),
   reagpAgricolaRate: decimal("reagp_agricola_rate", { precision: 5, scale: 2 }).default("12.00"),
   reagpGanaderoRate: decimal("reagp_ganadero_rate", { precision: 5, scale: 2 }).default("10.50"),
   reagpForestalRate: decimal("reagp_forestal_rate", { precision: 5, scale: 2 }).default("12.00"),

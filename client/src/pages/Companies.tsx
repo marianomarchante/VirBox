@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
-import { Plus, Building2, Mail, Phone, MapPin, Edit, Trash2, Upload, X, Globe, CreditCard } from "lucide-react";
+import { Plus, Building2, Mail, Phone, MapPin, Edit, Trash2, Upload, X, Globe, CreditCard, Wheat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Sidebar from "@/components/layout/Sidebar";
@@ -100,6 +101,7 @@ export default function Companies() {
       email: null,
       bankAccount: null,
       website: null,
+      canIssueAgriculturalReceipts: false,
       isActive: true,
     },
   });
@@ -176,6 +178,7 @@ export default function Companies() {
         email: company.email || null,
         bankAccount: company.bankAccount || null,
         website: company.website || null,
+        canIssueAgriculturalReceipts: company.canIssueAgriculturalReceipts || false,
         isActive: company.isActive,
       });
       setIsModalOpen(true);
@@ -448,6 +451,21 @@ export default function Companies() {
                     className="pl-10"
                     data-testid="input-website"
                   />
+                </div>
+              </div>
+
+              <div className="md:col-span-2 flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+                <Checkbox
+                  id="canIssueAgriculturalReceipts"
+                  checked={form.watch("canIssueAgriculturalReceipts") || false}
+                  onCheckedChange={(checked) => form.setValue("canIssueAgriculturalReceipts", checked === true)}
+                  data-testid="checkbox-can-issue-agricultural-receipts"
+                />
+                <div className="flex items-center gap-2">
+                  <Wheat className="w-4 h-4 text-green-600" />
+                  <Label htmlFor="canIssueAgriculturalReceipts" className="cursor-pointer">
+                    Puede expedir Recibos Agrarios (REAGP)
+                  </Label>
                 </div>
               </div>
 

@@ -228,6 +228,7 @@ export class MemStorage implements IStorage {
       logoFileName: null,
       bankAccount: null,
       website: null,
+      canIssueAgriculturalReceipts: false,
       reagpAgricolaRate: null,
       reagpGanaderoRate: null,
       reagpForestalRate: null,

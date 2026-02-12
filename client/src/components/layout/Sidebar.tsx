@@ -118,14 +118,16 @@ export default function Sidebar() {
             <Receipt className="w-5 h-5" />
             <span>Facturas</span>
           </Link>
-          <Link 
-            href="/recibos-agrarios"
-            className={cn("sidebar-link", location === "/recibos-agrarios" && "active")}
-            data-testid="nav-recibos-agrarios"
-          >
-            <Wheat className="w-5 h-5" />
-            <span>Recibos Agrarios</span>
-          </Link>
+          {currentCompany?.canIssueAgriculturalReceipts && (
+            <Link 
+              href="/recibos-agrarios"
+              className={cn("sidebar-link", location === "/recibos-agrarios" && "active")}
+              data-testid="nav-recibos-agrarios"
+            >
+              <Wheat className="w-5 h-5" />
+              <span>Recibos Agrarios</span>
+            </Link>
+          )}
         </div>
 
         <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">

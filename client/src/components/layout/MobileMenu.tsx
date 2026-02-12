@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, UserCog, HelpCircle, LogOut, CalendarDays, Images, ShoppingBag, ClipboardList, Receipt, Building2 } from "lucide-react";
+import { X, Calculator, BarChart3, TrendingUp, TrendingDown, Package, Users, Truck, FileText, Tags, Files, UserCog, HelpCircle, LogOut, CalendarDays, Images, ShoppingBag, ClipboardList, Receipt, Building2, Wheat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -209,6 +209,17 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               <Receipt className="w-5 h-5" />
               <span>Facturas</span>
             </Link>
+            {currentCompany?.canIssueAgriculturalReceipts && (
+              <Link 
+                href="/recibos-agrarios"
+                className={cn("sidebar-link", location === "/recibos-agrarios" && "active")}
+                onClick={onClose}
+                data-testid="mobile-nav-recibos-agrarios"
+              >
+                <Wheat className="w-5 h-5" />
+                <span>Recibos Agrarios</span>
+              </Link>
+            )}
           </div>
 
           <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
