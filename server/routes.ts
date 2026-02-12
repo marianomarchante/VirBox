@@ -1355,7 +1355,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     const lines = await storage.getInvoiceLines(req.params.id);
     const vatBreakdown = await storage.getInvoiceVatBreakdown(req.params.id);
-    res.json({ ...invoice, lines, vatBreakdown });
+    
+    let clientData: any = {};
+    if (invoice.clientId) {
+      const client = await storage.getClient(invoice.clientId, companyId);
+      if (client) {
+        clientData = {
+          clientType: (client as any).clientType || 'particular',
+          codigoOficinaContable: (client as any).codigoOficinaContable || null,
+          codigoOrganoGestor: (client as any).codigoOrganoGestor || null,
+          codigoUnidadTramitadora: (client as any).codigoUnidadTramitadora || null,
+        };
+      }
+    }
+    
+    res.json({ ...invoice, lines, vatBreakdown, ...clientData });
   });
 
   // Create invoice from delivery notes

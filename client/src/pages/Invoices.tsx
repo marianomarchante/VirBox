@@ -712,18 +712,15 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
 
   const handleGenerateXML = async (invoice: Invoice) => {
     try {
-      // Fetch invoice details with lines
       const params = new URLSearchParams();
       if (currentCompanyId) params.append('companyId', currentCompanyId);
       const response = await fetch(`/api/invoices/${invoice.id}?${params.toString()}`, { credentials: 'include' });
       const invoiceData = await response.json();
       
-      // Generate Facturae 3.2.2 XML
       const xmlYear = invoice.year || new Date(invoice.date).getFullYear();
       const invoiceNumber = `${invoice.series}-${xmlYear}-${String(invoice.number).padStart(4, '0')}`;
       const invoiceDate = format(new Date(invoice.date), 'yyyy-MM-dd');
       
-      // Escape XML special characters
       const escapeXml = (str: string) => str
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -731,7 +728,6 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
       
-      // Company data with full address
       const companyName = escapeXml(currentCompany?.name || 'Empresa no configurada');
       const companyTaxId = currentCompany?.taxId || 'NIF_NO_CONFIGURADO';
       const companyAddress = escapeXml(currentCompany?.address || '');
@@ -741,14 +737,153 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
       const companyPhone = currentCompany?.phone || '';
       const companyEmail = currentCompany?.email || '';
       
-      // Client data with full address
       const clientName = escapeXml(invoice.clientName || '');
       const clientTaxId = invoice.clientIdFiscal || 'NIF_NO_PROPORCIONADO';
       const clientAddress = escapeXml(invoice.clientAddress || '');
       const clientTown = escapeXml(invoiceData.clientTown || '');
       const clientProvince = escapeXml(invoiceData.clientProvince || '');
       const clientPostalCode = invoiceData.clientPostalCode || '';
-      
+
+      const isPublicAdmin = invoiceData.clientType === 'administracion_publica';
+      const buyerPersonType = (invoiceData.clientType === 'particular') ? 'F' : 'J';
+      const sellerPersonType = 'J';
+
+      const totalAmount = parseFloat(invoice.total || '0').toFixed(2);
+      const subtotal = parseFloat(invoice.subtotal || '0').toFixed(2);
+      const totalVat = parseFloat(invoice.totalVat || '0').toFixed(2);
+      const irpfRate = parseFloat(invoice.irpfRate || '0');
+      const irpfAmount = parseFloat(invoice.irpfAmount || '0').toFixed(2);
+      const hasIrpf = irpfRate > 0;
+
+      const batchId = `${companyTaxId}${invoiceNumber}`;
+
+      if (isPublicAdmin) {
+        const dir3Missing = !invoiceData.codigoOficinaContable || !invoiceData.codigoOrganoGestor || !invoiceData.codigoUnidadTramitadora;
+        if (dir3Missing) {
+          toast({
+            title: "Error de validación",
+            description: "El cliente es Administración Pública pero faltan códigos DIR3. Edite el cliente para añadir los códigos antes de generar el XML.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      let adminCentresXml = '';
+      if (isPublicAdmin) {
+        const oc = invoiceData.codigoOficinaContable;
+        const og = invoiceData.codigoOrganoGestor;
+        const ut = invoiceData.codigoUnidadTramitadora;
+        adminCentresXml = `
+      <AdministrativeCentres>
+        <AdministrativeCentre>
+          <CentreCode>${escapeXml(oc)}</CentreCode>
+          <RoleTypeCode>01</RoleTypeCode>
+          <CentreDescription>Oficina Contable</CentreDescription>
+          <AddressInSpain>
+            <Address>${clientAddress || 'Sin direccion'}</Address>
+            <PostCode>${clientPostalCode || '00000'}</PostCode>
+            <Town>${clientTown || 'Sin municipio'}</Town>
+            <Province>${clientProvince || 'Sin provincia'}</Province>
+            <CountryCode>ESP</CountryCode>
+          </AddressInSpain>
+        </AdministrativeCentre>
+        <AdministrativeCentre>
+          <CentreCode>${escapeXml(og)}</CentreCode>
+          <RoleTypeCode>02</RoleTypeCode>
+          <CentreDescription>Órgano Gestor</CentreDescription>
+          <AddressInSpain>
+            <Address>${clientAddress || 'Sin direccion'}</Address>
+            <PostCode>${clientPostalCode || '00000'}</PostCode>
+            <Town>${clientTown || 'Sin municipio'}</Town>
+            <Province>${clientProvince || 'Sin provincia'}</Province>
+            <CountryCode>ESP</CountryCode>
+          </AddressInSpain>
+        </AdministrativeCentre>
+        <AdministrativeCentre>
+          <CentreCode>${escapeXml(ut)}</CentreCode>
+          <RoleTypeCode>03</RoleTypeCode>
+          <CentreDescription>Unidad Tramitadora</CentreDescription>
+          <AddressInSpain>
+            <Address>${clientAddress || 'Sin direccion'}</Address>
+            <PostCode>${clientPostalCode || '00000'}</PostCode>
+            <Town>${clientTown || 'Sin municipio'}</Town>
+            <Province>${clientProvince || 'Sin provincia'}</Province>
+            <CountryCode>ESP</CountryCode>
+          </AddressInSpain>
+        </AdministrativeCentre>
+      </AdministrativeCentres>`;
+      }
+
+      const taxesOutputsXml = (invoiceData.vatBreakdown || []).map((vat: any) => `        <Tax>
+          <TaxTypeCode>01</TaxTypeCode>
+          <TaxRate>${parseFloat(vat.vatRate).toFixed(2)}</TaxRate>
+          <TaxableBase>
+            <TotalAmount>${parseFloat(vat.taxableBase).toFixed(2)}</TotalAmount>
+          </TaxableBase>
+          <TaxAmount>
+            <TotalAmount>${parseFloat(vat.vatAmount).toFixed(2)}</TotalAmount>
+          </TaxAmount>
+        </Tax>`).join('\n');
+
+      const taxesWithheldXml = hasIrpf ? `
+      <TaxesWithheld>
+        <Tax>
+          <TaxTypeCode>04</TaxTypeCode>
+          <TaxRate>${irpfRate.toFixed(2)}</TaxRate>
+          <TaxableBase>
+            <TotalAmount>${subtotal}</TotalAmount>
+          </TaxableBase>
+          <TaxAmount>
+            <TotalAmount>${irpfAmount}</TotalAmount>
+          </TaxAmount>
+        </Tax>
+      </TaxesWithheld>` : '';
+
+      const invoiceLinesXml = (invoiceData.lines || []).map((line: any) => {
+        const lineSubtotal = parseFloat(line.subtotal).toFixed(2);
+        const lineVatRate = parseFloat(line.vatRate).toFixed(2);
+        const lineVatAmount = parseFloat(line.vatAmount).toFixed(2);
+        const lineWithheldXml = hasIrpf ? `
+          <TaxesWithheld>
+            <Tax>
+              <TaxTypeCode>04</TaxTypeCode>
+              <TaxRate>${irpfRate.toFixed(2)}</TaxRate>
+              <TaxableBase>
+                <TotalAmount>${lineSubtotal}</TotalAmount>
+              </TaxableBase>
+              <TaxAmount>
+                <TotalAmount>${(parseFloat(lineSubtotal) * irpfRate / 100).toFixed(2)}</TotalAmount>
+              </TaxAmount>
+            </Tax>
+          </TaxesWithheld>` : '';
+        return `        <InvoiceLine>
+          <ItemDescription>${escapeXml(line.description || '')}</ItemDescription>
+          <Quantity>${parseFloat(line.quantity).toFixed(2)}</Quantity>
+          <UnitOfMeasure>01</UnitOfMeasure>
+          <UnitPriceWithoutTax>${parseFloat(line.unitPrice).toFixed(6)}</UnitPriceWithoutTax>
+          <TotalCost>${lineSubtotal}</TotalCost>
+          <GrossAmount>${lineSubtotal}</GrossAmount>
+          <TaxesOutputs>
+            <Tax>
+              <TaxTypeCode>01</TaxTypeCode>
+              <TaxRate>${lineVatRate}</TaxRate>
+              <TaxableBase>
+                <TotalAmount>${lineSubtotal}</TotalAmount>
+              </TaxableBase>
+              <TaxAmount>
+                <TotalAmount>${lineVatAmount}</TotalAmount>
+              </TaxAmount>
+            </Tax>
+          </TaxesOutputs>${lineWithheldXml}
+        </InvoiceLine>`;
+      }).join('\n');
+
+      const additionalDataXml = invoiceData.vatExemptionReason ? `
+      <AdditionalData>
+        <InvoiceAdditionalInformation>${escapeXml('Exenta de aplicación del IVA: ' + invoiceData.vatExemptionReason)}</InvoiceAdditionalInformation>
+      </AdditionalData>` : '';
+
       let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <fe:Facturae xmlns:fe="http://www.facturae.es/Facturae/2014/v3.2.2/Facturae">
   <FileHeader>
@@ -756,16 +891,16 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
     <Modality>I</Modality>
     <InvoiceIssuerType>EM</InvoiceIssuerType>
     <Batch>
-      <BatchIdentifier>${invoiceNumber}</BatchIdentifier>
+      <BatchIdentifier>${escapeXml(batchId)}</BatchIdentifier>
       <InvoicesCount>1</InvoicesCount>
       <TotalInvoicesAmount>
-        <TotalAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalAmount>
+        <TotalAmount>${totalAmount}</TotalAmount>
       </TotalInvoicesAmount>
       <TotalOutstandingAmount>
-        <TotalAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalAmount>
+        <TotalAmount>${totalAmount}</TotalAmount>
       </TotalOutstandingAmount>
       <TotalExecutableAmount>
-        <TotalAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalAmount>
+        <TotalAmount>${totalAmount}</TotalAmount>
       </TotalExecutableAmount>
       <InvoiceCurrencyCode>EUR</InvoiceCurrencyCode>
     </Batch>
@@ -773,7 +908,7 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
   <Parties>
     <SellerParty>
       <TaxIdentification>
-        <PersonTypeCode>J</PersonTypeCode>
+        <PersonTypeCode>${sellerPersonType}</PersonTypeCode>
         <ResidenceTypeCode>R</ResidenceTypeCode>
         <TaxIdentificationNumber>${companyTaxId}</TaxIdentificationNumber>
       </TaxIdentification>
@@ -785,20 +920,37 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
           <Town>${companyTown || 'Sin municipio'}</Town>
           <Province>${companyProvince || 'Sin provincia'}</Province>
           <CountryCode>ESP</CountryCode>
-        </AddressInSpain>
-        ${companyPhone || companyEmail ? `<ContactDetails>
-          ${companyPhone ? `<Telephone>${companyPhone}</Telephone>` : ''}
-          ${companyEmail ? `<ElectronicMail>${companyEmail}</ElectronicMail>` : ''}
+        </AddressInSpain>${companyPhone || companyEmail ? `
+        <ContactDetails>${companyPhone ? `
+          <Telephone>${escapeXml(companyPhone)}</Telephone>` : ''}${companyEmail ? `
+          <ElectronicMail>${escapeXml(companyEmail)}</ElectronicMail>` : ''}
         </ContactDetails>` : ''}
       </LegalEntity>
     </SellerParty>
     <BuyerParty>
       <TaxIdentification>
-        <PersonTypeCode>J</PersonTypeCode>
+        <PersonTypeCode>${buyerPersonType}</PersonTypeCode>
         <ResidenceTypeCode>R</ResidenceTypeCode>
         <TaxIdentificationNumber>${clientTaxId}</TaxIdentificationNumber>
-      </TaxIdentification>
-      <LegalEntity>
+      </TaxIdentification>${adminCentresXml}
+      ${buyerPersonType === 'F' ? (() => {
+        const nameParts = (invoice.clientName || '').trim().split(/\s+/);
+        const firstName = escapeXml(nameParts[0] || '');
+        const firstSurname = escapeXml(nameParts.length > 1 ? nameParts[1] : '');
+        const secondSurname = nameParts.length > 2 ? escapeXml(nameParts.slice(2).join(' ')) : '';
+        return `<Individual>
+        <Name>${firstName}</Name>
+        <FirstSurname>${firstSurname || firstName}</FirstSurname>${secondSurname ? `
+        <SecondSurname>${secondSurname}</SecondSurname>` : ''}
+        <AddressInSpain>
+          <Address>${clientAddress || 'Sin direccion'}</Address>
+          <PostCode>${clientPostalCode || '00000'}</PostCode>
+          <Town>${clientTown || 'Sin municipio'}</Town>
+          <Province>${clientProvince || 'Sin provincia'}</Province>
+          <CountryCode>ESP</CountryCode>
+        </AddressInSpain>
+      </Individual>`;
+      })() : `<LegalEntity>
         <CorporateName>${clientName}</CorporateName>
         <AddressInSpain>
           <Address>${clientAddress || 'Sin direccion'}</Address>
@@ -807,14 +959,14 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
           <Province>${clientProvince || 'Sin provincia'}</Province>
           <CountryCode>ESP</CountryCode>
         </AddressInSpain>
-      </LegalEntity>
+      </LegalEntity>`}
     </BuyerParty>
   </Parties>
   <Invoices>
     <Invoice>
       <InvoiceHeader>
-        <InvoiceNumber>${invoiceNumber}</InvoiceNumber>
-        <InvoiceSeriesCode>${invoice.series || 'F'}</InvoiceSeriesCode>
+        <InvoiceNumber>${escapeXml(invoiceNumber)}</InvoiceNumber>
+        <InvoiceSeriesCode>${escapeXml(invoice.series || 'F')}</InvoiceSeriesCode>
         <InvoiceDocumentType>FC</InvoiceDocumentType>
         <InvoiceClass>OO</InvoiceClass>
       </InvoiceHeader>
@@ -825,70 +977,30 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
         <LanguageName>es</LanguageName>
       </InvoiceIssueData>
       <TaxesOutputs>
-${(invoiceData.vatBreakdown || []).map((vat: any) => `        <Tax>
-          <TaxTypeCode>01</TaxTypeCode>
-          <TaxRate>${parseFloat(vat.vatRate).toFixed(2)}</TaxRate>
-          <TaxableBase>
-            <TotalAmount>${parseFloat(vat.taxableBase).toFixed(2)}</TotalAmount>
-          </TaxableBase>
-          <TaxAmount>
-            <TotalAmount>${parseFloat(vat.vatAmount).toFixed(2)}</TotalAmount>
-          </TaxAmount>
-        </Tax>`).join('\n')}
-      </TaxesOutputs>${invoiceData.vatExemptionReason ? `
-      <AdditionalData>
-        <InvoiceAdditionalInformation>Exenta de aplicación del IVA: ${escapeXml(invoiceData.vatExemptionReason)}</InvoiceAdditionalInformation>
-      </AdditionalData>` : ''}${parseFloat(invoice.irpfRate || '0') > 0 ? `
-      <TaxesWithheld>
-        <Tax>
-          <TaxTypeCode>04</TaxTypeCode>
-          <TaxRate>${parseFloat(invoice.irpfRate || '0').toFixed(2)}</TaxRate>
-          <TaxableBase>
-            <TotalAmount>${parseFloat(invoice.subtotal || '0').toFixed(2)}</TotalAmount>
-          </TaxableBase>
-          <TaxAmount>
-            <TotalAmount>${parseFloat(invoice.irpfAmount || '0').toFixed(2)}</TotalAmount>
-          </TaxAmount>
-        </Tax>
-      </TaxesWithheld>` : ''}
+${taxesOutputsXml}
+      </TaxesOutputs>${taxesWithheldXml}
       <InvoiceTotals>
-        <TotalGrossAmount>${parseFloat(invoice.subtotal || '0').toFixed(2)}</TotalGrossAmount>
-        <TotalGrossAmountBeforeTaxes>${parseFloat(invoice.subtotal || '0').toFixed(2)}</TotalGrossAmountBeforeTaxes>
-        <TotalTaxOutputs>${parseFloat(invoice.totalVat || '0').toFixed(2)}</TotalTaxOutputs>
-        <TotalTaxesWithheld>${parseFloat(invoice.irpfAmount || '0').toFixed(2)}</TotalTaxesWithheld>
-        <InvoiceTotal>${parseFloat(invoice.total || '0').toFixed(2)}</InvoiceTotal>
-        <TotalOutstandingAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalOutstandingAmount>
-        <TotalExecutableAmount>${parseFloat(invoice.total || '0').toFixed(2)}</TotalExecutableAmount>
+        <TotalGrossAmount>${subtotal}</TotalGrossAmount>
+        <TotalGeneralDiscounts>0.00</TotalGeneralDiscounts>
+        <TotalGeneralSurcharges>0.00</TotalGeneralSurcharges>
+        <TotalGrossAmountBeforeTaxes>${subtotal}</TotalGrossAmountBeforeTaxes>
+        <TotalTaxOutputs>${totalVat}</TotalTaxOutputs>
+        <TotalTaxesWithheld>${irpfAmount}</TotalTaxesWithheld>
+        <InvoiceTotal>${totalAmount}</InvoiceTotal>
+        <TotalFinancialExpenses>0.00</TotalFinancialExpenses>
+        <TotalOutstandingAmount>${totalAmount}</TotalOutstandingAmount>
+        <TotalExecutableAmount>${totalAmount}</TotalExecutableAmount>
       </InvoiceTotals>
       <Items>
-${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceLine>
-          <ItemDescription>${line.description}</ItemDescription>
-          <Quantity>${parseFloat(line.quantity).toFixed(2)}</Quantity>
-          <UnitOfMeasure>01</UnitOfMeasure>
-          <UnitPriceWithoutTax>${parseFloat(line.unitPrice).toFixed(6)}</UnitPriceWithoutTax>
-          <TotalCost>${parseFloat(line.subtotal).toFixed(2)}</TotalCost>
-          <GrossAmount>${parseFloat(line.subtotal).toFixed(2)}</GrossAmount>
-          <TaxesOutputs>
-            <Tax>
-              <TaxTypeCode>01</TaxTypeCode>
-              <TaxRate>${parseFloat(line.vatRate).toFixed(2)}</TaxRate>
-              <TaxableBase>
-                <TotalAmount>${parseFloat(line.subtotal).toFixed(2)}</TotalAmount>
-              </TaxableBase>
-              <TaxAmount>
-                <TotalAmount>${parseFloat(line.vatAmount).toFixed(2)}</TotalAmount>
-              </TaxAmount>
-            </Tax>
-          </TaxesOutputs>
-        </InvoiceLine>`).join('\n')}
+${invoiceLinesXml}
       </Items>
       <PaymentDetails>
         <Installment>
           <InstallmentDueDate>${invoice.dueDate ? format(new Date(invoice.dueDate), 'yyyy-MM-dd') : invoiceDate}</InstallmentDueDate>
-          <InstallmentAmount>${parseFloat(invoice.total || '0').toFixed(2)}</InstallmentAmount>
+          <InstallmentAmount>${totalAmount}</InstallmentAmount>
           <PaymentMeans>${invoice.paymentMethod === 'transferencia' ? '04' : invoice.paymentMethod === 'efectivo' ? '01' : '02'}</PaymentMeans>
         </Installment>
-      </PaymentDetails>
+      </PaymentDetails>${additionalDataXml}
     </Invoice>
   </Invoices>
 </fe:Facturae>`;
