@@ -464,11 +464,40 @@ export default function AgriculturalReceipts() {
     const qrSupplierNif = (receipt.supplierIdFiscal || '').replace(/[^A-Za-z0-9]/g, '').padStart(10, '0').slice(-10);
     const qrCode = `RA${qrYear}${qrMonth}${qrDay}${qrHour}${qrMinute}${qrReceiptNum}${qrCompanyNif}${qrSupplierNif}`;
 
+    const companyNameForClause = currentCompany?.name || 'Empresa';
+    const companyTaxIdForClause = currentCompany?.taxId || 'No indicado';
+    const companyAddressParts = [
+      currentCompany?.address,
+      currentCompany?.postalCode,
+      currentCompany?.town,
+      currentCompany?.province
+    ].filter(Boolean);
+    const companyAddressForClause = companyAddressParts.join(', ') || 'Domicilio no indicado';
+    const companyEmailForClause = currentCompany?.email || '';
+
+    const dataProtectionText = `INFORMACIÓN BÁSICA SOBRE PROTECCIÓN DE DATOS
+• Responsable del tratamiento: ${companyNameForClause}, con NIF/CIF ${companyTaxIdForClause} y domicilio ${companyAddressForClause}.
+• Finalidad: Gestión administrativa, contable, fiscal y comercial derivada de la entrega de mercancías o prestación de servicios, incluyendo el control de pagos y compensaciones en el marco del Régimen Especial de Agricultura, Ganadería y Pesca.
+• Legitimación: El tratamiento es necesario para la ejecución de un contrato en el que el interesado es parte y para el cumplimiento de obligaciones legales aplicables al responsable (especialmente en materia tributaria y mercantil).
+• Destinatarios: Los datos podrán ser comunicados a la Administración Tributaria y a entidades bancarias para la gestión del pago. Asimismo, tendrán acceso a la información los prestadores de servicios de asesoramiento contable y fiscal en su condición de encargados del tratamiento. No se realizarán otras cesiones salvo obligación legal.
+• Derechos: Usted tiene derecho a acceder, rectificar y suprimir sus datos, así como a la limitación de su tratamiento, portabilidad y oposición. Puede ejercer estos derechos enviando una solicitud por escrito a la dirección postal arriba indicada${companyEmailForClause ? ` o al correo electrónico: ${companyEmailForClause}` : ''}. En caso de dudas razonables sobre su identidad, el responsable podrá solicitar información adicional para confirmarla.
+• Conservación: Los datos se conservarán mientras se mantenga la relación comercial y, posteriormente, durante los años necesarios para cumplir con las obligaciones legales de prescripción (generalmente 4 años por normativa fiscal y 6 años por normativa mercantil).
+Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI), se hace constar que los medios de contacto directo y efectivo son la dirección física y el correo electrónico detallados en el apartado del Responsable.`;
+
     const qrDataUrl = await QRCode.toDataURL(qrCode, { width: 80, margin: 1 });
     const pageHeight = doc.internal.pageSize.getHeight();
     const qrSize = 25;
     const qrX = pageWidth - qrSize - 10;
-    const footerY = pageHeight - 30;
+    const footerY = pageHeight - 55;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, footerY - 3, pageWidth - 15, footerY - 3);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5);
+    doc.setTextColor(80, 80, 80);
+    const splitDataProtection = doc.splitTextToSize(dataProtectionText, qrX - 20);
+    doc.text(splitDataProtection, 15, footerY);
+    doc.setTextColor(0, 0, 0);
+
     try {
       doc.addImage(qrDataUrl, 'PNG', qrX, footerY - 3, qrSize, qrSize);
     } catch (e) {
