@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Sidebar from "@/components/layout/Sidebar";
@@ -37,9 +38,13 @@ export default function Suppliers() {
       email: '',
       phone: '',
       address: '',
+      town: '',
+      province: '',
+      postalCode: '',
       contactPerson: '',
       category: 'materials',
       isActive: true,
+      isReagp: false,
     },
   });
 
@@ -90,9 +95,13 @@ export default function Suppliers() {
         email: supplier.email || '',
         phone: supplier.phone || '',
         address: supplier.address || '',
+        town: supplier.town || '',
+        province: supplier.province || '',
+        postalCode: supplier.postalCode || '',
         contactPerson: supplier.contactPerson || '',
         category: supplier.category,
         isActive: supplier.isActive,
+        isReagp: supplier.isReagp || false,
       });
       setIsModalOpen(true);
     }
@@ -416,6 +425,46 @@ export default function Suppliers() {
                   placeholder="Dirección completa"
                   data-testid="input-supplier-address"
                 />
+              </div>
+              
+              <div>
+                <Label htmlFor="town">Población</Label>
+                <Input
+                  {...form.register("town")}
+                  placeholder="Ej: Madrid"
+                  data-testid="input-supplier-town"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="province">Provincia</Label>
+                <Input
+                  {...form.register("province")}
+                  placeholder="Ej: Madrid"
+                  data-testid="input-supplier-province"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="postalCode">Código Postal</Label>
+                <Input
+                  {...form.register("postalCode")}
+                  placeholder="Ej: 28001"
+                  maxLength={5}
+                  data-testid="input-supplier-postal-code"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="isReagp"
+                  checked={form.watch("isReagp") || false}
+                  onCheckedChange={(checked) => form.setValue("isReagp", checked === true)}
+                  data-testid="checkbox-supplier-reagp"
+                />
+                <Label htmlFor="isReagp" className="cursor-pointer">
+                  Proveedor REAGP (Régimen Especial de Agricultura, Ganadería y Pesca)
+                </Label>
               </div>
             </div>
             

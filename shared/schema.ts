@@ -49,8 +49,11 @@ export const companies = pgTable("companies", {
   email: text("email"),
   logoImage: text("logo_image"), // Company logo stored as base64
   logoFileName: text("logo_file_name"), // Original filename of the logo
-  bankAccount: varchar("bank_account", { length: 24 }), // Bank account (max 24 chars)
-  website: varchar("website", { length: 155 }), // Website URL (max 155 chars)
+  bankAccount: varchar("bank_account", { length: 24 }),
+  website: varchar("website", { length: 155 }),
+  reagpAgricolaRate: decimal("reagp_agricola_rate", { precision: 5, scale: 2 }).default("12.00"),
+  reagpGanaderoRate: decimal("reagp_ganadero_rate", { precision: 5, scale: 2 }).default("10.50"),
+  reagpForestalRate: decimal("reagp_forestal_rate", { precision: 5, scale: 2 }).default("12.00"),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -122,8 +125,12 @@ export const suppliers = pgTable("suppliers", {
   email: text("email"),
   phone: text("phone"),
   address: text("address"),
+  town: text("town"),
+  province: text("province"),
+  postalCode: text("postal_code"),
   contactPerson: text("contact_person"),
-  category: text("category").notNull(), // e.g. 'materials', 'supplies', 'equipment'
+  category: text("category").notNull(),
+  isReagp: boolean("is_reagp").default(false),
   totalPurchases: decimal("total_purchases", { precision: 10, scale: 2 }).default("0"),
   orderCount: integer("order_count").default(0),
   isActive: boolean("is_active").default(true),
@@ -309,6 +316,51 @@ export const invoiceVatBreakdown = pgTable("invoice_vat_breakdown", {
   vatAmount: decimal("vat_amount", { precision: 10, scale: 2 }).notNull(),
 });
 
+// Agricultural Receipts (Recibos Agrarios REAGP)
+export const agriculturalReceipts = pgTable("agricultural_receipts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  series: varchar("series", { length: 10 }).default("RA"),
+  number: integer("number").notNull(),
+  year: integer("year"),
+  date: timestamp("date").notNull(),
+  operationDate: timestamp("operation_date"),
+  supplierId: varchar("supplier_id").notNull(),
+  supplierName: text("supplier_name").notNull(),
+  supplierIdFiscal: varchar("supplier_id_fiscal", { length: 20 }),
+  supplierAddress: text("supplier_address"),
+  supplierTown: text("supplier_town"),
+  supplierProvince: text("supplier_province"),
+  supplierPostalCode: varchar("supplier_postal_code", { length: 10 }),
+  productType: text("product_type").default("agricola"),
+  compensationRate: decimal("compensation_rate", { precision: 5, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  compensationAmount: decimal("compensation_amount", { precision: 10, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  paymentMethod: text("payment_method").default("transferencia"),
+  notes: text("notes"),
+  status: text("status").default("draft").notNull(),
+  transactionId: varchar("transaction_id"),
+  expenseCategory: text("expense_category").default("Compensación REAGP"),
+  pdfData: text("pdf_data"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  unique("unique_agricultural_receipt_number").on(table.companyId, table.series, table.year, table.number),
+]);
+
+// Agricultural Receipt Lines
+export const agriculturalReceiptLines = pgTable("agricultural_receipt_lines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  receiptId: varchar("receipt_id").notNull(),
+  articleId: varchar("article_id"),
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  lineOrder: integer("line_order").default(0),
+});
+
 // Insert schemas
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
@@ -351,6 +403,10 @@ export const insertSupplierSchema = createInsertSchema(suppliers).omit({
   createdAt: true,
 }).extend({
   companyId: z.string().optional(),
+  isReagp: z.boolean().optional().default(false),
+  town: z.string().nullable().optional(),
+  province: z.string().nullable().optional(),
+  postalCode: z.string().nullable().optional(),
 });
 
 export const insertInventoryMovementSchema = createInsertSchema(inventoryMovements).omit({
@@ -477,6 +533,38 @@ export const insertInvoiceVatBreakdownSchema = createInsertSchema(invoiceVatBrea
   vatAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
 
+// Agricultural Receipt schemas
+export const insertAgriculturalReceiptSchema = createInsertSchema(agriculturalReceipts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  pdfData: true,
+  transactionId: true,
+}).extend({
+  companyId: z.string().optional(),
+  date: z.coerce.date(),
+  operationDate: z.coerce.date().optional().nullable(),
+  subtotal: z.union([z.string(), z.number()]).transform(val => String(val)),
+  compensationRate: z.union([z.string(), z.number()]).transform(val => String(val)),
+  compensationAmount: z.union([z.string(), z.number()]).transform(val => String(val)),
+  total: z.union([z.string(), z.number()]).transform(val => String(val)),
+  status: z.enum(["draft", "issued", "paid", "cancelled"]).default("draft"),
+  expenseCategory: z.string().default("Compensación REAGP"),
+  series: z.string().optional().default("RA"),
+  number: z.number().optional(),
+  year: z.number().optional(),
+});
+
+export const insertAgriculturalReceiptLineSchema = createInsertSchema(agriculturalReceiptLines).omit({
+  id: true,
+  receiptId: true,
+}).extend({
+  quantity: z.union([z.string(), z.number()]).transform(val => String(val)),
+  unitPrice: z.union([z.string(), z.number()]).transform(val => String(val)),
+  subtotal: z.union([z.string(), z.number()]).transform(val => String(val)),
+  receiptId: z.string().optional(),
+});
+
 // Types
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
@@ -528,6 +616,12 @@ export type InvoiceLine = typeof invoiceLines.$inferSelect;
 export type InsertInvoiceLine = z.infer<typeof insertInvoiceLineSchema>;
 export type InvoiceVatBreakdown = typeof invoiceVatBreakdown.$inferSelect;
 export type InsertInvoiceVatBreakdown = z.infer<typeof insertInvoiceVatBreakdownSchema>;
+
+// Agricultural Receipt types
+export type AgriculturalReceipt = typeof agriculturalReceipts.$inferSelect;
+export type InsertAgriculturalReceipt = z.infer<typeof insertAgriculturalReceiptSchema>;
+export type AgriculturalReceiptLine = typeof agriculturalReceiptLines.$inferSelect;
+export type InsertAgriculturalReceiptLine = z.infer<typeof insertAgriculturalReceiptLineSchema>;
 
 // User schemas
 export type UpsertUser = typeof users.$inferInsert;

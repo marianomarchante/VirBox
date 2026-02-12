@@ -19,7 +19,8 @@ import {
   ShoppingBag,
   ClipboardList,
   Receipt,
-  Building2
+  Building2,
+  Wheat
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -116,6 +117,14 @@ export default function Sidebar() {
           >
             <Receipt className="w-5 h-5" />
             <span>Facturas</span>
+          </Link>
+          <Link 
+            href="/recibos-agrarios"
+            className={cn("sidebar-link", location === "/recibos-agrarios" && "active")}
+            data-testid="nav-recibos-agrarios"
+          >
+            <Wheat className="w-5 h-5" />
+            <span>Recibos Agrarios</span>
           </Link>
         </div>
 

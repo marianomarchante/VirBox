@@ -58,7 +58,13 @@ import {
   type InvoiceLine,
   type InsertInvoiceLine,
   type InvoiceVatBreakdown,
-  type InsertInvoiceVatBreakdown
+  type InsertInvoiceVatBreakdown,
+  agriculturalReceipts,
+  agriculturalReceiptLines,
+  type AgriculturalReceipt,
+  type InsertAgriculturalReceipt,
+  type AgriculturalReceiptLine,
+  type InsertAgriculturalReceiptLine
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
@@ -1162,6 +1168,126 @@ export class PostgresStorage implements IStorage {
     const result = await db.update(invoices)
       .set({ pdfData, xmlData, updatedAt: new Date() })
       .where(and(eq(invoices.id, id), eq(invoices.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  // Agricultural Receipts
+  async getAgriculturalReceipts(companyId: string): Promise<AgriculturalReceipt[]> {
+    return await db.select().from(agriculturalReceipts)
+      .where(eq(agriculturalReceipts.companyId, companyId))
+      .orderBy(desc(agriculturalReceipts.year), desc(agriculturalReceipts.number));
+  }
+
+  async getAgriculturalReceipt(id: string, companyId: string): Promise<AgriculturalReceipt | undefined> {
+    const result = await db.select().from(agriculturalReceipts)
+      .where(and(eq(agriculturalReceipts.id, id), eq(agriculturalReceipts.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createAgriculturalReceipt(
+    insertReceipt: InsertAgriculturalReceipt,
+    lines: InsertAgriculturalReceiptLine[]
+  ): Promise<AgriculturalReceipt> {
+    const companyId = insertReceipt.companyId || await this.getDefaultCompanyId();
+    const series = insertReceipt.series || 'RA';
+    const year = insertReceipt.year || new Date().getFullYear();
+    const number = await this.getNextAgriculturalReceiptNumber(companyId, series, year);
+
+    const result = await db.insert(agriculturalReceipts).values({
+      ...insertReceipt,
+      companyId,
+      series,
+      year,
+      number,
+    }).returning();
+
+    const receipt = result[0];
+
+    if (lines.length > 0) {
+      const linesWithId = lines.map((line, index) => ({
+        ...line,
+        receiptId: receipt.id,
+        lineOrder: index,
+      }));
+      await db.insert(agriculturalReceiptLines).values(linesWithId);
+    }
+
+    return receipt;
+  }
+
+  async updateAgriculturalReceipt(id: string, companyId: string, update: Partial<InsertAgriculturalReceipt>): Promise<AgriculturalReceipt | undefined> {
+    const result = await db.update(agriculturalReceipts)
+      .set({ ...update, updatedAt: new Date() })
+      .where(and(eq(agriculturalReceipts.id, id), eq(agriculturalReceipts.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteAgriculturalReceipt(id: string, companyId: string): Promise<boolean> {
+    await db.delete(agriculturalReceiptLines).where(eq(agriculturalReceiptLines.receiptId, id));
+    const result = await db.delete(agriculturalReceipts)
+      .where(and(eq(agriculturalReceipts.id, id), eq(agriculturalReceipts.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getAgriculturalReceiptLines(receiptId: string): Promise<AgriculturalReceiptLine[]> {
+    return await db.select().from(agriculturalReceiptLines)
+      .where(eq(agriculturalReceiptLines.receiptId, receiptId))
+      .orderBy(agriculturalReceiptLines.lineOrder);
+  }
+
+  async getNextAgriculturalReceiptNumber(companyId: string, series: string, year: number): Promise<number> {
+    const invoiceExists = async (num: number): Promise<boolean> => {
+      const existing = await db.select({ id: agriculturalReceipts.id })
+        .from(agriculturalReceipts)
+        .where(and(
+          eq(agriculturalReceipts.companyId, companyId),
+          eq(agriculturalReceipts.series, series),
+          eq(agriculturalReceipts.year, year),
+          eq(agriculturalReceipts.number, num)
+        ))
+        .limit(1);
+      return existing.length > 0;
+    };
+
+    let nextNumber = 1;
+    while (await invoiceExists(nextNumber)) {
+      nextNumber++;
+    }
+
+    const existingSequence = await db.select()
+      .from(documentSequences)
+      .where(and(
+        eq(documentSequences.documentType, 'agricultural_receipt'),
+        eq(documentSequences.companyId, companyId),
+        eq(documentSequences.series, series),
+        eq(documentSequences.year, year)
+      ))
+      .limit(1);
+
+    if (existingSequence.length > 0) {
+      await db.update(documentSequences)
+        .set({ lastNumber: nextNumber, updatedAt: new Date() })
+        .where(eq(documentSequences.id, existingSequence[0].id));
+    } else {
+      await db.insert(documentSequences).values({
+        documentType: 'agricultural_receipt',
+        companyId,
+        series,
+        year,
+        lastNumber: nextNumber,
+      });
+    }
+
+    return nextNumber;
+  }
+
+  async updateAgriculturalReceiptPdf(id: string, companyId: string, pdfData: string | null): Promise<AgriculturalReceipt | undefined> {
+    const result = await db.update(agriculturalReceipts)
+      .set({ pdfData, updatedAt: new Date() })
+      .where(and(eq(agriculturalReceipts.id, id), eq(agriculturalReceipts.companyId, companyId)))
       .returning();
     return result[0];
   }

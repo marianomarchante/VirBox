@@ -36,7 +36,11 @@ import {
   type InvoiceLine,
   type InsertInvoiceLine,
   type InvoiceVatBreakdown,
-  type InsertInvoiceVatBreakdown
+  type InsertInvoiceVatBreakdown,
+  type AgriculturalReceipt,
+  type InsertAgriculturalReceipt,
+  type AgriculturalReceiptLine,
+  type InsertAgriculturalReceiptLine
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -176,6 +180,16 @@ export interface IStorage {
   getInvoiceVatBreakdown(invoiceId: string): Promise<InvoiceVatBreakdown[]>;
   getNextInvoiceNumber(companyId: string, series: string, year: number): Promise<number>;
   updateInvoiceDocuments(id: string, companyId: string, pdfData: string | null, xmlData: string | null): Promise<Invoice | undefined>;
+
+  // Agricultural Receipts
+  getAgriculturalReceipts(companyId: string): Promise<AgriculturalReceipt[]>;
+  getAgriculturalReceipt(id: string, companyId: string): Promise<AgriculturalReceipt | undefined>;
+  createAgriculturalReceipt(receipt: InsertAgriculturalReceipt, lines: InsertAgriculturalReceiptLine[]): Promise<AgriculturalReceipt>;
+  updateAgriculturalReceipt(id: string, companyId: string, receipt: Partial<InsertAgriculturalReceipt>): Promise<AgriculturalReceipt | undefined>;
+  deleteAgriculturalReceipt(id: string, companyId: string): Promise<boolean>;
+  getAgriculturalReceiptLines(receiptId: string): Promise<AgriculturalReceiptLine[]>;
+  getNextAgriculturalReceiptNumber(companyId: string, series: string, year: number): Promise<number>;
+  updateAgriculturalReceiptPdf(id: string, companyId: string, pdfData: string | null): Promise<AgriculturalReceipt | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -205,8 +219,18 @@ export class MemStorage implements IStorage {
       name: 'Mi Organización',
       taxId: null,
       address: null,
+      town: null,
+      province: null,
+      postalCode: null,
       phone: null,
       email: null,
+      logoImage: null,
+      logoFileName: null,
+      bankAccount: null,
+      website: null,
+      reagpAgricolaRate: null,
+      reagpGanaderoRate: null,
+      reagpForestalRate: null,
       isActive: true,
       createdAt: new Date(),
     };
@@ -633,9 +657,13 @@ export class MemStorage implements IStorage {
       ...insertSupplier,
       companyId,
       address: insertSupplier.address || null,
+      town: insertSupplier.town || null,
+      province: insertSupplier.province || null,
+      postalCode: insertSupplier.postalCode || null,
       email: insertSupplier.email || null,
       phone: insertSupplier.phone || null,
       contactPerson: insertSupplier.contactPerson || null,
+      isReagp: insertSupplier.isReagp ?? false,
       isActive: insertSupplier.isActive ?? null,
       id,
       totalPurchases: "0",
@@ -962,6 +990,39 @@ export class MemStorage implements IStorage {
     }
     
     return data;
+  }
+
+  // Agricultural Receipts (stubs)
+  async getAgriculturalReceipts(companyId: string): Promise<AgriculturalReceipt[]> {
+    throw new Error("Not implemented");
+  }
+
+  async getAgriculturalReceipt(id: string, companyId: string): Promise<AgriculturalReceipt | undefined> {
+    throw new Error("Not implemented");
+  }
+
+  async createAgriculturalReceipt(receipt: InsertAgriculturalReceipt, lines: InsertAgriculturalReceiptLine[]): Promise<AgriculturalReceipt> {
+    throw new Error("Not implemented");
+  }
+
+  async updateAgriculturalReceipt(id: string, companyId: string, receipt: Partial<InsertAgriculturalReceipt>): Promise<AgriculturalReceipt | undefined> {
+    throw new Error("Not implemented");
+  }
+
+  async deleteAgriculturalReceipt(id: string, companyId: string): Promise<boolean> {
+    throw new Error("Not implemented");
+  }
+
+  async getAgriculturalReceiptLines(receiptId: string): Promise<AgriculturalReceiptLine[]> {
+    throw new Error("Not implemented");
+  }
+
+  async getNextAgriculturalReceiptNumber(companyId: string, series: string, year: number): Promise<number> {
+    throw new Error("Not implemented");
+  }
+
+  async updateAgriculturalReceiptPdf(id: string, companyId: string, pdfData: string | null): Promise<AgriculturalReceipt | undefined> {
+    throw new Error("Not implemented");
   }
 }
 

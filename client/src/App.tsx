@@ -28,6 +28,7 @@ import Landing from "@/pages/Landing";
 import Articles from "@/pages/Articles";
 import DeliveryNotes from "@/pages/DeliveryNotes";
 import Invoices from "@/pages/Invoices";
+import AgriculturalReceipts from "@/pages/AgriculturalReceipts";
 
 function Router() {
   return (
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/articulos" component={Articles} />
       <Route path="/albaranes" component={DeliveryNotes} />
       <Route path="/facturas" component={Invoices} />
+      <Route path="/recibos-agrarios" component={AgriculturalReceipts} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -20,7 +20,9 @@ import {
   insertDeliveryNoteLineSchema,
   insertInvoiceSchema,
   insertInvoiceLineSchema,
-  insertInvoiceVatBreakdownSchema
+  insertInvoiceVatBreakdownSchema,
+  insertAgriculturalReceiptSchema,
+  insertAgriculturalReceiptLineSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -1656,6 +1658,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const success = await storage.deleteInvoice(req.params.id, companyId);
     if (!success) {
       return res.status(404).json({ message: "Invoice not found" });
+    }
+    res.status(204).send();
+  });
+
+  // Agricultural Receipt routes (Recibos Agrarios REAGP)
+  app.get("/api/agricultural-receipts", isAuthenticated, async (req: any, res) => {
+    const { companyId } = await getCompanyIdWithPermission(req, 'consulta');
+    const receipts = await storage.getAgriculturalReceipts(companyId);
+    res.json(receipts);
+  });
+
+  app.get("/api/agricultural-receipts/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId } = await getCompanyIdWithPermission(req, 'consulta');
+    const receipt = await storage.getAgriculturalReceipt(req.params.id, companyId);
+    if (!receipt) {
+      return res.status(404).json({ message: "Agricultural receipt not found" });
+    }
+    const lines = await storage.getAgriculturalReceiptLines(receipt.id);
+    res.json({ ...receipt, lines });
+  });
+
+  app.post("/api/agricultural-receipts", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const { lines: rawLines, ...receiptData } = req.body;
+      const validatedReceipt = insertAgriculturalReceiptSchema.parse({
+        ...receiptData,
+        companyId,
+      });
+
+      const validatedLines = (rawLines || []).map((line: any) =>
+        insertAgriculturalReceiptLineSchema.parse(line)
+      );
+
+      const receipt = await storage.createAgriculturalReceipt(validatedReceipt, validatedLines);
+
+      if (receipt.status === 'issued' || receipt.status === 'paid') {
+        const transaction = await storage.createTransaction({
+          companyId,
+          type: 'expense',
+          date: receipt.date,
+          concept: `Recibo Agrario ${receipt.series}-${receipt.year}-${String(receipt.number).padStart(4, '0')} - ${receipt.supplierName}`,
+          category: receipt.expenseCategory || 'Compensación REAGP',
+          amount: receipt.total,
+          taxableBase: receipt.subtotal,
+          vatAmount: '0',
+          irpfRate: '0',
+          irpfAmount: '0',
+          clientSupplierId: receipt.supplierId,
+          notes: receipt.notes || null,
+        });
+        await storage.updateAgriculturalReceipt(receipt.id, companyId, { transactionId: transaction.id } as any);
+      }
+
+      res.status(201).json(receipt);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ message: "Invalid receipt data", errors: error.errors });
+      } else {
+        console.error("Error creating agricultural receipt:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.put("/api/agricultural-receipts/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const validatedData = insertAgriculturalReceiptSchema.partial().parse(req.body);
+      const receipt = await storage.updateAgriculturalReceipt(req.params.id, companyId, validatedData);
+      if (!receipt) {
+        return res.status(404).json({ message: "Agricultural receipt not found" });
+      }
+      res.json(receipt);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        res.status(400).json({ message: "Invalid receipt data", errors: error.errors });
+      } else {
+        console.error("Error updating agricultural receipt:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  });
+
+  app.patch("/api/agricultural-receipts/:id/pdf", isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) {
+        return res.status(403).json({ message: "Forbidden: Admin permission required" });
+      }
+
+      const { pdfData } = req.body;
+      const receipt = await storage.updateAgriculturalReceiptPdf(req.params.id, companyId, pdfData);
+      if (!receipt) {
+        return res.status(404).json({ message: "Agricultural receipt not found" });
+      }
+      res.json(receipt);
+    } catch (error) {
+      console.error("Error updating agricultural receipt PDF:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/agricultural-receipts/:id", isAuthenticated, async (req: any, res) => {
+    const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Forbidden: Admin permission required" });
+    }
+
+    const success = await storage.deleteAgriculturalReceipt(req.params.id, companyId);
+    if (!success) {
+      return res.status(404).json({ message: "Agricultural receipt not found" });
     }
     res.status(204).send();
   });

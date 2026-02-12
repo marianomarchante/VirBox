@@ -1,0 +1,225 @@
+Propuesta de Modificaciones para Permitir la Emisión de Recibos Agrarios
+
+(Régimen Especial de Agricultura, Ganadería y Pesca – REAGP, España)
+
+1️⃣ Objetivo
+
+Ampliar el sistema actual de facturación para permitir la emisión de Recibos de Compensación Agraria, conforme al art. 16 del RD 1619/2012, manteniendo coherencia con el módulo actual de facturas.
+
+2️⃣ Cambios Funcionales
+A. Nuevo Tipo de Documento
+
+Añadir un nuevo tipo documental:
+
+FACTURA
+
+FACTURA_RECTIFICATIVA
+
+✅ RECIBO_AGRARIO (nuevo)
+
+Debe:
+
+Tener serie independiente
+
+Numeración correlativa propia
+
+No compartir numeración con facturas
+
+B. Configuración del Cliente/Proveedor
+
+Añadir en la ficha del proveedor:
+
+Campo nuevo:
+
+□ Acogido al Régimen Especial de Agricultura, Ganadería y Pesca (REAGP)
+
+
+Si está marcado:
+
+Permitir generar Recibo Agrario
+
+Bloquear generación de factura normal si la operación corresponde a entrega sujeta a compensación
+
+C. Estructura del Documento
+
+El Recibo Agrario debe incluir:
+
+1. Datos obligatorios
+
+Serie
+
+Número correlativo
+
+Fecha de expedición
+
+Fecha de operación
+
+Datos completos del agricultor/ganadero:
+
+Nombre/Razón social
+
+NIF
+
+Domicilio fiscal
+
+Datos completos de la empresa adquirente
+
+Descripción detallada de los productos
+
+Base de compensación (importe sin IVA)
+
+Porcentaje de compensación
+
+Importe de compensación
+
+Total a pagar (Base + Compensación)
+
+D. Lógica Fiscal
+❌ No debe:
+
+Desglosar IVA
+
+Incluir tipo impositivo
+
+Incluir cuota de IVA
+
+✅ Debe:
+
+Calcular automáticamente:
+
+Compensación = Base x % compensación
+Total = Base + Compensación
+
+E. Configuración del % de Compensación
+
+Crear tabla configurable:
+
+Tipo Producto	% Compensación
+Agrícola	configurable
+Ganadero	configurable
+Forestal	configurable
+
+El sistema debe permitir:
+
+Modificar el porcentaje desde panel administrador
+
+Asociar porcentaje automáticamente según categoría del producto
+
+F. Firma
+
+Añadir campo opcional:
+
+Firma digital del agricultor
+o
+
+Campo “Recibido y conforme”
+
+Si existe módulo de firma digital → reutilizarlo.
+
+G. Contabilización
+
+Cuando se genere un Recibo Agrario:
+
+En lugar de:
+
+Cuenta IVA soportado
+
+Debe generar:
+
+Gasto/compra (Base)
+
+Cuenta específica de Compensación REAGP
+
+Total como deuda al proveedor
+
+Debe existir:
+
+Cuenta contable configurable para compensaciones agrarias
+
+H. Libros Registro
+
+Si el sistema genera libros de IVA:
+
+El Recibo Agrario debe:
+
+Registrarse como factura recibida
+
+Identificarse como “Compensación REAGP”
+
+No computar como cuota IVA deducible ordinaria
+
+3️⃣ Cambios en la Interfaz
+En pantalla de creación:
+
+Si proveedor = REAGP:
+
+Mostrar:
+
+Base
+
+% compensación (editable si permisos)
+
+Importe compensación (autocalculado)
+
+Total
+
+Ocultar:
+
+Tipo de IVA
+
+Retención IRPF
+
+Recargo de equivalencia
+
+4️⃣ Validaciones
+
+No permitir crear Recibo Agrario si el proveedor no está marcado como REAGP.
+
+No permitir introducir IVA manual.
+
+Serie obligatoriamente distinta a facturas.
+
+5️⃣ PDF / Diseño del Documento
+
+Debe incluir texto legal tipo:
+
+“Recibo de compensación emitido conforme al artículo 16 del Reglamento de Facturación (RD 1619/2012). Operación acogida al Régimen Especial de Agricultura, Ganadería y Pesca.”
+
+Formato similar a factura pero titulado claramente:
+
+RECIBO DE COMPENSACIÓN AGRARIA
+6️⃣ API (si existe)
+
+Si la app tiene API:
+
+Nuevo endpoint:
+
+POST /recibos-agrarios
+GET /recibos-agrarios/{id}
+
+
+Y nuevo tipo en payload:
+
+"type": "RECIBO_AGRARIO"
+
+7️⃣ Impacto Técnico Estimado
+
+Bajo si:
+
+El sistema ya permite tipos documentales diferenciados.
+
+El motor fiscal es modular.
+
+Medio si:
+
+La lógica de IVA está fuertemente acoplada al modelo de factura.
+
+8️⃣ Resumen de Cambios Necesarios
+
+✔ Nuevo tipo documental
+✔ Serie independiente
+✔ Campo proveedor REAGP
+✔ Lógica de compensación automática
+✔ Cuenta contable específica
+✔ Adaptación libros registro
+✔ Nuevo diseño PDF
