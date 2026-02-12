@@ -96,6 +96,7 @@ export const clients = pgTable("clients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull(),
   name: text("name").notNull(),
+  clientType: text("client_type").default("particular"),
   idFiscal: varchar("id_fiscal", { length: 10 }),
   email: text("email"),
   phone: text("phone"),
@@ -104,6 +105,9 @@ export const clients = pgTable("clients", {
   province: text("province"), // Province
   postalCode: text("postal_code"), // Postal code
   contactPerson: text("contact_person"),
+  codigoOficinaContable: varchar("codigo_oficina_contable", { length: 9 }),
+  codigoOrganoGestor: varchar("codigo_organo_gestor", { length: 9 }),
+  codigoUnidadTramitadora: varchar("codigo_unidad_tramitadora", { length: 9 }),
   totalPurchases: decimal("total_purchases", { precision: 10, scale: 2 }).default("0"),
   orderCount: integer("order_count").default(0),
   isActive: boolean("is_active").default(true),
@@ -334,6 +338,10 @@ export const insertClientSchema = createInsertSchema(clients).omit({
   createdAt: true,
 }).extend({
   companyId: z.string().optional(),
+  clientType: z.string().optional().default("particular"),
+  codigoOficinaContable: z.string().nullable().optional(),
+  codigoOrganoGestor: z.string().nullable().optional(),
+  codigoUnidadTramitadora: z.string().nullable().optional(),
 });
 
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({

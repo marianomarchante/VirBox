@@ -480,6 +480,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = insertClientSchema.parse(req.body);
+      const dir3Regex = /^[A-Z0-9]{9}$/;
+      if (validatedData.clientType === 'administracion_publica') {
+        const dir3Errors: string[] = [];
+        if (!validatedData.codigoOficinaContable || !dir3Regex.test(validatedData.codigoOficinaContable)) {
+          dir3Errors.push('Código Oficina Contable: debe tener 9 caracteres alfanuméricos en mayúsculas');
+        }
+        if (!validatedData.codigoOrganoGestor || !dir3Regex.test(validatedData.codigoOrganoGestor)) {
+          dir3Errors.push('Código Órgano Gestor: debe tener 9 caracteres alfanuméricos en mayúsculas');
+        }
+        if (!validatedData.codigoUnidadTramitadora || !dir3Regex.test(validatedData.codigoUnidadTramitadora)) {
+          dir3Errors.push('Código Unidad Tramitadora: debe tener 9 caracteres alfanuméricos en mayúsculas');
+        }
+        if (dir3Errors.length > 0) {
+          return res.status(400).json({ message: "Códigos DIR3 inválidos", errors: dir3Errors });
+        }
+      } else {
+        validatedData.codigoOficinaContable = null;
+        validatedData.codigoOrganoGestor = null;
+        validatedData.codigoUnidadTramitadora = null;
+      }
       const client = await storage.createClient({
         ...validatedData,
         companyId
@@ -502,6 +522,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validatedData = insertClientSchema.partial().parse(req.body);
+      const dir3Regex = /^[A-Z0-9]{9}$/;
+      if (validatedData.clientType === 'administracion_publica') {
+        const dir3Errors: string[] = [];
+        if (!validatedData.codigoOficinaContable || !dir3Regex.test(validatedData.codigoOficinaContable)) {
+          dir3Errors.push('Código Oficina Contable: debe tener 9 caracteres alfanuméricos en mayúsculas');
+        }
+        if (!validatedData.codigoOrganoGestor || !dir3Regex.test(validatedData.codigoOrganoGestor)) {
+          dir3Errors.push('Código Órgano Gestor: debe tener 9 caracteres alfanuméricos en mayúsculas');
+        }
+        if (!validatedData.codigoUnidadTramitadora || !dir3Regex.test(validatedData.codigoUnidadTramitadora)) {
+          dir3Errors.push('Código Unidad Tramitadora: debe tener 9 caracteres alfanuméricos en mayúsculas');
+        }
+        if (dir3Errors.length > 0) {
+          return res.status(400).json({ message: "Códigos DIR3 inválidos", errors: dir3Errors });
+        }
+      } else if (validatedData.clientType && validatedData.clientType !== 'administracion_publica') {
+        validatedData.codigoOficinaContable = null;
+        validatedData.codigoOrganoGestor = null;
+        validatedData.codigoUnidadTramitadora = null;
+      }
       const client = await storage.updateClient(req.params.id, companyId, validatedData);
       if (!client) {
         return res.status(404).json({ message: "Client not found" });

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2, AlertTriangle, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Sidebar from "@/components/layout/Sidebar";
@@ -30,14 +31,21 @@ export default function Clients() {
     resolver: zodResolver(insertClientSchema),
     defaultValues: {
       name: '',
+      clientType: 'particular',
       idFiscal: '',
       email: '',
       phone: '',
       address: '',
       contactPerson: '',
+      codigoOficinaContable: '',
+      codigoOrganoGestor: '',
+      codigoUnidadTramitadora: '',
       isActive: true,
     },
   });
+
+  const watchClientType = form.watch('clientType');
+  const isAdminPublica = watchClientType === 'administracion_publica';
 
   const handleSubmit = (data: InsertClient) => {
     const errors: string[] = [];
@@ -45,17 +53,37 @@ export default function Clients() {
     if (!data.name || data.name.trim() === '') {
       errors.push('Nombre del cliente');
     }
+
+    const dir3Regex = /^[A-Z0-9]{9}$/;
+    if (data.clientType === 'administracion_publica') {
+      if (!data.codigoOficinaContable || !dir3Regex.test(data.codigoOficinaContable)) {
+        errors.push('Código Oficina Contable (9 caracteres alfanuméricos en mayúsculas)');
+      }
+      if (!data.codigoOrganoGestor || !dir3Regex.test(data.codigoOrganoGestor)) {
+        errors.push('Código Órgano Gestor (9 caracteres alfanuméricos en mayúsculas)');
+      }
+      if (!data.codigoUnidadTramitadora || !dir3Regex.test(data.codigoUnidadTramitadora)) {
+        errors.push('Código Unidad Tramitadora (9 caracteres alfanuméricos en mayúsculas)');
+      }
+    }
     
     if (errors.length > 0) {
       setValidationErrors(errors);
       setValidationModalOpen(true);
       return;
     }
+
+    const submitData = { ...data };
+    if (data.clientType !== 'administracion_publica') {
+      submitData.codigoOficinaContable = null;
+      submitData.codigoOrganoGestor = null;
+      submitData.codigoUnidadTramitadora = null;
+    }
     
     if (editingClient) {
-      updateClient.mutate({ id: editingClient, client: { ...data, companyId: currentCompanyId ?? undefined } });
+      updateClient.mutate({ id: editingClient, client: { ...submitData, companyId: currentCompanyId ?? undefined } });
     } else {
-      createClient.mutate({ ...data, companyId: currentCompanyId ?? undefined });
+      createClient.mutate({ ...submitData, companyId: currentCompanyId ?? undefined });
     }
     handleCloseModal();
   };
@@ -72,11 +100,15 @@ export default function Clients() {
       setEditingClient(clientId);
       form.reset({
         name: client.name,
+        clientType: (client as any).clientType || 'particular',
         idFiscal: client.idFiscal || '',
         email: client.email || '',
         phone: client.phone || '',
         address: client.address || '',
         contactPerson: client.contactPerson || '',
+        codigoOficinaContable: (client as any).codigoOficinaContable || '',
+        codigoOrganoGestor: (client as any).codigoOrganoGestor || '',
+        codigoUnidadTramitadora: (client as any).codigoUnidadTramitadora || '',
         isActive: client.isActive,
       });
       setIsModalOpen(true);
@@ -150,6 +182,9 @@ export default function Clients() {
                       Cliente
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
+                      Tipo
+                    </th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       ID Fiscal
                     </th>
                     <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
@@ -169,7 +204,7 @@ export default function Clients() {
                 <tbody>
                   {!clients || clients.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
                         No hay clientes registrados. 
                         {canWrite && (
                           <button 
@@ -197,6 +232,15 @@ export default function Clients() {
                               </p>
                             )}
                           </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                            (client as any).clientType === 'administracion_publica'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                          }`}>
+                            {({ particular: 'Particular', empresa: 'Empresa', autonomo: 'Autónomo', administracion_publica: 'Admin. Pública' } as Record<string, string>)[(client as any).clientType || 'particular'] || 'Particular'}
+                          </span>
                         </td>
                         <td className="py-3 px-4">
                           {client.idFiscal ? (
@@ -294,6 +338,25 @@ export default function Clients() {
                   </p>
                 )}
               </div>
+
+              <div>
+                <Label htmlFor="clientType">Tipo de cliente</Label>
+                <Select
+                  value={watchClientType || 'particular'}
+                  onValueChange={(value) => form.setValue('clientType', value)}
+                  data-testid="select-client-type"
+                >
+                  <SelectTrigger data-testid="select-trigger-client-type">
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="particular">Particular</SelectItem>
+                    <SelectItem value="empresa">Empresa</SelectItem>
+                    <SelectItem value="autonomo">Autónomo</SelectItem>
+                    <SelectItem value="administracion_publica">Administración Pública</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div>
                 <Label htmlFor="idFiscal">ID Fiscal (NIF/CIF)</Label>
@@ -342,6 +405,53 @@ export default function Clients() {
                 />
               </div>
             </div>
+
+            {isAdminPublica && (
+              <div className="border border-blue-200 dark:border-blue-800 rounded-lg p-4 bg-blue-50/50 dark:bg-blue-950/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                  <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-400">Códigos DIR3 (Obligatorios para Administración Pública)</h4>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Conforme a la Ley 25/2013. Cada código debe tener exactamente 9 caracteres alfanuméricos en mayúsculas (A-Z, 0-9).
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="codigoOficinaContable">Oficina Contable *</Label>
+                    <Input
+                      {...form.register("codigoOficinaContable")}
+                      placeholder="Ej: L01280796"
+                      maxLength={9}
+                      className="font-mono uppercase"
+                      onChange={(e) => form.setValue('codigoOficinaContable', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                      data-testid="input-codigo-oficina-contable"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="codigoOrganoGestor">Órgano Gestor *</Label>
+                    <Input
+                      {...form.register("codigoOrganoGestor")}
+                      placeholder="Ej: L01280796"
+                      maxLength={9}
+                      className="font-mono uppercase"
+                      onChange={(e) => form.setValue('codigoOrganoGestor', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                      data-testid="input-codigo-organo-gestor"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="codigoUnidadTramitadora">Unidad Tramitadora *</Label>
+                    <Input
+                      {...form.register("codigoUnidadTramitadora")}
+                      placeholder="Ej: L01280796"
+                      maxLength={9}
+                      className="font-mono uppercase"
+                      onChange={(e) => form.setValue('codigoUnidadTramitadora', e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                      data-testid="input-codigo-unidad-tramitadora"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="flex items-center gap-3 pt-6 border-t border-border">
               <Button 
