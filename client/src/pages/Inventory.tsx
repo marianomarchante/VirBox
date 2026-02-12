@@ -663,10 +663,14 @@ export default function Inventory() {
                       <FormControl>
                         <Input
                           {...field}
-                          type="number"
-                          step="0.01"
+                          type="text"
+                          inputMode="decimal"
                           placeholder="0.00"
                           data-testid="input-value"
+                          onChange={(e) => {
+                            const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+                            field.onChange(val);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />

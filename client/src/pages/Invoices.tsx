@@ -1272,21 +1272,27 @@ ${(invoiceData.lines || []).map((line: any, index: number) => `        <InvoiceL
                           <div className="col-span-2">
                             <Label className="text-xs">Cantidad</Label>
                             <Input
-                              type="number"
-                              step="1"
-                              min="0"
+                              type="text"
+                              inputMode="decimal"
                               value={line.quantity}
-                              onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+                                handleLineChange(index, 'quantity', val);
+                              }}
+                              placeholder="0"
                             />
                           </div>
                           <div className="col-span-2">
                             <Label className="text-xs">Precio</Label>
                             <Input
-                              type="number"
-                              step="1"
-                              min="0"
+                              type="text"
+                              inputMode="decimal"
                               value={line.unitPrice}
-                              onChange={(e) => handleLineChange(index, 'unitPrice', e.target.value)}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+                                handleLineChange(index, 'unitPrice', val);
+                              }}
+                              placeholder="0.00"
                             />
                           </div>
                           <div className="col-span-2">

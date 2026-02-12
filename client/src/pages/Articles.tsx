@@ -359,10 +359,14 @@ export default function Articles() {
                 <Label htmlFor="unitPrice">Precio (sin IVA) *</Label>
                 <Input
                   id="unitPrice"
-                  type="number"
-                  step="1"
-                  min="0"
-                  {...form.register('unitPrice')}
+                  type="text"
+                  inputMode="decimal"
+                  {...form.register('unitPrice', {
+                    onChange: (e) => {
+                      const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+                      form.setValue('unitPrice', val);
+                    }
+                  })}
                   placeholder="0.00"
                   data-testid="input-article-price"
                 />

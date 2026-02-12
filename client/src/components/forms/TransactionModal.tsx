@@ -418,11 +418,16 @@ export default function TransactionModal({
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0.00"
                   className="pl-8"
-                  {...form.register("taxableBase")}
+                  {...form.register("taxableBase", {
+                    onChange: (e) => {
+                      const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+                      form.setValue('taxableBase', val);
+                    }
+                  })}
                   disabled={isViewMode}
                   data-testid="input-taxable-base"
                 />
@@ -433,11 +438,16 @@ export default function TransactionModal({
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0.00"
                   className="pl-8"
-                  {...form.register("vatAmount")}
+                  {...form.register("vatAmount", {
+                    onChange: (e) => {
+                      const val = e.target.value.replace(',', '.').replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+                      form.setValue('vatAmount', val);
+                    }
+                  })}
                   disabled={isViewMode}
                   data-testid="input-vat-amount"
                 />
@@ -448,8 +458,8 @@ export default function TransactionModal({
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0.00"
                   className="pl-8 bg-muted"
                   value={form.watch('amount') || '0'}
@@ -487,8 +497,8 @@ export default function TransactionModal({
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                   <Input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="0.00"
                     className="pl-8 bg-muted"
                     value={form.watch('irpfAmount') || '0'}
