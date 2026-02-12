@@ -695,7 +695,7 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
                           <Label className="text-xs">Cantidad</Label>
                           <Input
                             type="number"
-                            step="0.01"
+                            step="1"
                             min="0"
                             value={line.quantity}
                             onChange={(e) => handleLineChange(index, 'quantity', e.target.value)}
@@ -705,7 +705,7 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
                           <Label className="text-xs">Precio</Label>
                           <Input
                             type="number"
-                            step="0.01"
+                            step="1"
                             min="0"
                             value={line.unitPrice}
                             onChange={(e) => handleLineChange(index, 'unitPrice', e.target.value)}

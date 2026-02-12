@@ -360,7 +360,7 @@ export default function Articles() {
                 <Input
                   id="unitPrice"
                   type="number"
-                  step="0.01"
+                  step="1"
                   min="0"
                   {...form.register('unitPrice')}
                   placeholder="0.00"
