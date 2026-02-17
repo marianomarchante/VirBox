@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { Search, X, ImageOff, MapPin, Box, Plus, Upload, Camera } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { Search, X, ImageOff, MapPin, Box, Plus, Upload, Camera, Printer } from "lucide-react";
+import jsPDF from "jspdf";
 import {
   Dialog,
   DialogContent,
@@ -113,6 +114,11 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{ name: string; data: string } | null>(null);
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [printRows, setPrintRows] = useState("8");
+  const [printCols, setPrintCols] = useState("3");
+  const [printStartLabel, setPrintStartLabel] = useState("1");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { currentCompanyId } = useCompany();
   const { data: productCategories } = useProductCategories();
   const { toast } = useToast();
@@ -261,7 +267,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
     const containers = inventoryItems
       .map(item => item.idContenedor)
       .filter((c): c is string => !!c && c.trim() !== "");
-    return [...new Set(containers)].sort();
+    return Array.from(new Set(containers)).sort();
   }, [inventoryItems]);
 
   const filteredItems = useMemo(() => {
@@ -308,6 +314,125 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
   const handleBackToGallery = () => {
     handleCloseForm();
   };
+
+  const handleOpenPrintDialog = () => {
+    setPrintRows("8");
+    setPrintCols("3");
+    setPrintStartLabel("1");
+    setIsPrintDialogOpen(true);
+  };
+
+  const handleGeneratePdf = useCallback(async () => {
+    const rows = parseInt(printRows, 10);
+    const cols = parseInt(printCols, 10);
+    const startLabel = parseInt(printStartLabel, 10);
+
+    if (!rows || rows < 1 || !cols || cols < 1 || !startLabel || startLabel < 1) {
+      toast({ title: "Error", description: "Los valores deben ser números enteros positivos.", variant: "destructive" });
+      return;
+    }
+
+    setIsGeneratingPdf(true);
+
+    try {
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const marginX = 5;
+      const marginY = 5;
+      const usableWidth = pageWidth - marginX * 2;
+      const usableHeight = pageHeight - marginY * 2;
+      const cellWidth = usableWidth / cols;
+      const cellHeight = usableHeight / rows;
+      const padding = 1.5;
+      const labelsPerPage = rows * cols;
+
+      const items = filteredItems;
+      const totalLabels = items.length + (startLabel - 1);
+      const totalPages = Math.ceil(totalLabels / labelsPerPage);
+
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) doc.addPage();
+
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const labelIndex = page * labelsPerPage + row * cols + col;
+            const itemIndex = labelIndex - (startLabel - 1);
+
+            if (labelIndex < startLabel - 1 || itemIndex >= items.length) continue;
+
+            const item = items[itemIndex];
+            const x = marginX + col * cellWidth;
+            const y = marginY + row * cellHeight;
+
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(x, y, cellWidth, cellHeight);
+
+            const contentX = x + padding;
+            const contentY = y + padding;
+            const contentWidth = cellWidth - padding * 2;
+            const contentHeight = cellHeight - padding * 2;
+
+            const textAreaHeight = item.idContenedor || item.location ? 10 : 6;
+            const imageAreaHeight = contentHeight - textAreaHeight;
+
+            if (item.imageDocument) {
+              try {
+                const imgSize = Math.min(contentWidth, imageAreaHeight) - 1;
+                const imgX = contentX + (contentWidth - imgSize) / 2;
+                const imgY = contentY;
+                doc.addImage(item.imageDocument, "JPEG", imgX, imgY, imgSize, imgSize);
+              } catch {
+                doc.setFontSize(6);
+                doc.setTextColor(150, 150, 150);
+                doc.text("Sin imagen", contentX + contentWidth / 2, contentY + imageAreaHeight / 2, { align: "center" });
+              }
+            } else {
+              doc.setFontSize(6);
+              doc.setTextColor(150, 150, 150);
+              doc.text("Sin imagen", contentX + contentWidth / 2, contentY + imageAreaHeight / 2, { align: "center" });
+            }
+
+            let textY = contentY + imageAreaHeight + 1;
+            const maxTextWidth = contentWidth - 1;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(6);
+            doc.setTextColor(0, 0, 0);
+            const nameText = item.name.length > 30 ? item.name.substring(0, 28) + "…" : item.name;
+            doc.text(nameText, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
+            textY += 3;
+
+            if (item.idContenedor) {
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(5);
+              doc.setTextColor(0, 100, 0);
+              const contText = item.idContenedor.length > 35 ? item.idContenedor.substring(0, 33) + "…" : item.idContenedor;
+              doc.text(contText, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
+              textY += 2.5;
+            }
+
+            if (item.location) {
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(5);
+              doc.setTextColor(100, 100, 100);
+              const locText = item.location.length > 35 ? item.location.substring(0, 33) + "…" : item.location;
+              doc.text(locText, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
+            }
+          }
+        }
+      }
+
+      doc.save("Galeria_Objetos.pdf");
+      toast({ title: "PDF generado", description: `Se ha generado el PDF con ${items.length} etiqueta${items.length !== 1 ? "s" : ""}.` });
+      setIsPrintDialogOpen(false);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }, [filteredItems, printRows, printCols, printStartLabel, toast]);
 
   return (
     <>
@@ -533,15 +658,28 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
                     Busca y visualiza los objetos del inventario
                   </DialogDescription>
                 </div>
-                <Button
-                  onClick={handleAddObject}
-                  size="icon"
-                  className="h-10 w-10 rounded-full shrink-0"
-                  title="Añadir objeto"
-                  data-testid="button-add-object-gallery"
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    onClick={handleOpenPrintDialog}
+                    size="icon"
+                    variant="outline"
+                    className="h-10 w-10 rounded-full"
+                    title="Imprimir etiquetas"
+                    disabled={filteredItems.length === 0}
+                    data-testid="button-print-gallery"
+                  >
+                    <Printer className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    onClick={handleAddObject}
+                    size="icon"
+                    className="h-10 w-10 rounded-full"
+                    title="Añadir objeto"
+                    data-testid="button-add-object-gallery"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </div>
               </DialogHeader>
 
               <div className="flex flex-col sm:flex-row gap-2">
@@ -680,6 +818,82 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
         isOpen={isDetailOpen}
         onClose={handleCloseDetail}
       />
+
+      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Configurar impresión de etiquetas</DialogTitle>
+            <DialogDescription>
+              Configure el formato de la cuadrícula en página A4
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium" htmlFor="print-rows">Filas por página</label>
+                <Input
+                  id="print-rows"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={printRows}
+                  onChange={(e) => setPrintRows(e.target.value)}
+                  data-testid="input-print-rows"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium" htmlFor="print-cols">Columnas por página</label>
+                <Input
+                  id="print-cols"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={printCols}
+                  onChange={(e) => setPrintCols(e.target.value)}
+                  data-testid="input-print-cols"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium" htmlFor="print-start">Empezar en etiqueta nº</label>
+              <Input
+                id="print-start"
+                type="number"
+                min="1"
+                value={printStartLabel}
+                onChange={(e) => setPrintStartLabel(e.target.value)}
+                data-testid="input-print-start-label"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                La primera etiqueta es la esquina superior izquierda. El orden es de izquierda a derecha, fila a fila.
+              </p>
+            </div>
+            <div className="text-sm text-muted-foreground bg-muted/50 rounded p-2">
+              {filteredItems.length} objeto{filteredItems.length !== 1 ? "s" : ""} a imprimir
+              {parseInt(printRows) > 0 && parseInt(printCols) > 0 && (
+                <> · {Math.ceil((filteredItems.length + Math.max(0, parseInt(printStartLabel) - 1)) / (parseInt(printRows) * parseInt(printCols))) || 1} página{Math.ceil((filteredItems.length + Math.max(0, parseInt(printStartLabel) - 1)) / (parseInt(printRows) * parseInt(printCols))) !== 1 ? "s" : ""}</>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsPrintDialogOpen(false)}
+                data-testid="button-cancel-print"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleGeneratePdf}
+                disabled={isGeneratingPdf}
+                data-testid="button-generate-pdf"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                {isGeneratingPdf ? "Generando..." : "Generar PDF"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

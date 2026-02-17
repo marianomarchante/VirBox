@@ -1,0 +1,30 @@
+Solicitud de implementación: Función de impresión para galería de objetos
+Por favor, añade una función de impresión a la vista de galería de objetos con las siguientes especificaciones:
+Descripción general
+Implementar un botón o opción "Imprimir" en la vista de galería que permita generar un documento PDF con los objetos actualmente filtrados en la galería.
+Requisitos funcionales
+1.	Acceso a la función
+o	Añadir un botón "Imprimir" o "Generar PDF" en la interfaz de la galería
+o	La función solo debe estar disponible cuando hay objetos en la galería
+2.	Selección de formato de etiquetas
+o	Antes de generar el PDF, mostrar un diálogo/modal para configurar el formato
+o	Permitir al usuario especificar el número de filas y columnas por página A4
+o	Valor por defecto: 8 filas x 3 columnas
+o	Solicitar al usuario el número de etiqueta por el que tiene que comenzar a imprimir, considerando que la primera es la situada en la parte superior izquierda y que el orden es hacia la derecha, y si es la última, hacia abajo. El valor por defecto será 1.
+o	Validar que los valores sean números enteros positivos
+3.	Contenido del PDF
+o	Los datos mostrados en cada "tarjeta" o "celda" deben ser exactamente los mismos que aparecen en la galería
+o	Mantener el mismo orden de los objetos que en la vista filtrada actual
+o	Respetar los filtros aplicados actualmente en la galería
+4.	Formato del documento
+o	Tamaño de página: A4 (vertical)
+o	Distribuir los objetos en una cuadrícula según las filas/columnas especificadas
+o	Si hay más objetos de los que caben en una página, generar múltiples páginas
+5.	Resultado final
+o	Generar un archivo PDF descargable
+o	Permitir al usuario guardar el PDF en su dispositivo
+o	El PDF debe poder imprimirse directamente desde el visor de PDF
+Consideraciones técnicas
+•	Optimizar la generación del PDF para no bloquear la interfaz de usuario
+•	Mantener la calidad de las imágenes si las hubiera
+•	Asegurar que los textos sean legibles en el formato impreso
