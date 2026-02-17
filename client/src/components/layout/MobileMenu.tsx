@@ -166,7 +166,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               data-testid="mobile-nav-categorías-inventario"
             >
               <Tags className="w-5 h-5" />
-              <span>Categorías Inventario</span>
+              <span>Categorías</span>
             </Link>
             <ObjectsGallery
               trigger={
@@ -175,7 +175,7 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   data-testid="mobile-nav-objetos"
                 >
                   <Images className="w-5 h-5" />
-                  <span>Objetos Inventario</span>
+                  <span>Objetos</span>
                 </button>
               }
             />
