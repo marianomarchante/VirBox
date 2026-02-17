@@ -108,6 +108,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+  const [selectedContainerFilter, setSelectedContainerFilter] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<Inventory | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -256,6 +257,13 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
     form.setValue('imageFileName', '');
   };
 
+  const uniqueContainers = useMemo(() => {
+    const containers = inventoryItems
+      .map(item => item.idContenedor)
+      .filter((c): c is string => !!c && c.trim() !== "");
+    return [...new Set(containers)].sort();
+  }, [inventoryItems]);
+
   const filteredItems = useMemo(() => {
     return inventoryItems.filter((item) => {
       const lowerSearch = searchTerm.trim().toLowerCase();
@@ -263,9 +271,12 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
       const matchesCategory = selectedCategoryFilter === "all" || 
         (selectedCategoryFilter === "none" && !item.categoryId) ||
         item.categoryId === selectedCategoryFilter;
-      return matchesSearch && matchesCategory;
+      const matchesContainer = selectedContainerFilter === "all" ||
+        (selectedContainerFilter === "none" && (!item.idContenedor || item.idContenedor.trim() === "")) ||
+        item.idContenedor === selectedContainerFilter;
+      return matchesSearch && matchesCategory && matchesContainer;
     });
-  }, [inventoryItems, searchTerm, selectedCategoryFilter]);
+  }, [inventoryItems, searchTerm, selectedCategoryFilter, selectedContainerFilter]);
 
   const handleItemClick = (item: Inventory) => {
     if (item.imageDocument) {
@@ -284,6 +295,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
     if (!open) {
       setSearchTerm("");
       setSelectedCategoryFilter("all");
+      setSelectedContainerFilter("all");
       setIsFormOpen(false);
       handleCloseForm();
     }
@@ -568,6 +580,21 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                <Select value={selectedContainerFilter} onValueChange={setSelectedContainerFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-gallery-container-filter">
+                    <Box className="w-4 h-4 mr-1 text-muted-foreground" />
+                    <SelectValue placeholder="Filtrar por contenedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los contenedores</SelectItem>
+                    <SelectItem value="none">Sin contenedor</SelectItem>
+                    {uniqueContainers.map((container) => (
+                      <SelectItem key={container} value={container}>
+                        {container}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex-1 overflow-y-auto overflow-x-auto mt-4 min-h-0">
@@ -579,7 +606,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
                   <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
                     <ImageOff className="w-12 h-12 mb-4" />
                     <p>
-                      {searchTerm || selectedCategoryFilter !== "all"
+                      {searchTerm || selectedCategoryFilter !== "all" || selectedContainerFilter !== "all"
                         ? "No se encontraron objetos con esos filtros"
                         : "No hay objetos en el inventario"}
                     </p>
