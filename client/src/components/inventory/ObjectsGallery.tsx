@@ -396,28 +396,41 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
             let textY = contentY + imageAreaHeight + 1;
             const maxTextWidth = contentWidth - 1;
 
+            const fitFontSize = (text: string, font: string, style: string, maxW: number, maxSize: number, minSize: number): number => {
+              let size = maxSize;
+              doc.setFont(font, style);
+              while (size > minSize) {
+                doc.setFontSize(size);
+                const w = doc.getTextWidth(text);
+                if (w <= maxW) break;
+                size -= 0.5;
+              }
+              return size;
+            };
+
+            const nameFontSize = fitFontSize(item.name, "helvetica", "bold", maxTextWidth, cellHeight * 0.4, 4);
+            const lineHeight = nameFontSize * 0.45;
+
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(6);
+            doc.setFontSize(nameFontSize);
             doc.setTextColor(0, 0, 0);
-            const nameText = item.name.length > 30 ? item.name.substring(0, 28) + "…" : item.name;
-            doc.text(nameText, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
-            textY += 3;
+            doc.text(item.name, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
+            textY += lineHeight;
 
             if (item.idContenedor) {
               doc.setFont("helvetica", "bold");
-              doc.setFontSize(5);
+              doc.setFontSize(nameFontSize);
               doc.setTextColor(0, 100, 0);
-              const contText = item.idContenedor.length > 35 ? item.idContenedor.substring(0, 33) + "…" : item.idContenedor;
-              doc.text(contText, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
-              textY += 2.5;
+              doc.text(item.idContenedor, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
+              textY += lineHeight;
             }
 
             if (item.location) {
+              const locFontSize = Math.max(nameFontSize * 0.75, 4);
               doc.setFont("helvetica", "normal");
-              doc.setFontSize(5);
+              doc.setFontSize(locFontSize);
               doc.setTextColor(100, 100, 100);
-              const locText = item.location.length > 35 ? item.location.substring(0, 33) + "…" : item.location;
-              doc.text(locText, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
+              doc.text(item.location, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
             }
           }
         }
