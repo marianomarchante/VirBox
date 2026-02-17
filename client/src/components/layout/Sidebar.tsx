@@ -217,11 +217,11 @@ export default function Sidebar() {
         <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
           <Link 
             href="/gestion-documental"
-            className={cn("sidebar-link", location === "/gestion-documental" && "active")}
-            data-testid="nav-gestión-documental"
+            className="sidebar-link w-full bg-[#FFFACD] hover:bg-white text-[#800020] hover:text-[#800020] border border-[#800020] hover:border-[#800020] font-semibold"
+            data-testid="nav-documentos"
           >
             <Files className="w-5 h-5" />
-            <span>Gestión Documental</span>
+            <span>Documentos</span>
           </Link>
           <Link 
             href="/categorias-documentos"
