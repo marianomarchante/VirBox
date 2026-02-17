@@ -118,6 +118,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
   const [printRows, setPrintRows] = useState("8");
   const [printCols, setPrintCols] = useState("3");
   const [printStartLabel, setPrintStartLabel] = useState("1");
+  const [printOrientation, setPrintOrientation] = useState<"portrait" | "landscape">("portrait");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { currentCompanyId } = useCompany();
   const { data: productCategories } = useProductCategories();
@@ -319,6 +320,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
     setPrintRows("8");
     setPrintCols("3");
     setPrintStartLabel("1");
+    setPrintOrientation("portrait");
     setIsPrintDialogOpen(true);
   };
 
@@ -335,9 +337,9 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
     setIsGeneratingPdf(true);
 
     try {
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWidth = 210;
-      const pageHeight = 297;
+      const doc = new jsPDF({ orientation: printOrientation, unit: "mm", format: "a4" });
+      const pageWidth = printOrientation === "portrait" ? 210 : 297;
+      const pageHeight = printOrientation === "portrait" ? 297 : 210;
       const marginX = 5;
       const marginY = 5;
       const usableWidth = pageWidth - marginX * 2;
@@ -448,7 +450,7 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
     } finally {
       setIsGeneratingPdf(false);
     }
-  }, [filteredItems, printRows, printCols, printStartLabel, toast]);
+  }, [filteredItems, printRows, printCols, printStartLabel, printOrientation, toast]);
 
   return (
     <>
@@ -883,6 +885,18 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
               <p className="text-xs text-muted-foreground mt-1">
                 La primera etiqueta es la esquina superior izquierda. El orden es de izquierda a derecha, fila a fila.
               </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Orientación</label>
+              <Select value={printOrientation} onValueChange={(v) => setPrintOrientation(v as "portrait" | "landscape")}>
+                <SelectTrigger data-testid="select-print-orientation">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="portrait">Vertical (retrato)</SelectItem>
+                  <SelectItem value="landscape">Apaisado (paisaje)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="text-sm text-muted-foreground bg-muted/50 rounded p-2">
               {filteredItems.length} objeto{filteredItems.length !== 1 ? "s" : ""} a imprimir
