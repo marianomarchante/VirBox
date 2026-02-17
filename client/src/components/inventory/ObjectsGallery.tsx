@@ -373,7 +373,26 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
             const contentWidth = cellWidth - padding * 2;
             const contentHeight = cellHeight - padding * 2;
 
-            const textAreaHeight = item.idContenedor || item.location ? 10 : 6;
+            const maxTextWidth = contentWidth - 1;
+
+            const fitFontSize = (text: string, font: string, style: string, maxW: number, maxSize: number, minSize: number): number => {
+              let size = maxSize;
+              doc.setFont(font, style);
+              while (size > minSize) {
+                doc.setFontSize(size);
+                const w = doc.getTextWidth(text);
+                if (w <= maxW) break;
+                size -= 0.5;
+              }
+              return size;
+            };
+
+            const textLines = 1 + (item.idContenedor ? 1 : 0) + (item.location ? 1 : 0);
+            const maxFontForCell = Math.min(contentHeight * 0.25, 14);
+            const nameFontSize = fitFontSize(item.name, "helvetica", "bold", maxTextWidth, maxFontForCell, 3);
+            const lineH = nameFontSize * 0.42;
+            const locLineH = item.location ? Math.max(nameFontSize * 0.75, 3) * 0.42 : 0;
+            const textAreaHeight = lineH * (textLines - (item.location ? 1 : 0)) + locLineH + padding;
             const imageAreaHeight = contentHeight - textAreaHeight;
 
             if (item.imageDocument) {
@@ -393,40 +412,24 @@ export function ObjectsGallery({ trigger }: ObjectsGalleryProps) {
               doc.text("Sin imagen", contentX + contentWidth / 2, contentY + imageAreaHeight / 2, { align: "center" });
             }
 
-            let textY = contentY + imageAreaHeight + 1;
-            const maxTextWidth = contentWidth - 1;
-
-            const fitFontSize = (text: string, font: string, style: string, maxW: number, maxSize: number, minSize: number): number => {
-              let size = maxSize;
-              doc.setFont(font, style);
-              while (size > minSize) {
-                doc.setFontSize(size);
-                const w = doc.getTextWidth(text);
-                if (w <= maxW) break;
-                size -= 0.5;
-              }
-              return size;
-            };
-
-            const nameFontSize = fitFontSize(item.name, "helvetica", "bold", maxTextWidth, cellHeight * 0.4, 4);
-            const lineHeight = nameFontSize * 0.45;
+            let textY = contentY + imageAreaHeight + lineH;
 
             doc.setFont("helvetica", "bold");
             doc.setFontSize(nameFontSize);
             doc.setTextColor(0, 0, 0);
             doc.text(item.name, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
-            textY += lineHeight;
+            textY += lineH;
 
             if (item.idContenedor) {
               doc.setFont("helvetica", "bold");
               doc.setFontSize(nameFontSize);
               doc.setTextColor(0, 100, 0);
               doc.text(item.idContenedor, contentX + contentWidth / 2, textY, { align: "center", maxWidth: maxTextWidth });
-              textY += lineHeight;
+              textY += lineH;
             }
 
             if (item.location) {
-              const locFontSize = Math.max(nameFontSize * 0.75, 4);
+              const locFontSize = Math.max(nameFontSize * 0.75, 3);
               doc.setFont("helvetica", "normal");
               doc.setFontSize(locFontSize);
               doc.setTextColor(100, 100, 100);
