@@ -3,9 +3,11 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 
 export interface User {
   id: string;
+  username: string | null;
   email: string | null;
-  name: string | null;
-  profilePicUrl: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profileImageUrl: string | null;
   isAdmin: boolean;
 }
 
@@ -16,18 +18,11 @@ export function useAuth() {
     refetchOnWindowFocus: false,
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async () => {
-      window.location.href = '/api/login';
-    },
-  });
-
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      await apiRequest('POST', '/api/logout');
       queryClient.setQueryData(['/api/auth/user'], null);
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/permissions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/companies'] });
-      window.location.href = '/api/logout';
+      queryClient.clear();
     },
   });
 
@@ -35,7 +30,6 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
-    login: loginMutation.mutate,
     logout: logoutMutation.mutate,
   };
 }

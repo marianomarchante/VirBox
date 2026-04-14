@@ -58,7 +58,7 @@ function Router() {
 }
 
 function AuthenticatedApp() {
-  const { user, isLoading, login } = useAuthContext();
+  const { user, isLoading } = useAuthContext();
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ function AuthenticatedApp() {
   }
 
   if (!user) {
-    return <Landing onLogin={login} />;
+    return <Landing />;
   }
 
   return (

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./localAuth";
 import { 
   insertTransactionSchema, 
   insertInventorySchema, 
@@ -28,7 +28,7 @@ import { z } from "zod";
 
 // Middleware to check if user is admin
 function isAdmin(req: any, res: any, next: any) {
-  const userId = req.user?.claims?.sub;
+  const userId = (req.user as any)?.id;
   if (!userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -45,7 +45,7 @@ function isAdmin(req: any, res: any, next: any) {
 
 // Middleware to check user permissions for a company
 async function checkCompanyPermission(req: any, companyId: string, requiredRole?: 'administracion'): Promise<boolean> {
-  const userId = req.user?.claims?.sub;
+  const userId = (req.user as any)?.id;
   if (!userId) {
     return false;
   }
@@ -88,9 +88,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any)?.id;
       const user = await storage.getUser(userId);
-      res.json(user);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const { passwordHash, ...safeUser } = user as any;
+      res.json(safeUser);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -99,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/auth/permissions', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any)?.id;
       const permissions = await storage.getUserPermissions(userId);
       res.json(permissions);
     } catch (error) {
@@ -111,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user permission for a specific company
   app.get('/api/auth/permissions/:companyId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any)?.id;
       const companyId = req.params.companyId;
       
       // Check if user is a global admin
@@ -210,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company routes (protected)
   app.get("/api/companies", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.user as any)?.id;
       const companies = await storage.getCompaniesForUser(userId);
       res.json(companies);
     } catch (error) {

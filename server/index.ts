@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
+import bcrypt from "bcrypt";
 
 const app = express();
 
@@ -59,8 +61,29 @@ app.use((req, res, next) => {
   next();
 });
 
+async function seedAdminUser() {
+  try {
+    const existing = await storage.getUserByUsername("admin");
+    if (!existing) {
+      const passwordHash = await bcrypt.hash("kkdvk777", 12);
+      await storage.upsertUser({
+        username: "admin",
+        email: "admin@micontable.local",
+        passwordHash,
+        firstName: "Administrador",
+        lastName: "",
+        isAdmin: true,
+      } as any);
+      log("Admin user created: admin / kkdvk777");
+    }
+  } catch (err) {
+    log("Error seeding admin user: " + err);
+  }
+}
+
 (async () => {
   const server = await registerRoutes(app);
+  await seedAdminUser();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

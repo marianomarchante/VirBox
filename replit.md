@@ -20,7 +20,7 @@ Developed with Node.js, Express.js, and TypeScript. Drizzle ORM provides type-sa
 
 ### Authentication & Authorization
 
-Authentication uses Replit Auth (OpenID Connect / OAuth 2.0) via Passport.js and a PostgreSQL session store. Authorization is role-based (RBAC) with a global `isAdmin` flag and company-level 'consulta' (read-only) or 'administración' (full access) permissions, enforced on both backend and frontend. `CompanyContext` ensures data isolation.
+Authentication uses local username/password via Passport.js (passport-local strategy) with bcrypt password hashing and a PostgreSQL session store. On startup, a super-admin user (`admin`) is automatically created if it doesn't exist. Authorization is role-based (RBAC) with a global `isAdmin` flag and company-level 'consulta' (read-only) or 'administración' (full access) permissions, enforced on both backend and frontend. `CompanyContext` ensures data isolation.
 
 ### Data Storage
 

@@ -47,6 +47,7 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   // Users
   getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
   updateUserAdmin(userId: string, isAdmin: boolean): Promise<User | undefined>;
@@ -289,15 +290,21 @@ export class MemStorage implements IStorage {
     return this.users.get(id);
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(u => u.username === username);
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const existing = this.users.get(userData.id!);
     const user: User = {
       id: userData.id!,
+      username: (userData as any).username ?? existing?.username ?? null,
       email: userData.email ?? null,
+      passwordHash: (userData as any).passwordHash ?? existing?.passwordHash ?? null,
       firstName: userData.firstName ?? null,
       lastName: userData.lastName ?? null,
       profileImageUrl: userData.profileImageUrl ?? null,
-      isAdmin: existing?.isAdmin ?? false,
+      isAdmin: (userData as any).isAdmin ?? existing?.isAdmin ?? false,
       createdAt: existing?.createdAt ?? new Date(),
       updatedAt: new Date(),
     };
