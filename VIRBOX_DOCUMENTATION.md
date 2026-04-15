@@ -45,10 +45,17 @@ La fase de producción actual se ejecuta en un servidor casero Linux auto-hosped
     *   La base de datos se llama `virbox`.
     *   El usuario propietario es `mariano`.
 *   **Sincronización y Despliegue**: 
-    *(Actualización 15/04/2026)*. El servidor Linux ahora está configurado como un **repositorio Git**. Ya no es necesario el envío manual por SFTP para actualizaciones rutinarias. 
-    1.  Los cambios se suben a GitHub desde el entorno de desarrollo.
-    2.  En el servidor (`/home/mariano/VirBox`), se ejecuta `git pull origin main`.
-    3.  Se procede a compilar con `npm run build` y reiniciar el servicio a través de PM2 o el script `reiniciar_linux.sh`.
+    *(Actualización 15/04/2026)*. El servidor Linux ahora está configurado como un **repositorio Git**. Ya no es necesario el envío manual por SFTP para actualizaciones rutinarias.
+
+    **⚠️ Proceso completo y correcto de despliegue en producción:**
+    ```bash
+    cd /home/mariano/VirBox
+    git pull origin main
+    npm install          # ← OBLIGATORIO si hay cambios en package.json (instala devDeps necesarias para el build)
+    npm run build        # Compila frontend (Vite) y backend (esbuild) en dist/
+    pm2 restart virbox   # Reinicia el proceso con el nuevo dist/index.js
+    ```
+    > **Nota crítica**: El paso `npm install` es imprescindible en el servidor de producción porque `vite` y `esbuild` son `devDependencies`. Si se omite y no están instaladas previamente, `npm run build` fallará con `vite: not found` y el frontend no se compilará, dejando `dist/public` vacío y sirviendo un error 404.
 
 ---
 
@@ -95,6 +102,57 @@ Debido a una migración técnica (de Replit-Oauth a Autenticación Local), algun
 
 ---
 
+## 💻 8. Entorno de Desarrollo en Windows
+
+*(Añadido 15/04/2026)* El proyecto se puede desarrollar localmente en Windows (PowerShell/CMD) con las siguientes consideraciones:
+
+### Configuración inicial (una sola vez)
+
+1.  **Variables de entorno**: Crear un archivo `.env` en la raíz del proyecto (no se sube a Git):
+    ```env
+    DATABASE_URL=postgresql://mariano:kkdvk777@localhost:5432/virbox
+    PORT=5001
+    NODE_ENV=development
+    ```
+    > Si no tienes PostgreSQL instalado localmente, el servidor arrancará de todas formas en "modo sin base de datos", sirviendo el frontend. El inicio de sesión no funcionará hasta tener la DB disponible.
+
+2.  **Compatibilidad de scripts**: Los scripts de `package.json` usan `cross-env` para gestionar variables de entorno de forma compatible entre Windows y Linux. Es una devDependency que se instala junto al resto con `npm install`.
+
+3.  **Puerto**: La aplicación usa el puerto **5001** por defecto (coincide con el túnel de Cloudflare en producción).
+
+### Problemas conocidos en Windows
+
+| Error | Causa | Solución |
+|---|---|---|
+| `'NODE_ENV' no se reconoce...` | Scripts escritos con sintaxis Bash | Usar `cross-env` (ya incluido) |
+| `Error: listen ENOTSUP` al arrancar | `reusePort: true` no soportado en Windows | Eliminado de `server.listen()` |
+| `Unexpected "\x00" in source map` | Archivos corruptos en `node_modules` | Borrar `node_modules` y ejecutar `npm install` |
+
+---
+
+## 📋 9. Histórico de Incidencias
+
+### 15/04/2026 — Error 404 en producción + web no arranca en local
+
+**Síntomas:**
+- La URL `https://virbox.sinsolo.uk` devolvía un error 404.
+- `npm run dev` fallaba en el entorno de desarrollo Windows con el error `'NODE_ENV' no se reconoce...`.
+
+**Causa raíz (producción):**
+El script de build `npm run build` invoca a `vite`, que es una `devDependency`. El servidor de producción tenía `node_modules` incompleto (sin devDeps), por lo que `vite: not found` hacía fallar el build. PM2 reiniciaba el servicio con el `dist/index.js` antiguo, pero `dist/public/` no tenía los archivos del frontend actualizados.
+
+**Causa raíz (local Windows):**
+Los scripts de `package.json` usaban la sintaxis `VAR=valor comando` propia de sistemas Unix/bash, incompatible con PowerShell/CMD de Windows.
+
+**Solución aplicada:**
+1.  Instalado `cross-env` como devDependency y actualizado `package.json` para usarlo en los scripts `dev`, `start` y `db:push`.
+2.  Eliminado `reusePort: true` de `server.listen()` (incompatible con Windows).
+3.  Cambiado el puerto por defecto de `5000` a `5001` en `server/index.ts` para consistencia con la configuración de Cloudflare.
+4.  Añadido `--env-file=.env` a los scripts para cargar el archivo `.env` automáticamente en Node.js 22+.
+5.  En producción: ejecutado `npm install` antes de `npm run build` para instalar todas las dependencias (incluidas devDeps necesarias para compilar).
+
+---
+
 ## 🤖 7. Guía Directa para Próximas Asistencias (AI)
 
 Para futuras llamadas en contexto para implementar características, se ha de seguir esta pauta:
@@ -102,3 +160,5 @@ Para futuras llamadas en contexto para implementar características, se ha de se
 2.  **Modificaciones de UI**: Usar los componentes bases creados en `client/src/components/ui` si ya existen. Si hay listas, buscar reciclar o emular `DataTable.tsx` y `EntityForm.tsx`.
 3.  **Migraciones**: Toda nueva tabla necesita obligatoriamente tener la columna `id` (uuid v4 de preferencia mapeado nativo gen_random_uuid()) e ir acoplada con `.extend({ companyId })` cuando corresponda separar la tenencia (Multi-tenancy).
 4.  **Si se hacen cambios en las tablas**: Recuerda que el servidor Linux remoto necesitará lanzar internamente el comando de `drizzle-kit push` para verse reflejado, por lo que a la IA en el futuro se le debe avisar de *desplegar cambios en la estructura de DB en el remoto*.
+5.  **Despliegue en producción**: El proceso correcto siempre es `git pull → npm install → npm run build → pm2 restart virbox`. No omitir `npm install` aunque no parezca necesario.
+6.  **Entorno local Windows**: La aplicación tiene un archivo `.env` (no subido a Git) con `DATABASE_URL`, `PORT=5001` y `NODE_ENV=development`. Si la DB no está disponible localmente, el servidor arranca igualmente para servir el frontend.
