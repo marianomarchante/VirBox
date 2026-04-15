@@ -11,7 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Users, Building2 } from 'lucide-react';
+import { Shield, Users, Building2, UserPlus, Pencil } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import type { User } from '@/hooks/use-auth';
 import type { Company, UserCompanyPermission } from '@shared/schema';
 
@@ -24,6 +27,39 @@ export default function UserManagement() {
   const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserWithPermissions | null>(null);
+  const [userFormData, setUserFormData] = useState({
+    username: '',
+    email: '',
+    firstName: '',
+    lastName: '',
+    password: '',
+    isAdmin: false,
+  });
+
+  const resetUserForm = () => {
+    setUserFormData({ username: '', email: '', firstName: '', lastName: '', password: '', isAdmin: false });
+    setEditingUser(null);
+  };
+
+  const handleOpenCreateModal = () => {
+    resetUserForm();
+    setIsUserModalOpen(true);
+  };
+
+  const handleOpenEditModal = (u: UserWithPermissions) => {
+    setUserFormData({
+      username: u.username || '',
+      email: u.email || '',
+      firstName: u.firstName || '',
+      lastName: u.lastName || '',
+      password: '',
+      isAdmin: u.isAdmin || false,
+    });
+    setEditingUser(u);
+    setIsUserModalOpen(true);
+  };
 
   const { data: users = [], isLoading: usersLoading } = useQuery<UserWithPermissions[]>({
     queryKey: ['/api/admin/users'],
@@ -52,6 +88,52 @@ export default function UserManagement() {
       });
     },
   });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (data: typeof userFormData) => {
+      await apiRequest('POST', '/api/admin/users', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: 'Éxito', description: 'Usuario creado correctamente' });
+      setIsUserModalOpen(false);
+      resetUserForm();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'No se pudo crear el usuario', variant: 'destructive' });
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: async (data: typeof userFormData & { id: string }) => {
+      await apiRequest('PUT', `/api/admin/users/${data.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({ title: 'Éxito', description: 'Usuario actualizado correctamente' });
+      setIsUserModalOpen(false);
+      resetUserForm();
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'No se pudo actualizar el usuario', variant: 'destructive' });
+    },
+  });
+
+  const handleSaveUser = () => {
+    if (!userFormData.username) {
+      toast({ title: 'Error', description: 'El nombre de usuario es requerido', variant: 'destructive' });
+      return;
+    }
+    if (editingUser) {
+      updateUserMutation.mutate({ ...userFormData, id: editingUser.id });
+    } else {
+      if (!userFormData.password) {
+        toast({ title: 'Error', description: 'La contraseña es requerida para nuevos usuarios', variant: 'destructive' });
+        return;
+      }
+      createUserMutation.mutate(userFormData);
+    }
+  };
 
   const setPermissionMutation = useMutation({
     mutationFn: async ({ userId, companyId, role }: { userId: string; companyId: string; role: 'consulta' | 'administracion' }) => {
@@ -135,6 +217,10 @@ export default function UserManagement() {
                 <Shield className="h-8 w-8" />
                 Gestión de Usuarios y Permisos
               </h1>
+              <Button onClick={handleOpenCreateModal} className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                Añadir Usuario
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -202,6 +288,13 @@ export default function UserManagement() {
                             <Button
                               variant="outline"
                               size="sm"
+                              onClick={() => handleOpenEditModal(u)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => setSelectedUserId(u.id)}
                               data-testid={`button-manage-permissions-${u.id}`}
                             >
@@ -243,6 +336,86 @@ export default function UserManagement() {
                 </CardContent>
               </Card>
             </div>
+            <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{editingUser ? 'Editar Usuario' : 'Añadir Nuevo Usuario'}</DialogTitle>
+                  <DialogDescription>
+                    {editingUser 
+                      ? 'Modifica los datos del usuario. Deja la contraseña en blanco para mantener la actual.' 
+                      : 'Crea un nuevo usuario en el sistema con credenciales locales.'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="username" className="text-right">Usuario</Label>
+                    <Input 
+                      id="username" 
+                      value={userFormData.username} 
+                      onChange={(e) => setUserFormData({...userFormData, username: e.target.value})} 
+                      className="col-span-3"
+                      placeholder="Nombre de usuario"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="firstName" className="text-right">Nombre</Label>
+                    <Input 
+                      id="firstName" 
+                      value={userFormData.firstName} 
+                      onChange={(e) => setUserFormData({...userFormData, firstName: e.target.value})} 
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="lastName" className="text-right">Apellidos</Label>
+                    <Input 
+                      id="lastName" 
+                      value={userFormData.lastName} 
+                      onChange={(e) => setUserFormData({...userFormData, lastName: e.target.value})} 
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="email" className="text-right">Email</Label>
+                    <Input 
+                      id="email" 
+                      type="email"
+                      value={userFormData.email} 
+                      onChange={(e) => setUserFormData({...userFormData, email: e.target.value})} 
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="password" className="text-right">Contraseña</Label>
+                    <Input 
+                      id="password" 
+                      type="password"
+                      value={userFormData.password} 
+                      onChange={(e) => setUserFormData({...userFormData, password: e.target.value})} 
+                      className="col-span-3"
+                      placeholder={editingUser ? "Dejar vacío para no cambiar" : ""}
+                    />
+                  </div>
+                  {!editingUser && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="isAdmin" className="text-right">Es Admin</Label>
+                      <Switch 
+                        id="isAdmin" 
+                        checked={userFormData.isAdmin}
+                        onCheckedChange={(c) => setUserFormData({...userFormData, isAdmin: c})}
+                      />
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsUserModalOpen(false)}>Cancelar</Button>
+                  <Button type="button" onClick={handleSaveUser} disabled={createUserMutation.isPending || updateUserMutation.isPending}>
+                    {editingUser ? 'Guardar Cambios' : 'Crear Usuario'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
           </div>
         </main>
       </div>

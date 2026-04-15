@@ -15,6 +15,7 @@ import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { useCompany } from "@/contexts/CompanyContext";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertClientSchema, type InsertClient } from "@shared/schema";
+import { DataTable } from "@/components/common/DataTable";
 
 export default function Clients() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -173,142 +174,86 @@ export default function Clients() {
                 Agregar Cliente
               </Button>
             </div>
-            
-            <div className="overflow-x-auto" data-testid="clients-table">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Cliente
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Tipo
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      ID Fiscal
-                    </th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Total Compras
-                    </th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Pedidos
-                    </th>
-                    <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Estado
-                    </th>
-                    <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!clients || clients.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                        No hay clientes registrados. 
-                        {canWrite && (
-                          <button 
-                            onClick={() => setIsModalOpen(true)}
-                            className="text-primary hover:underline ml-1"
-                          >
-                            Agregar el primero
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ) : (
-                    clients.map((client) => (
-                      <tr 
-                        key={client.id} 
-                        className="transaction-row"
-                        data-testid={`client-row-${client.id}`}
-                      >
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="text-sm font-medium">{client.name}</p>
-                            {client.contactPerson && (
-                              <p className="text-xs text-muted-foreground">
-                                {client.contactPerson}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                            (client as any).clientType === 'administracion_publica'
-                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                          }`}>
-                            {({ particular: 'Particular', empresa: 'Empresa', autonomo: 'Autónomo', administracion_publica: 'Admin. Pública' } as Record<string, string>)[(client as any).clientType || 'particular'] || 'Particular'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          {client.idFiscal ? (
-                            <span className="text-sm font-mono text-muted-foreground">
-                              {client.idFiscal}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground italic">
-                              Sin ID fiscal
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <span className="text-sm font-semibold text-primary">
-                            {formatCurrency(client.totalPurchases || "0")}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <span className="text-sm font-medium">
-                            {client.orderCount}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span 
-                            className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                              client.isActive 
-                                ? 'bg-primary/10 text-primary' 
-                                : 'bg-muted text-muted-foreground'
-                            }`}
-                          >
-                            {client.isActive ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              data-testid={`view-client-${client.id}`}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => handleEdit(client.id)}
-                              data-testid={`edit-client-${client.id}`}
-                              disabled={!canWrite}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost"
-                              onClick={() => handleDelete(client.id)}
-                              data-testid={`delete-client-${client.id}`}
-                              disabled={!canWrite}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable<any>
+              data={clients}
+              isLoading={isLoading}
+              testId="clients-table"
+              columns={[
+                {
+                  header: "Cliente",
+                  accessor: (client) => (
+                    <div>
+                      <p className="text-sm font-medium">{client.name}</p>
+                      {client.contactPerson && (
+                        <p className="text-xs text-muted-foreground">
+                          {client.contactPerson}
+                        </p>
+                      )}
+                    </div>
+                  )
+                },
+                {
+                  header: "Tipo",
+                  accessor: (client) => (
+                    <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                      client.clientType === 'administracion_publica'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                    }`}>
+                      {({ particular: 'Particular', empresa: 'Empresa', autonomo: 'Autónomo', administracion_publica: 'Admin. Pública' } as Record<string, string>)[client.clientType || 'particular'] || 'Particular'}
+                    </span>
+                  )
+                },
+                {
+                  header: "ID Fiscal",
+                  accessor: (client) => (
+                    client.idFiscal ? (
+                      <span className="text-sm font-mono text-muted-foreground">
+                        {client.idFiscal}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">
+                        Sin ID fiscal
+                      </span>
+                    )
+                  )
+                },
+                {
+                  header: "Total Compras",
+                  align: "right",
+                  accessor: (client) => (
+                    <span className="text-sm font-semibold text-primary">
+                      {formatCurrency(client.totalPurchases || "0")}
+                    </span>
+                  )
+                },
+                {
+                  header: "Pedidos",
+                  align: "right",
+                  accessor: "orderCount"
+                },
+                {
+                  header: "Estado",
+                  align: "center",
+                  accessor: (client) => (
+                    <span 
+                      className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                        client.isActive 
+                          ? 'bg-primary/10 text-primary' 
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {client.isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                  )
+                }
+              ]}
+              canWrite={canWrite}
+              onEdit={(client) => handleEdit(client.id)}
+              onDelete={(client) => handleDelete(client.id)}
+              onView={(client) => { /* TODO: implement view */ }}
+              emptyMessage={!canWrite ? "No hay clientes registrados." : undefined}
+            />
             </div>
           </div>
         </main>

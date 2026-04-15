@@ -1,0 +1,40 @@
+[1G[0K⠙[1G[0K
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K⠙[1G[0K10:16:28 AM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 18 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+10:16:47 AM [express] GET /api/auth/user 401 in 2ms :: {"message":"Unauthorized"}
+10:25:19 AM [express] GET /api/auth/user 401 in 0ms :: {"message":"Unauthorized"}
+10:25:30 AM [express] GET /api/login 302 in 485ms
+10:25:39 AM [express] GET /api/callback 302 in 373ms
+10:25:42 AM [express] GET /api/auth/user 200 in 10ms :: {"id":"40444355","email":"mariano.marchante@g…
+10:25:42 AM [express] GET /api/categories 200 in 32ms :: [{"id":"1a408430-7234-4958-876a-80ad658f9944…
+10:25:42 AM [express] GET /api/auth/permissions/74239d4b-7952-4031-bff7-c667b562b637 200 in 36ms :: […
+10:25:42 AM [express] GET /api/product-categories 200 in 44ms :: [{"id":"bc33715c-204e-4d84-8f4a-aa25…
+10:25:42 AM [express] GET /api/categories 200 in 44ms :: [{"id":"83e1fe73-3066-407d-9a0c-f100672475d3…
+10:25:42 AM [express] GET /api/dashboard/metrics 200 in 48ms :: {"totalIncome":0,"totalExpenses":0,"b…
+10:25:42 AM [express] GET /api/dashboard/monthly-data 200 in 63ms :: [{"month":"Ene","income":0,"expe…
+10:25:42 AM [express] GET /api/transactions 200 in 11ms :: [{"id":"eb0410d2-0d9b-4344-8649-5719ab2c01…
+10:25:42 AM [express] GET /api/clients 200 in 12ms :: [{"id":"c33bfacb-664c-49ec-9e88-29c25938916b","…
+10:25:42 AM [express] GET /api/suppliers 200 in 13ms :: []
+10:25:43 AM [express] GET /api/inventory 200 in 27ms :: [{"id":"4e687a57-8486-4b63-8754-f026886b0bc2"…
+10:25:43 AM [express] GET /api/companies 200 in 29ms :: [{"id":"company_kMg7Pp","name":"ACME Test Com…
+10:25:43 AM [express] GET /api/transactions 200 in 10ms :: [{"id":"eb0410d2-0d9b-4344-8649-5719ab2c01…
+10:25:44 AM [express] GET /api/events 200 in 9ms :: []
+10:28:59 AM [express] GET /api/auth/user 200 in 16ms :: {"id":"40444355","email":"mariano.marchante@g…
+10:28:59 AM [express] GET /api/categories 200 in 21ms :: [{"id":"83e1fe73-3066-407d-9a0c-f100672475d3…
+10:28:59 AM [express] GET /api/auth/permissions/74239d4b-7952-4031-bff7-c667b562b637 200 in 29ms :: […
+10:28:59 AM [express] GET /api/dashboard/metrics 200 in 23ms :: {"totalIncome":0,"totalExpenses":0,"b…
+10:28:59 AM [express] GET /api/categories 200 in 36ms :: [{"id":"1a408430-7234-4958-876a-80ad658f9944…
+10:28:59 AM [express] GET /api/product-categories 200 in 39ms :: [{"id":"bc33715c-204e-4d84-8f4a-aa25…
+10:28:59 AM [express] GET /api/dashboard/monthly-data 200 in 52ms :: [{"month":"Ene","income":0,"expe…
+10:28:59 AM [express] GET /api/transactions 200 in 9ms :: [{"id":"eb0410d2-0d9b-4344-8649-5719ab2c019…
+10:28:59 AM [express] GET /api/companies 200 in 16ms :: [{"id":"company_kMg7Pp","name":"ACME Test Com…
+10:28:59 AM [express] GET /api/inventory 200 in 15ms :: [{"id":"4e687a57-8486-4b63-8754-f026886b0bc2"…
+10:28:59 AM [express] GET /api/clients 200 in 7ms :: [{"id":"c33bfacb-664c-49ec-9e88-29c25938916b","c…
+10:28:59 AM [express] GET /api/suppliers 200 in 7ms :: []
+10:28:59 AM [express] GET /api/transactions 200 in 8ms :: [{"id":"eb0410d2-0d9b-4344-8649-5719ab2c019…
+10:29:01 AM [express] GET /api/events 200 in 8ms :: []

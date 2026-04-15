@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./localAuth";
+import bcrypt from "bcrypt";
 import { 
   insertTransactionSchema, 
   insertInventorySchema, 
@@ -149,6 +150,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(users);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { username, email, firstName, lastName, password, isAdmin: adminStatus } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "El nombre de usuario y la contraseña son requeridos" });
+      }
+
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "El nombre de usuario ya existe" });
+      }
+      
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash(password, salt);
+      
+      const user = await storage.upsertUser({
+        username,
+        email: email || null,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        passwordHash,
+        isAdmin: adminStatus || false,
+      } as any);
+      
+      res.status(201).json(user);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.put("/api/admin/users/:userId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { username, email, firstName, lastName, password } = req.body;
+      const user = await storage.getUser(req.params.userId);
+      
+      if (!user) {
+         return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (username && username !== user.username) {
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser) {
+          return res.status(400).json({ message: "El nombre de usuario ya existe" });
+        }
+      }
+      
+      const updateData: any = {
+         id: req.params.userId,
+         username: username || user.username,
+         email: email !== undefined ? email : user.email,
+         firstName: firstName !== undefined ? firstName : user.firstName,
+         lastName: lastName !== undefined ? lastName : user.lastName,
+         isAdmin: user.isAdmin,
+         passwordHash: user.passwordHash,
+      };
+
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        updateData.passwordHash = await bcrypt.hash(password, salt);
+      }
+
+      const updatedUser = await storage.upsertUser(updateData);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to update user" });
     }
   });
 

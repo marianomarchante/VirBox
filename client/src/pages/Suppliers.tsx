@@ -17,6 +17,8 @@ import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { useCompany } from "@/contexts/CompanyContext";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertSupplierSchema, type InsertSupplier } from "@shared/schema";
+import { DataTable } from "@/components/common/DataTable";
+import { EntityForm } from "@/components/common/EntityForm";
 
 export default function Suppliers() {
   const [location] = useLocation();
@@ -181,314 +183,244 @@ export default function Suppliers() {
                 Agregar Proveedor
               </Button>
             </div>
-            
-            <div className="overflow-x-auto" data-testid="suppliers-table">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Proveedor
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      ID Fiscal
-                    </th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Categoría
-                    </th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Total Compras
-                    </th>
-                    <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Órdenes
-                    </th>
-                    <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Estado
-                    </th>
-                    <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!suppliers || suppliers.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                        No hay proveedores registrados. 
-                        {canWrite && (
-                          <button 
-                            onClick={() => setIsModalOpen(true)}
-                            className="text-primary hover:underline ml-1"
-                          >
-                            Agregar el primero
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ) : (
-                    suppliers.map((supplier) => {
-                      const categoryColor = getCategoryColor(supplier.category);
-                      const colorMap: Record<string, { bg: string, text: string }> = {
-                        primary: { bg: 'bg-primary/10', text: 'text-primary' },
-                        destructive: { bg: 'bg-destructive/10', text: 'text-destructive' },
-                        muted: { bg: 'bg-muted/10', text: 'text-muted-foreground' },
-                        accent: { bg: 'bg-accent/10', text: 'text-accent' },
-                        secondary: { bg: 'bg-secondary/10', text: 'text-secondary' }
-                      };
-                      const colors = colorMap[categoryColor] || colorMap.muted;
-                      
-                      return (
-                        <tr 
-                          key={supplier.id} 
-                          className="transaction-row"
-                          data-testid={`supplier-row-${supplier.id}`}
-                        >
-                          <td className="py-3 px-4">
-                            <div>
-                              <p className="text-sm font-medium">{supplier.name}</p>
-                              {supplier.contactPerson && (
-                                <p className="text-xs text-muted-foreground">
-                                  {supplier.contactPerson}
-                                </p>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            {supplier.idFiscal ? (
-                              <span className="text-sm font-mono text-muted-foreground">
-                                {supplier.idFiscal}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground italic">
-                                Sin ID fiscal
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span 
-                              className={`inline-block px-2 py-1 text-xs font-medium ${colors.bg} ${colors.text} rounded`}
-                            >
-                              {getCategoryLabel(supplier.category)}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span className="text-sm font-semibold text-destructive">
-                              {formatCurrency(supplier.totalPurchases || "0")}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <span className="text-sm font-medium">
-                              {supplier.orderCount}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span 
-                              className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                                supplier.isActive 
-                                  ? 'bg-primary/10 text-primary' 
-                                  : 'bg-muted text-muted-foreground'
-                              }`}
-                            >
-                              {supplier.isActive ? 'Activo' : 'Inactivo'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center justify-center gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                data-testid={`view-supplier-${supplier.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                onClick={() => handleEdit(supplier.id)}
-                                data-testid={`edit-supplier-${supplier.id}`}
-                                disabled={!canWrite}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                onClick={() => handleDelete(supplier.id)}
-                                data-testid={`delete-supplier-${supplier.id}`}
-                                disabled={!canWrite}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                     <DataTable<any>
+              data={suppliers}
+              isLoading={isLoading}
+              testId="suppliers-table"
+              columns={[
+                {
+                  header: "Proveedor",
+                  accessor: (supplier) => (
+                    <div>
+                      <p className="text-sm font-medium">{supplier.name}</p>
+                      {supplier.contactPerson && (
+                        <p className="text-xs text-muted-foreground">
+                          {supplier.contactPerson}
+                        </p>
+                      )}
+                    </div>
+                  )
+                },
+                {
+                  header: "ID Fiscal",
+                  accessor: (supplier) => (
+                    supplier.idFiscal ? (
+                      <span className="text-sm font-mono text-muted-foreground">
+                        {supplier.idFiscal}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">
+                        Sin ID fiscal
+                      </span>
+                    )
+                  )
+                },
+                {
+                  header: "Categoría",
+                  accessor: (supplier) => {
+                    const label = getCategoryLabel(supplier.category);
+                    const colorClass = getCategoryColor(supplier.category);
+                    const colorMap: Record<string, string> = {
+                      primary: 'bg-primary/10 text-primary',
+                      destructive: 'bg-destructive/10 text-destructive',
+                      muted: 'bg-muted/10 text-muted-foreground',
+                      accent: 'bg-accent/10 text-accent',
+                      secondary: 'bg-secondary/10 text-secondary'
+                    };
+                    return (
+                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${colorMap[colorClass] || colorMap.muted}`}>
+                        {label}
+                      </span>
+                    );
+                  }
+                },
+                {
+                  header: "Total Compras",
+                  align: "right",
+                  accessor: (supplier) => (
+                    <span className="text-sm font-semibold text-destructive">
+                      {formatCurrency(supplier.totalPurchases || "0")}
+                    </span>
+                  )
+                },
+                {
+                  header: "Órdenes",
+                  align: "right",
+                  accessor: "orderCount"
+                },
+                {
+                  header: "Estado",
+                  align: "center",
+                  accessor: (supplier) => (
+                    <span 
+                      className={`inline-block px-2 py-1 text-xs font-medium rounded ${
+                        supplier.isActive 
+                          ? 'bg-primary/10 text-primary' 
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {supplier.isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                  )
+                }
+              ]}
+              canWrite={canWrite}
+              onEdit={(supplier) => handleEdit(supplier.id)}
+              onDelete={(supplier) => handleDelete(supplier.id)}
+              onView={(supplier) => { /* TODO: implement view */ }}
+            />
             </div>
           </div>
         </main>
 
       {/* Add/Edit Supplier Modal */}
-      <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingSupplier ? 'Editar Proveedor' : 'Agregar Proveedor'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6" data-testid="supplier-form">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Label htmlFor="name">Nombre de la empresa *</Label>
-                <Input
-                  {...form.register("name")}
-                  placeholder="Ej: Suministros Generales S.A."
-                  data-testid="input-supplier-name"
-                />
-                {form.formState.errors.name && (
-                  <p className="text-sm text-destructive mt-1">
-                    {form.formState.errors.name.message}
-                  </p>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="idFiscal">ID Fiscal (NIF/CIF)</Label>
-                <Input
-                  {...form.register("idFiscal")}
-                  placeholder="Ej: B87654321"
-                  maxLength={10}
-                  data-testid="input-supplier-id-fiscal"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="category">Categoría *</Label>
-                <Select 
-                  value={form.watch('category')} 
-                  onValueChange={(value) => form.setValue('category', value)}
-                >
-                  <SelectTrigger data-testid="select-supplier-category">
-                    <SelectValue placeholder="Seleccionar categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.category && (
-                  <p className="text-sm text-destructive mt-1">
-                    {form.formState.errors.category.message}
-                  </p>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="contactPerson">Persona de contacto</Label>
-                <Input
-                  {...form.register("contactPerson")}
-                  placeholder="Nombre del contacto"
-                  data-testid="input-contact-person"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="email">Correo electrónico</Label>
-                <Input
-                  type="email"
-                  {...form.register("email")}
-                  placeholder="contacto@proveedor.com"
-                  data-testid="input-supplier-email"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Teléfono</Label>
-                <Input
-                  {...form.register("phone")}
-                  placeholder="+1 234 567 8900"
-                  data-testid="input-supplier-phone"
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <Label htmlFor="address">Dirección</Label>
-                <Input
-                  {...form.register("address")}
-                  placeholder="Dirección completa"
-                  data-testid="input-supplier-address"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="town">Población</Label>
-                <Input
-                  {...form.register("town")}
-                  placeholder="Ej: Madrid"
-                  data-testid="input-supplier-town"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="province">Provincia</Label>
-                <Input
-                  {...form.register("province")}
-                  placeholder="Ej: Madrid"
-                  data-testid="input-supplier-province"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="postalCode">Código Postal</Label>
-                <Input
-                  {...form.register("postalCode")}
-                  placeholder="Ej: 28001"
-                  maxLength={5}
-                  data-testid="input-supplier-postal-code"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="isReagp"
-                  checked={form.watch("isReagp") || false}
-                  onCheckedChange={(checked) => form.setValue("isReagp", checked === true)}
-                  data-testid="checkbox-supplier-reagp"
-                />
-                <Label htmlFor="isReagp" className="cursor-pointer">
-                  Proveedor REAGP (Régimen Especial de Agricultura, Ganadería y Pesca)
-                </Label>
-              </div>
+      <EntityForm<InsertSupplier>
+        title={editingSupplier ? 'Editar Proveedor' : 'Agregar Proveedor'}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+        schema={insertSupplierSchema}
+        isLoading={createSupplier.isPending || updateSupplier.isPending}
+        testId="supplier-form"
+        defaultValues={editingSupplier ? suppliers?.find(s => s.id === editingSupplier) as any : {
+          name: '',
+          idFiscal: '',
+          email: '',
+          phone: '',
+          address: '',
+          town: '',
+          province: '',
+          postalCode: '',
+          contactPerson: '',
+          category: 'materials',
+          isActive: true,
+          isReagp: false,
+        }}
+      >
+        {(form) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <Label htmlFor="name">Nombre de la empresa *</Label>
+              <Input
+                {...form.register("name")}
+                placeholder="Ej: Suministros Generales S.A."
+                data-testid="input-supplier-name"
+              />
+              {form.formState.errors.name && (
+                <p className="text-sm text-destructive mt-1">
+                  {form.formState.errors.name.message}
+                </p>
+              )}
             </div>
             
-            <div className="flex items-center gap-3 pt-6 border-t border-border">
-              <Button 
-                type="submit" 
-                className="flex-1"
-                disabled={createSupplier.isPending || updateSupplier.isPending}
-                data-testid="button-save-supplier"
-              >
-                {editingSupplier ? 'Actualizar Proveedor' : 'Guardar Proveedor'}
-              </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleCloseModal}
-                data-testid="button-cancel-supplier"
-              >
-                Cancelar
-              </Button>
+            <div>
+              <Label htmlFor="idFiscal">ID Fiscal (NIF/CIF)</Label>
+              <Input
+                {...form.register("idFiscal")}
+                placeholder="Ej: B87654321"
+                maxLength={10}
+                data-testid="input-supplier-id-fiscal"
+              />
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            
+            <div>
+              <Label htmlFor="category">Categoría *</Label>
+              <Select 
+                value={form.watch('category')} 
+                onValueChange={(value) => form.setValue('category', value)}
+              >
+                <SelectTrigger data-testid="select-supplier-category">
+                  <SelectValue placeholder="Seleccionar categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="contactPerson">Persona de contacto</Label>
+              <Input
+                {...form.register("contactPerson")}
+                placeholder="Nombre del contacto"
+                data-testid="input-contact-person"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="email">Correo electrónico</Label>
+              <Input
+                type="email"
+                {...form.register("email")}
+                placeholder="contacto@proveedor.com"
+                data-testid="input-supplier-email"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="phone">Teléfono</Label>
+              <Input
+                {...form.register("phone")}
+                placeholder="+1 234 567 8900"
+                data-testid="input-supplier-phone"
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <Label htmlFor="address">Dirección</Label>
+              <Input
+                {...form.register("address")}
+                placeholder="Dirección completa"
+                data-testid="input-supplier-address"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="town">Población</Label>
+              <Input
+                {...form.register("town")}
+                placeholder="Ej: Madrid"
+                data-testid="input-supplier-town"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="province">Provincia</Label>
+              <Input
+                {...form.register("province")}
+                placeholder="Ej: Madrid"
+                data-testid="input-supplier-province"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="postalCode">Código Postal</Label>
+              <Input
+                {...form.register("postalCode")}
+                placeholder="Ej: 28001"
+                maxLength={5}
+                data-testid="input-supplier-postal-code"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="isReagp"
+                checked={form.watch("isReagp") || false}
+                onCheckedChange={(checked) => form.setValue("isReagp", checked === true)}
+                data-testid="checkbox-supplier-reagp"
+              />
+              <Label htmlFor="isReagp" className="cursor-pointer">
+                Proveedor REAGP (Régimen Especial de Agricultura, Ganadería y Pesca)
+              </Label>
+            </div>
+          </div>
+        )}
+      </EntityForm>
 
       <Dialog open={validationModalOpen} onOpenChange={setValidationModalOpen}>
         <DialogContent className="max-w-md">

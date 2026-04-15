@@ -1,0 +1,90 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0KRe-optimizing dependencies because lockfile has changed
+10:36:33 AM [express] serving on port 5000
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
+error: column "username" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async PostgresStorage.getUser (/home/runner/workspace/server/pg-storage.ts:141:20)
+    at async <anonymous> (/home/runner/workspace/server/localAuth.ts:62:20)
