@@ -82,7 +82,15 @@ async function seedAdminUser() {
 }
 
 (async () => {
-  const server = await registerRoutes(app);
+  let server: any;
+  try {
+    server = await registerRoutes(app);
+  } catch (err) {
+    console.error("Error al registrar rutas (¿falta DATABASE_URL o DB no disponible?):", err);
+    // Arrancar servidor HTTP mínimo para servir frontend aunque no haya DB
+    const { createServer } = await import("http");
+    server = createServer(app);
+  }
   await seedAdminUser();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -106,11 +114,10 @@ async function seedAdminUser() {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
+  const port = parseInt(process.env.PORT || '5001', 10);
   server.listen({
     port,
     host: "0.0.0.0",
-    reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
   });
