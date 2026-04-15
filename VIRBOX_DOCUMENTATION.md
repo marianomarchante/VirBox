@@ -44,11 +44,38 @@ La fase de producción actual se ejecuta en un servidor casero Linux auto-hosped
 *   **Base de datos Producción**: Alojada en `postgresql` de sistema local de Linux (`localhost`). 
     *   La base de datos se llama `virbox`.
     *   El usuario propietario es `mariano`.
-*   **Sincronización de Archivos**: La carpeta alojada en el servidor (`/home/mariano/VirBox`) **NO es un repositorio Git**. Por este motivo, cualquier archivo que la Inteligencia Artificial o tú modifiquen en tu entorno de desarrollo local (Windows) debe ser copiado/transferido manualmente (haciendo uso de `scp` en PowerShell o clientes SFTP como WinSCP/FileZilla) sobre los mismos directorios en Linux antes de proceder a compilar la versión de producción mediante `npm run build`. El sistema nunca podrá actualizarse utilizando el comando `git pull` internamente en el servidor.
+*   **Sincronización y Despliegue**: 
+    *(Actualización 15/04/2026)*. El servidor Linux ahora está configurado como un **repositorio Git**. Ya no es necesario el envío manual por SFTP para actualizaciones rutinarias. 
+    1.  Los cambios se suben a GitHub desde el entorno de desarrollo.
+    2.  En el servidor (`/home/mariano/VirBox`), se ejecuta `git pull origin main`.
+    3.  Se procede a compilar con `npm run build` y reiniciar el servicio a través de PM2 o el script `reiniciar_linux.sh`.
 
 ---
 
-## 🔐 4. Casos Especiales y Auth Quirks
+## 🛡️ 4. Sistema de Backups y Resiliencia (Integral)
+
+Desde abril de 2026, VirBox cuenta con un sistema de respaldo automatizado e híbrido (Local + Nube) gestionado por el script `backup_virbox.sh`.
+
+### 🛰️ Tecnología: rclone + GitHub
+Se utiliza **rclone** para la sincronización con Google Drive mediante un remoto autenticado como `gdrive`.
+
+### 📅 Estrategia de Respaldo:
+*   **Backups Diarios (3:00 AM)**: 
+    *   **Base de Datos**: Dump SQL completo de la base de datos `virbox`.
+    *   **Destino**: `/mnt/backup_disk/virbox_backups` (Local) y `GDrive/VirBox_Backups/diario/` (Nube).
+*   **Backups Integrales (Semanales - Domingos)**:
+    *   **Código**: Compresión de `/home/mariano/VirBox` (excluyendo basura como `node_modules`).
+    *   **Nginx**: Toda la configuración de `/etc/nginx/` (sitios, SSL, etc.).
+    *   **PostgreSQL**: Configuración completa de `/etc/postgresql/16/main/`.
+    *   **Firewall y Servicios**: Exportación de reglas `iptables` y archivos de servicio `.service` de Systemd.
+    *   **Destino**: Almacenado en `GDrive/VirBox_Backups/semanal/`.
+
+### 🔔 Notificaciones
+El sistema informa del estado de cada backup (tanto local como en la nube) a través de un Bot de **Telegram**, asegurando que los administradores sepan al instante si una copia ha fallado.
+
+---
+
+## 🔐 5. Casos Especiales y Auth Quirks
 
 **Notas de inicio de sesión de cuentas generadas desde la versión antigua:**
 Debido a una migración técnica (de Replit-Oauth a Autenticación Local), algunos usuarios antiguos generados con la versión anterior solo tenían guardado el `email` y carecían de `username` y `password_hash`. A la hora de añadir usuarios anteriores, la base de datos local necesita que la columna `username` reciba una copia exacta del `email` y que se inyecte directamente el `$2b$10$...` hash via bcrypt. 
@@ -59,7 +86,7 @@ Debido a una migración técnica (de Replit-Oauth a Autenticación Local), algun
 
 ---
 
-## 🧰 5. Scripts de NPM de Uso Diario
+## 🧰 6. Scripts de NPM de Uso Diario
 
 *   `npm run dev`: Inicia el servidor express mediante TSX y Vite en modo desarrollo interactivo en el puerto asignado.
 *   `npm run build`: Construye el binario y estáticos limpios dentro de `/dist`.
@@ -68,7 +95,7 @@ Debido a una migración técnica (de Replit-Oauth a Autenticación Local), algun
 
 ---
 
-## 🤖 6. Guía Directa para Próximas Asistencias (AI)
+## 🤖 7. Guía Directa para Próximas Asistencias (AI)
 
 Para futuras llamadas en contexto para implementar características, se ha de seguir esta pauta:
 1.  **Drizzle Types**: Al pasar algo de Frontend al Backend siempre valida con el esquema inferido de `drizzle-zod` en `shared/schema.ts` (esquemas `insertXSchema`).
