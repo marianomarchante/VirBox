@@ -44,6 +44,7 @@ La fase de producción actual se ejecuta en un servidor casero Linux auto-hosped
 *   **Base de datos Producción**: Alojada en `postgresql` de sistema local de Linux (`localhost`). 
     *   La base de datos se llama `virbox`.
     *   El usuario propietario es `mariano`.
+*   **Sincronización de Archivos**: La carpeta alojada en el servidor (`/home/mariano/VirBox`) **NO es un repositorio Git**. Por este motivo, cualquier archivo que la Inteligencia Artificial o tú modifiquen en tu entorno de desarrollo local (Windows) debe ser copiado/transferido manualmente (haciendo uso de `scp` en PowerShell o clientes SFTP como WinSCP/FileZilla) sobre los mismos directorios en Linux antes de proceder a compilar la versión de producción mediante `npm run build`. El sistema nunca podrá actualizarse utilizando el comando `git pull` internamente en el servidor.
 
 ---
 
@@ -52,6 +53,9 @@ La fase de producción actual se ejecuta en un servidor casero Linux auto-hosped
 **Notas de inicio de sesión de cuentas generadas desde la versión antigua:**
 Debido a una migración técnica (de Replit-Oauth a Autenticación Local), algunos usuarios antiguos generados con la versión anterior solo tenían guardado el `email` y carecían de `username` y `password_hash`. A la hora de añadir usuarios anteriores, la base de datos local necesita que la columna `username` reciba una copia exacta del `email` y que se inyecte directamente el `$2b$10$...` hash via bcrypt. 
 *(Ref. Ejecutada el 14/04/2026: Actualización manual en la BD producción).*
+
+**Gestión Integrada de Usuarios Administradores**:
+*(Actualización 15/04/2026)*. Afortunadamente, se ha integrado por completo un panel visual dentro de la ruta `/usuarios` para el manejo de credenciales. Siempre que inicies sesión con un usuario que tenga `isAdmin: true` en la base de datos, podrás crear usuarios nuevos en el sistema y cambiar contraseñas o nombres por completo con seguridad criptográfica (hashes manejados por `bcrypt` subyacente en las rutas de la API). Por tanto, la administración de usuarios ya no requiere tocar comandos SQL para la creación habitual de inquilinos.
 
 ---
 
