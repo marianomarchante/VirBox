@@ -40,7 +40,15 @@ import {
   type AgriculturalReceipt,
   type InsertAgriculturalReceipt,
   type AgriculturalReceiptLine,
-  type InsertAgriculturalReceiptLine
+  type InsertAgriculturalReceiptLine,
+  type MemberType,
+  type InsertMemberType,
+  type Season,
+  type InsertSeason,
+  type Member,
+  type InsertMember,
+  type MemberFeePayment,
+  type InsertMemberFeePayment,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -191,6 +199,37 @@ export interface IStorage {
   getAgriculturalReceiptLines(receiptId: string): Promise<AgriculturalReceiptLine[]>;
   getNextAgriculturalReceiptNumber(companyId: string, series: string, year: number): Promise<number>;
   updateAgriculturalReceiptPdf(id: string, companyId: string, pdfData: string | null): Promise<AgriculturalReceipt | undefined>;
+
+  // Member Types
+  getMemberTypes(companyId: string): Promise<MemberType[]>;
+  getMemberType(id: string, companyId: string): Promise<MemberType | undefined>;
+  createMemberType(memberType: InsertMemberType): Promise<MemberType>;
+  updateMemberType(id: string, companyId: string, memberType: Partial<InsertMemberType>): Promise<MemberType | undefined>;
+  deleteMemberType(id: string, companyId: string): Promise<boolean>;
+
+  // Seasons
+  getSeasons(companyId: string): Promise<Season[]>;
+  getSeason(id: string, companyId: string): Promise<Season | undefined>;
+  createSeason(season: InsertSeason): Promise<Season>;
+  updateSeason(id: string, companyId: string, season: Partial<InsertSeason>): Promise<Season | undefined>;
+  deleteSeason(id: string, companyId: string): Promise<boolean>;
+  getSuggestedNextSeason(companyId: string): Promise<{ name: string; startYear: number; endYear: number } | null>;
+
+  // Members
+  getMembers(companyId: string, filter?: { memberTypeId?: string; isActive?: boolean; search?: string }): Promise<Member[]>;
+  getMember(id: string, companyId: string): Promise<Member | undefined>;
+  createMember(member: InsertMember): Promise<Member>;
+  updateMember(id: string, companyId: string, member: Partial<InsertMember>): Promise<Member | undefined>;
+  deleteMember(id: string, companyId: string): Promise<boolean>;
+  getNextMemberNumber(companyId: string): Promise<string>;
+
+  // Member Fee Payments
+  getMemberFeePayments(companyId: string, filter?: { seasonId?: string; memberId?: string; isPaid?: boolean }): Promise<MemberFeePayment[]>;
+  getMemberFeePayment(id: string, companyId: string): Promise<MemberFeePayment | undefined>;
+  createMemberFeePayment(payment: InsertMemberFeePayment): Promise<MemberFeePayment>;
+  updateMemberFeePayment(id: string, companyId: string, payment: Partial<InsertMemberFeePayment>): Promise<MemberFeePayment | undefined>;
+  deleteMemberFeePayment(id: string, companyId: string): Promise<boolean>;
+  bulkGenerateMemberFeePayments(companyId: string, seasonId: string): Promise<MemberFeePayment[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -229,6 +268,7 @@ export class MemStorage implements IStorage {
       logoFileName: null,
       bankAccount: null,
       website: null,
+      companyType: 'comercio',
       canIssueAgriculturalReceipts: false,
       reagpAgricolaRate: null,
       reagpGanaderoRate: null,

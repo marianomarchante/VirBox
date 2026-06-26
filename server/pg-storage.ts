@@ -21,6 +21,12 @@ import {
   invoices,
   invoiceLines,
   invoiceVatBreakdown,
+  agriculturalReceipts,
+  agriculturalReceiptLines,
+  memberTypes,
+  seasons,
+  members,
+  memberFeePayments,
   type User,
   type UpsertUser,
   type UserCompanyPermission,
@@ -59,12 +65,18 @@ import {
   type InsertInvoiceLine,
   type InvoiceVatBreakdown,
   type InsertInvoiceVatBreakdown,
-  agriculturalReceipts,
-  agriculturalReceiptLines,
   type AgriculturalReceipt,
   type InsertAgriculturalReceipt,
   type AgriculturalReceiptLine,
-  type InsertAgriculturalReceiptLine
+  type InsertAgriculturalReceiptLine,
+  type MemberType,
+  type InsertMemberType,
+  type Season,
+  type InsertSeason,
+  type Member,
+  type InsertMember,
+  type MemberFeePayment,
+  type InsertMemberFeePayment,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 
@@ -1295,5 +1307,245 @@ export class PostgresStorage implements IStorage {
       .where(and(eq(agriculturalReceipts.id, id), eq(agriculturalReceipts.companyId, companyId)))
       .returning();
     return result[0];
+  }
+
+  // ── Member Types ──────────────────────────────────────────────────────────────
+
+  async getMemberTypes(companyId: string): Promise<MemberType[]> {
+    return await db.select().from(memberTypes)
+      .where(eq(memberTypes.companyId, companyId))
+      .orderBy(memberTypes.name);
+  }
+
+  async getMemberType(id: string, companyId: string): Promise<MemberType | undefined> {
+    const result = await db.select().from(memberTypes)
+      .where(and(eq(memberTypes.id, id), eq(memberTypes.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createMemberType(memberType: InsertMemberType): Promise<MemberType> {
+    const result = await db.insert(memberTypes).values(memberType as any).returning();
+    return result[0];
+  }
+
+  async updateMemberType(id: string, companyId: string, memberType: Partial<InsertMemberType>): Promise<MemberType | undefined> {
+    const result = await db.update(memberTypes)
+      .set(memberType as any)
+      .where(and(eq(memberTypes.id, id), eq(memberTypes.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMemberType(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(memberTypes)
+      .where(and(eq(memberTypes.id, id), eq(memberTypes.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // ── Seasons ───────────────────────────────────────────────────────────────────
+
+  async getSeasons(companyId: string): Promise<Season[]> {
+    return await db.select().from(seasons)
+      .where(eq(seasons.companyId, companyId))
+      .orderBy(desc(seasons.startYear));
+  }
+
+  async getSeason(id: string, companyId: string): Promise<Season | undefined> {
+    const result = await db.select().from(seasons)
+      .where(and(eq(seasons.id, id), eq(seasons.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createSeason(season: InsertSeason): Promise<Season> {
+    const result = await db.insert(seasons).values(season as any).returning();
+    return result[0];
+  }
+
+  async updateSeason(id: string, companyId: string, season: Partial<InsertSeason>): Promise<Season | undefined> {
+    const result = await db.update(seasons)
+      .set(season as any)
+      .where(and(eq(seasons.id, id), eq(seasons.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSeason(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(seasons)
+      .where(and(eq(seasons.id, id), eq(seasons.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getSuggestedNextSeason(companyId: string): Promise<{ name: string; startYear: number; endYear: number } | null> {
+    const lastSeason = await db.select().from(seasons)
+      .where(eq(seasons.companyId, companyId))
+      .orderBy(desc(seasons.endYear))
+      .limit(1);
+
+    if (lastSeason.length === 0) {
+      // Suggest current year / next year
+      const currentYear = new Date().getFullYear();
+      return {
+        name: `${currentYear}/${currentYear + 1}`,
+        startYear: currentYear,
+        endYear: currentYear + 1,
+      };
+    }
+
+    const lastEndYear = lastSeason[0].endYear;
+    return {
+      name: `${lastEndYear}/${lastEndYear + 1}`,
+      startYear: lastEndYear,
+      endYear: lastEndYear + 1,
+    };
+  }
+
+  // ── Members ───────────────────────────────────────────────────────────────────
+
+  async getMembers(companyId: string, filter?: { memberTypeId?: string; isActive?: boolean; search?: string }): Promise<Member[]> {
+    const conditions = [eq(members.companyId, companyId)];
+
+    if (filter?.memberTypeId) {
+      conditions.push(eq(members.memberTypeId, filter.memberTypeId));
+    }
+    if (filter?.isActive !== undefined) {
+      conditions.push(eq(members.isActive, filter.isActive));
+    }
+    if (filter?.search) {
+      const searchTerm = `%${filter.search}%`;
+      conditions.push(
+        or(
+          ilike(members.firstName, searchTerm),
+          ilike(members.lastName, searchTerm),
+          ilike(members.email ?? '', searchTerm),
+          ilike(members.memberNumber, searchTerm),
+        )!
+      );
+    }
+
+    return await db.select().from(members)
+      .where(and(...conditions))
+      .orderBy(members.lastName, members.firstName);
+  }
+
+  async getMember(id: string, companyId: string): Promise<Member | undefined> {
+    const result = await db.select().from(members)
+      .where(and(eq(members.id, id), eq(members.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createMember(member: InsertMember): Promise<Member> {
+    const result = await db.insert(members).values(member as any).returning();
+    return result[0];
+  }
+
+  async updateMember(id: string, companyId: string, member: Partial<InsertMember>): Promise<Member | undefined> {
+    const result = await db.update(members)
+      .set({ ...member as any, updatedAt: new Date() })
+      .where(and(eq(members.id, id), eq(members.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMember(id: string, companyId: string): Promise<boolean> {
+    // Delete associated payments first
+    await db.delete(memberFeePayments)
+      .where(and(eq(memberFeePayments.memberId, id), eq(memberFeePayments.companyId, companyId)));
+    const result = await db.delete(members)
+      .where(and(eq(members.id, id), eq(members.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getNextMemberNumber(companyId: string): Promise<string> {
+    const result = await db.select({ maxNum: max(sql<number>`CAST(NULLIF(REGEXP_REPLACE(${members.memberNumber}, '[^0-9]', '', 'g'), '') AS INTEGER)`) })
+      .from(members)
+      .where(eq(members.companyId, companyId));
+    const maxNum = Number(result[0]?.maxNum ?? 0);
+    return String((maxNum || 0) + 1).padStart(4, '0');
+  }
+
+  // ── Member Fee Payments ───────────────────────────────────────────────────────
+
+  async getMemberFeePayments(companyId: string, filter?: { seasonId?: string; memberId?: string; isPaid?: boolean }): Promise<MemberFeePayment[]> {
+    const conditions = [eq(memberFeePayments.companyId, companyId)];
+
+    if (filter?.seasonId) {
+      conditions.push(eq(memberFeePayments.seasonId, filter.seasonId));
+    }
+    if (filter?.memberId) {
+      conditions.push(eq(memberFeePayments.memberId, filter.memberId));
+    }
+    if (filter?.isPaid !== undefined) {
+      conditions.push(eq(memberFeePayments.isPaid, filter.isPaid));
+    }
+
+    return await db.select().from(memberFeePayments)
+      .where(and(...conditions))
+      .orderBy(memberFeePayments.createdAt);
+  }
+
+  async getMemberFeePayment(id: string, companyId: string): Promise<MemberFeePayment | undefined> {
+    const result = await db.select().from(memberFeePayments)
+      .where(and(eq(memberFeePayments.id, id), eq(memberFeePayments.companyId, companyId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createMemberFeePayment(payment: InsertMemberFeePayment): Promise<MemberFeePayment> {
+    const result = await db.insert(memberFeePayments).values(payment as any).returning();
+    return result[0];
+  }
+
+  async updateMemberFeePayment(id: string, companyId: string, payment: Partial<InsertMemberFeePayment>): Promise<MemberFeePayment | undefined> {
+    const result = await db.update(memberFeePayments)
+      .set(payment as any)
+      .where(and(eq(memberFeePayments.id, id), eq(memberFeePayments.companyId, companyId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMemberFeePayment(id: string, companyId: string): Promise<boolean> {
+    const result = await db.delete(memberFeePayments)
+      .where(and(eq(memberFeePayments.id, id), eq(memberFeePayments.companyId, companyId)));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async bulkGenerateMemberFeePayments(companyId: string, seasonId: string): Promise<MemberFeePayment[]> {
+    // Get the season to get its fee info
+    const season = await this.getSeason(seasonId, companyId);
+    if (!season) throw new Error('Season not found');
+
+    // Get all active members
+    const activeMembers = await this.getMembers(companyId, { isActive: true });
+    if (activeMembers.length === 0) return [];
+
+    // Get already-existing payments for this season to avoid duplicates
+    const existingPayments = await this.getMemberFeePayments(companyId, { seasonId });
+    const existingMemberIds = new Set(existingPayments.map(p => p.memberId));
+
+    const newPayments: MemberFeePayment[] = [];
+
+    for (const member of activeMembers) {
+      if (existingMemberIds.has(member.id)) continue;
+
+      // Get the fee amount from the member type
+      const memberType = await this.getMemberType(member.memberTypeId, companyId);
+      const amount = memberType?.feeAmount ?? '0.00';
+
+      const payment = await this.createMemberFeePayment({
+        companyId,
+        memberId: member.id,
+        seasonId,
+        amount: String(amount),
+        isPaid: false,
+        paidDate: null,
+        notes: null,
+      });
+      newPayments.push(payment);
+    }
+
+    return newPayments;
   }
 }

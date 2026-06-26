@@ -29,6 +29,10 @@ import Articles from "@/pages/Articles";
 import DeliveryNotes from "@/pages/DeliveryNotes";
 import Invoices from "@/pages/Invoices";
 import AgriculturalReceipts from "@/pages/AgriculturalReceipts";
+import Members from "@/pages/Members";
+import MemberTypes from "@/pages/MemberTypes";
+import Seasons from "@/pages/Seasons";
+import MemberFeePayments from "@/pages/MemberFeePayments";
 
 function Router() {
   return (
@@ -52,6 +56,10 @@ function Router() {
       <Route path="/albaranes" component={DeliveryNotes} />
       <Route path="/facturas" component={Invoices} />
       <Route path="/recibos-agrarios" component={AgriculturalReceipts} />
+      <Route path="/socios" component={Members} />
+      <Route path="/tipos-socio" component={MemberTypes} />
+      <Route path="/temporadas" component={Seasons} />
+      <Route path="/cuotas-socios" component={MemberFeePayments} />
       <Route component={NotFound} />
     </Switch>
   );

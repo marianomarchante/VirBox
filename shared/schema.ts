@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, decimal, integer, timestamp, boolean, index, jsonb, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, decimal, integer, timestamp, boolean, index, jsonb, unique, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -53,6 +53,7 @@ export const companies = pgTable("companies", {
   logoFileName: text("logo_file_name"), // Original filename of the logo
   bankAccount: varchar("bank_account", { length: 24 }),
   website: varchar("website", { length: 155 }),
+  companyType: text("company_type").default("comercio").notNull(), // 'agraria' | 'autonomo' | 'comercio' | 'taller' | 'asociacion' | 'micasa'
   canIssueAgriculturalReceipts: boolean("can_issue_agricultural_receipts").default(false).notNull(),
   reagpAgricolaRate: decimal("reagp_agricola_rate", { precision: 5, scale: 2 }).default("12.00"),
   reagpGanaderoRate: decimal("reagp_ganadero_rate", { precision: 5, scale: 2 }).default("10.50"),
@@ -364,7 +365,66 @@ export const agriculturalReceiptLines = pgTable("agricultural_receipt_lines", {
   lineOrder: integer("line_order").default(0),
 });
 
-// Insert schemas
+// ── Socios Module ──────────────────────────────────────────────────────────────
+
+// Tipos de Socio
+export const memberTypes = pgTable("member_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  feeAmount: decimal("fee_amount", { precision: 10, scale: 2 }).default("0.00"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Temporadas interanuales
+export const seasons = pgTable("seasons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  name: text("name").notNull(), // e.g. "2025/2026"
+  startYear: integer("start_year").notNull(),
+  endYear: integer("end_year").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Socios
+export const members = pgTable("members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  memberNumber: varchar("member_number", { length: 20 }).notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  birthDate: date("birth_date"), // stored as date string YYYY-MM-DD
+  joinDate: date("join_date").notNull(),
+  memberTypeId: varchar("member_type_id").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  unique("unique_member_number").on(table.companyId, table.memberNumber),
+]);
+
+// Pagos de cuotas de socios
+export const memberFeePayments = pgTable("member_fee_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull(),
+  memberId: varchar("member_id").notNull(),
+  seasonId: varchar("season_id").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  isPaid: boolean("is_paid").default(false).notNull(),
+  paidDate: date("paid_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  unique("unique_member_season").on(table.memberId, table.seasonId),
+]);
+
+// ── Insert schemas ─────────────────────────────────────────────────────────────
 export const insertCompanySchema = createInsertSchema(companies).omit({
   id: true,
   createdAt: true,
@@ -568,7 +628,42 @@ export const insertAgriculturalReceiptLineSchema = createInsertSchema(agricultur
   receiptId: z.string().optional(),
 });
 
-// Types
+// Socios module insert schemas
+export const insertMemberTypeSchema = createInsertSchema(memberTypes).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
+  feeAmount: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+});
+
+export const insertSeasonSchema = createInsertSchema(seasons).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
+});
+
+export const insertMemberSchema = createInsertSchema(members).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  companyId: z.string().optional(),
+  birthDate: z.string().nullable().optional(),
+  joinDate: z.string(),
+});
+
+export const insertMemberFeePaymentSchema = createInsertSchema(memberFeePayments).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  companyId: z.string().optional(),
+  amount: z.union([z.string(), z.number()]).transform(val => String(val)).optional(),
+  paidDate: z.string().nullable().optional(),
+});
+
+// ── Types ──────────────────────────────────────────────────────────────────────
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 
@@ -640,6 +735,16 @@ export const insertUserCompanyPermissionSchema = createInsertSchema(userCompanyP
 
 export type UserCompanyPermission = typeof userCompanyPermissions.$inferSelect;
 export type InsertUserCompanyPermission = z.infer<typeof insertUserCompanyPermissionSchema>;
+
+// Socios module types
+export type MemberType = typeof memberTypes.$inferSelect;
+export type InsertMemberType = z.infer<typeof insertMemberTypeSchema>;
+export type Season = typeof seasons.$inferSelect;
+export type InsertSeason = z.infer<typeof insertSeasonSchema>;
+export type Member = typeof members.$inferSelect;
+export type InsertMember = z.infer<typeof insertMemberSchema>;
+export type MemberFeePayment = typeof memberFeePayments.$inferSelect;
+export type InsertMemberFeePayment = z.infer<typeof insertMemberFeePaymentSchema>;
 
 // Additional schemas for forms
 export const transactionFilterSchema = z.object({

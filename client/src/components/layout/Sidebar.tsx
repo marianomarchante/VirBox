@@ -20,7 +20,9 @@ import {
   ClipboardList,
   Receipt,
   Building2,
-  Wheat
+  Wheat,
+  UserRound,
+  CreditCard as FeeCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -129,6 +131,45 @@ export default function Sidebar() {
             </Link>
           )}
         </div>
+
+        {/* Socios — solo visible para empresas tipo Asociación */}
+        {(currentCompany as any)?.companyType === 'asociacion' && (
+          <div className="my-2 p-2 rounded-lg border-2 border-purple-600 bg-purple-50 dark:bg-purple-900/10">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-purple-600 px-2 pb-1">Socios</p>
+            <Link
+              href="/socios"
+              className={cn("sidebar-link", location === "/socios" && "active")}
+              data-testid="nav-socios"
+            >
+              <UserRound className="w-5 h-5" />
+              <span>Socios</span>
+            </Link>
+            <Link
+              href="/tipos-socio"
+              className={cn("sidebar-link", location === "/tipos-socio" && "active")}
+              data-testid="nav-tipos-socio"
+            >
+              <Tags className="w-5 h-5" />
+              <span>Tipos de Socio</span>
+            </Link>
+            <Link
+              href="/temporadas"
+              className={cn("sidebar-link", location === "/temporadas" && "active")}
+              data-testid="nav-temporadas"
+            >
+              <CalendarDays className="w-5 h-5" />
+              <span>Temporadas</span>
+            </Link>
+            <Link
+              href="/cuotas-socios"
+              className={cn("sidebar-link", location === "/cuotas-socios" && "active")}
+              data-testid="nav-cuotas-socios"
+            >
+              <FeeCard className="w-5 h-5" />
+              <span>Cuotas</span>
+            </Link>
+          </div>
+        )}
 
         <div className="my-2 p-2 rounded-lg border-2 border-[#800020] bg-[#800020]/5">
           <Link 

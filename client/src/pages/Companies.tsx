@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useForm } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileMenu from "@/components/layout/MobileMenu";
@@ -101,6 +102,7 @@ export default function Companies() {
       email: null,
       bankAccount: null,
       website: null,
+      companyType: 'comercio',
       canIssueAgriculturalReceipts: false,
       isActive: true,
     },
@@ -178,6 +180,7 @@ export default function Companies() {
         email: company.email || null,
         bankAccount: company.bankAccount || null,
         website: company.website || null,
+        companyType: (company as any).companyType || 'comercio',
         canIssueAgriculturalReceipts: company.canIssueAgriculturalReceipts || false,
         isActive: company.isActive,
       });
@@ -241,6 +244,9 @@ export default function Companies() {
                       Empresa
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
+                      Tipo
+                    </th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
                       NIF/CIF
                     </th>
                     <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">
@@ -282,6 +288,25 @@ export default function Companies() {
                             <Building2 className="w-4 h-4 text-muted-foreground" />
                             <p className="text-sm font-medium">{company.name}</p>
                           </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {(() => {
+                            const typeLabels: Record<string, { label: string; color: string }> = {
+                              agraria: { label: 'Agraria', color: 'bg-green-100 text-green-800' },
+                              autonomo: { label: 'Autónomo', color: 'bg-blue-100 text-blue-800' },
+                              comercio: { label: 'Comercio', color: 'bg-orange-100 text-orange-800' },
+                              taller: { label: 'Taller', color: 'bg-yellow-100 text-yellow-800' },
+                              asociacion: { label: 'Asociación', color: 'bg-purple-100 text-purple-800' },
+                              micasa: { label: 'MiCasa', color: 'bg-pink-100 text-pink-800' },
+                            };
+                            const ct = (company as any).companyType || 'comercio';
+                            const info = typeLabels[ct] || { label: ct, color: 'bg-gray-100 text-gray-800' };
+                            return (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${info.color}`}>
+                                {info.label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="py-3 px-4">
                           <p className="text-sm text-muted-foreground">
@@ -381,6 +406,29 @@ export default function Companies() {
                     {form.formState.errors.name.message}
                   </p>
                 )}
+              </div>
+
+              <div>
+                <Label htmlFor="companyType">Tipo de empresa</Label>
+                <Controller
+                  name="companyType"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select value={field.value ?? 'comercio'} onValueChange={field.onChange}>
+                      <SelectTrigger id="companyType" data-testid="select-company-type">
+                        <SelectValue placeholder="Selecciona tipo..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="agraria">Agraria</SelectItem>
+                        <SelectItem value="autonomo">Autónomo</SelectItem>
+                        <SelectItem value="comercio">Comercio</SelectItem>
+                        <SelectItem value="taller">Taller</SelectItem>
+                        <SelectItem value="asociacion">Asociación</SelectItem>
+                        <SelectItem value="micasa">MiCasa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
 
               <div>
