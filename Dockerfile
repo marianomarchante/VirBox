@@ -23,11 +23,10 @@ WORKDIR /app
 # Set node environment to production
 ENV NODE_ENV=production
 
-# Copy package files for production dependencies installation
 COPY package.json package-lock.json* ./
 
-# Install dependencies (including devDependencies for migrations)
-RUN npm install
+# Copy all node_modules from builder to ensure devDependencies (drizzle-kit, tsx) are available
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy the built artifacts from the builder stage
 COPY --from=builder /app/dist ./dist
