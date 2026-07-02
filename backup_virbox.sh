@@ -1,14 +1,13 @@
 #!/bin/bash
 
 # =========================================================================
-# VirBox Backup Utility - Integral (BD + Proyecto + Sistema)
+# VirBox Backup Utility - Integral (BD + Proyecto) - Docker Ready
 # =========================================================================
 
 # 1. Configuración principal
-USER="mariano"
-DATABASE="virbox"
-PROJECT_DIR="/home/mariano/VirBox"
-PG_VERSION="16"
+USER="virbox"
+DATABASE="virbox_db"
+PROJECT_DIR="/home/mm/VirBox" # Ruta en el nuevo Ubuntu Server
 
 # 2. Rutas de Backup
 BACKUP_LOCAL="/mnt/backup_disk/virbox_backups"
@@ -44,8 +43,8 @@ DB_FILENAME="virbox_db_${TIMESTAMP}.sql"
 DB_FILE="${BACKUP_LOCAL}/${DB_FILENAME}"
 
 echo "--- Iniciando Dump de Base de Datos ---"
-export PGPASSWORD="kkdvk777"
-pg_dump -U "$USER" -h localhost -d "$DATABASE" -F p -f "$DB_FILE"
+# Al usar Docker, podemos extraer el dump de la BBDD desde el contenedor:
+docker exec -t virbox-db pg_dump -U "$USER" "$DATABASE" > "$DB_FILE"
 
 if [ $? -eq 0 ]; then
     DB_STATUS="✅ DB Local OK"
@@ -72,26 +71,12 @@ if [ "$IS_SUNDAY" = true ]; then
     TEMP_DIR="/tmp/${FULL_DIR_NAME}"
     mkdir -p "$TEMP_DIR"
 
-    # 1. Copia del Proyecto (excluyendo node_modules, .git, dist)
+    # 1. Copia del Proyecto (excluyendo carpetas innecesarias para el despliegue Docker)
     mkdir -p "$TEMP_DIR/project"
     rsync -av --exclude 'node_modules' --exclude '.git' --exclude 'dist' "$PROJECT_DIR/" "$TEMP_DIR/project/" > /dev/null
 
-    # 2. Configuración Nginx
-    if [ -d "/etc/nginx" ]; then
-        cp -r /etc/nginx "$TEMP_DIR/nginx_config"
-    fi
-
-    # 3. Configuración Postgres
-    if [ -d "/etc/postgresql/$PG_VERSION/main" ]; then
-        cp -r "/etc/postgresql/$PG_VERSION/main" "$TEMP_DIR/postgres_config"
-    fi
-
-    # 4. Servicios de Systemd
-    mkdir -p "$TEMP_DIR/systemd"
-    cp /etc/systemd/system/*.service "$TEMP_DIR/systemd/" 2>/dev/null
-
-    # 5. Reglas de Firewall
-    iptables-save > "$TEMP_DIR/firewall_rules.txt" 2>/dev/null
+    # Ya no respaldamos nginx ni config global de postgres porque ahora todo corre en Docker Compose
+    # y la configuración está en el propio código (docker-compose.yml, Dockerfile, etc).
 
     # Comprimir todo
     FULL_FILENAME="${FULL_DIR_NAME}.tar.gz"
