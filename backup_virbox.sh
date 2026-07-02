@@ -10,7 +10,7 @@ DATABASE="virbox_db"
 PROJECT_DIR="/home/mm/VirBox" # Ruta en el nuevo Ubuntu Server
 
 # 2. Rutas de Backup
-BACKUP_LOCAL="/mnt/backup_disk/virbox_backups"
+BACKUP_LOCAL="/backups/virbox_backups"
 GD_REMOTE="gdrive"
 GD_FOLDER="VirBox_Backups"
 
