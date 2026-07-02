@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: virbox-app
+    restart: always
+    ports:
+      - "5001:5000" # Mapea el puerto 5000 del contenedor al 5001 del host (usado en el .bat anterior)
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://virbox:virbox_password@db:5432/virbox_db
+      - SESSION_SECRET=${SESSION_SECRET:-super_secret_session_key} # Puedes crear un .env para esto
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npm run db:push && npm start"
+
+  db:
+    image: postgres:16-alpine
+    container_name: virbox-db
+    restart: always
+    environment:
+      - POSTGRES_USER=virbox
+      - POSTGRES_PASSWORD=virbox_password
+      - POSTGRES_DB=virbox_db
+    ports:
+      - "5432:5432" # Opcional: permite conectar desde fuera para ver los datos
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U virbox -d virbox_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

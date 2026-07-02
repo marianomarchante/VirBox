@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+attached_assets
+backup_micontable.sql
