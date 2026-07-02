@@ -36,6 +36,10 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 
+# Create an empty .env file because package.json scripts require it (--env-file=.env)
+# The actual environment variables will be provided by docker-compose
+RUN touch .env
+
 # Expose the application port
 EXPOSE 5000
 
