@@ -26,8 +26,8 @@ ENV NODE_ENV=production
 # Copy package files for production dependencies installation
 COPY package.json package-lock.json* ./
 
-# Install only production dependencies
-RUN npm install --omit=dev
+# Install dependencies (including devDependencies for migrations)
+RUN npm install
 
 # Copy the built artifacts from the builder stage
 COPY --from=builder /app/dist ./dist
