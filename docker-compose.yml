@@ -14,7 +14,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "npm run db:push && npm start"
+    command: sh -c "npx drizzle-kit push && npm start"
 
   db:
     image: postgres:16-alpine
