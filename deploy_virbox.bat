@@ -3,22 +3,15 @@ REM ============================================================
 REM  deploy_virbox.bat
 REM  Despliega los cambios en el servidor VirBox
 REM  Servidor: mm@192.168.100.190
-REM  Uso: Ejecutar desde la raiz del proyecto VirBox
-REM       deploy_virbox.bat ["mensaje de commit opcional"]
+REM  Uso: deploy_virbox.bat ["mensaje de commit opcional"]
 REM ============================================================
 
 setlocal enabledelayedexpansion
 
 set SERVER=mm@192.168.100.190
-set APP_DIR=/home/mm/VirBox
 set GIT_BRANCH=main
-set PM2_APP_NAME=virbox
 
-REM Prefijo para cargar el entorno completo del usuario en SSH no-interactivo.
-REM Sourcea .bashrc (donde nvm registra node) y nvm.sh directamente como fallback.
-set NODE_ENV_INIT=source ~/.bashrc 2>/dev/null; export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] ^&^& . "$NVM_DIR/nvm.sh"; 
-
-REM Mensaje de commit: usar el argumento pasado o uno generico
+REM Mensaje de commit
 if "%~1"=="" (
     set COMMIT_MSG=chore: deploy update
 ) else (
@@ -32,8 +25,8 @@ echo   Rama: %GIT_BRANCH%   Servidor: %SERVER%
 echo ============================================================
 echo.
 
-REM ── PASO 1: Commit y push de los cambios locales ─────────────
-echo [1/5] Preparando y subiendo cambios locales...
+REM ── PASO 1: Commit y push ────────────────────────────────────
+echo [1/3] Preparando y subiendo cambios a GitHub...
 echo.
 
 git add -A
@@ -44,72 +37,48 @@ if %ERRORLEVEL% NEQ 0 (
 
 git commit -m "%COMMIT_MSG%"
 if %ERRORLEVEL% NEQ 0 (
-    echo AVISO: No habia nada nuevo que commitear, continuando...
+    echo AVISO: Nada nuevo que commitear, continuando...
 )
 
 git push origin %GIT_BRANCH%
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: git push fallo. Comprueba la conexion y credenciales de GitHub.
+    echo ERROR: git push fallo. Comprueba la conexion con GitHub.
     goto :error
 )
-echo     OK - Cambios subidos a GitHub.
+echo     OK - Cambios en GitHub.
 
-REM ── PASO 2: Actualizar codigo en el servidor ─────────────────
+REM ── PASO 2: Ejecutar script en el servidor via SSH stdin ─────
+REM  Se usa "ssh ... bash -s < script.sh" para evitar cualquier
+REM  problema de escape de caracteres especiales en Windows cmd.
 echo.
-echo [2/5] Actualizando codigo en el servidor...
+echo [2/3] Ejecutando despliegue en el servidor...
+echo       (Introduce la contrasena SSH cuando se pida)
+echo.
 
-ssh %SERVER% "bash -c 'cd %APP_DIR% && git pull origin %GIT_BRANCH%'"
+ssh %SERVER% bash -s < deploy_server.sh
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: No se pudo hacer git pull en el servidor.
-    echo        Verifica que el servidor tenga acceso a GitHub.
+    echo.
+    echo ERROR: El despliegue en el servidor fallo.
+    echo        Revisa la salida anterior para identificar el problema.
+    echo.
+    echo        Puedes conectarte manualmente y ejecutar:
+    echo          ssh %SERVER%
+    echo          cd /home/mm/VirBox
+    echo          bash deploy_server.sh
     goto :error
 )
-echo     OK - Codigo actualizado en el servidor.
 
-REM ── PASO 3: Instalar dependencias ────────────────────────────
+REM ── PASO 3: Confirmacion ─────────────────────────────────────
 echo.
-echo [3/5] Instalando dependencias npm en el servidor...
-
-REM bash -c + source de .bashrc y nvm garantiza que node/npm esten en PATH
-REM aunque SSH no cargue el perfil interactivo del usuario
-ssh %SERVER% "bash -c '%NODE_ENV_INIT% node -v && npm -v'"
-ssh %SERVER% "bash -c '%NODE_ENV_INIT% cd %APP_DIR% && npm install --include=dev --legacy-peer-deps'"
-if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: npm install fallo en el servidor.
-    echo        Posibles causas:
-    echo          - Node.js no esta en el PATH del servidor
-    echo          - Sin conexion a internet en el servidor
-    echo          - Permisos insuficientes en node_modules
-    echo        Intenta conectarte manualmente y ejecutar:
-    echo          bash -lc 'cd %APP_DIR% ^&^& npm install --include=dev --legacy-peer-deps'
-    goto :error
-)
-echo     OK - Dependencias instaladas.
-
-REM ── PASO 4: Compilar el servidor (esbuild) ───────────────────
-echo.
-echo [4/5] Compilando el servidor...
-
-ssh %SERVER% "bash -c '%NODE_ENV_INIT% cd %APP_DIR% && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist'"
-if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: La compilacion del servidor fallo.
-    echo        Revisa los errores de TypeScript/esbuild en el servidor.
-    goto :error
-)
-echo     OK - Servidor compilado correctamente.
-
-REM ── PASO 5: Reiniciar la aplicacion ──────────────────────────
-echo.
-echo [5/5] Reiniciando la aplicacion con PM2...
-
-ssh %SERVER% "bash -c '%NODE_ENV_INIT% pm2 restart %PM2_APP_NAME% 2>/dev/null || pm2 restart all 2>/dev/null || sudo systemctl restart virbox 2>/dev/null || echo AVISO: reinicia el servidor manualmente'"
+echo [3/3] Verificando estado de PM2...
+ssh %SERVER% bash -c "command -v pm2 &>/dev/null && pm2 list || echo '(pm2 no disponible)'"
 
 echo.
 echo ============================================================
 echo   DESPLIEGUE COMPLETADO CON EXITO
 echo ============================================================
 echo.
-echo   URL del servidor: http://192.168.100.190:5001
+echo   URL: http://192.168.100.190:5001
 echo.
 goto :end
 
