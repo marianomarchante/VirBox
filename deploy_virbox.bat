@@ -26,7 +26,7 @@ echo ============================================================
 echo.
 
 REM ── PASO 1: Commit y push ────────────────────────────────────
-echo [1/3] Preparando y subiendo cambios a GitHub...
+echo [1/4] Subiendo cambios a GitHub...
 echo.
 
 git add -A
@@ -47,31 +47,43 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo     OK - Cambios en GitHub.
 
-REM ── PASO 2: Ejecutar script en el servidor via SSH stdin ─────
-REM  Se usa "ssh ... bash -s < script.sh" para evitar cualquier
-REM  problema de escape de caracteres especiales en Windows cmd.
+REM ── PASO 2: Copiar script al servidor ────────────────────────
+REM  Se copia con scp para evitar el conflicto de stdin que
+REM  ocurre con "ssh bash -s < script.sh" (SSH no puede leer
+REM  la contrasena si stdin esta redirigido desde un fichero).
 echo.
-echo [2/3] Ejecutando despliegue en el servidor...
+echo [2/4] Copiando script de despliegue al servidor...
 echo       (Introduce la contrasena SSH cuando se pida)
 echo.
 
-ssh %SERVER% bash -s < deploy_server.sh
+scp deploy_server.sh %SERVER%:/tmp/virbox_deploy.sh
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: No se pudo copiar el script al servidor.
+    echo        Comprueba que el servidor esta accesible.
+    goto :error
+)
+echo     OK - Script copiado.
+
+REM ── PASO 3: Ejecutar script en el servidor ───────────────────
+echo.
+echo [3/4] Ejecutando despliegue en el servidor...
+echo       (Introduce la contrasena SSH cuando se pida)
+echo.
+
+ssh %SERVER% "bash /tmp/virbox_deploy.sh"
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo ERROR: El despliegue en el servidor fallo.
-    echo        Revisa la salida anterior para identificar el problema.
-    echo.
-    echo        Puedes conectarte manualmente y ejecutar:
+    echo        Conéctate manualmente para ver el error:
     echo          ssh %SERVER%
-    echo          cd /home/mm/VirBox
-    echo          bash deploy_server.sh
+    echo          bash /tmp/virbox_deploy.sh
     goto :error
 )
 
-REM ── PASO 3: Confirmacion ─────────────────────────────────────
+REM ── PASO 4: Estado PM2 ───────────────────────────────────────
 echo.
-echo [3/3] Verificando estado de PM2...
-ssh %SERVER% bash -c "command -v pm2 &>/dev/null && pm2 list || echo '(pm2 no disponible)'"
+echo [4/4] Estado de PM2...
+ssh %SERVER% "command -v pm2 >/dev/null 2>&1 && pm2 list || echo '(pm2 no disponible)'"
 
 echo.
 echo ============================================================
