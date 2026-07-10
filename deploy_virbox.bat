@@ -14,6 +14,10 @@ set APP_DIR=/home/mm/VirBox
 set GIT_BRANCH=main
 set PM2_APP_NAME=virbox
 
+REM Prefijo para cargar el entorno completo del usuario en SSH no-interactivo.
+REM Sourcea .bashrc (donde nvm registra node) y nvm.sh directamente como fallback.
+set NODE_ENV_INIT=source ~/.bashrc 2>/dev/null; export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] ^&^& . "$NVM_DIR/nvm.sh"; 
+
 REM Mensaje de commit: usar el argumento pasado o uno generico
 if "%~1"=="" (
     set COMMIT_MSG=chore: deploy update
@@ -54,7 +58,7 @@ REM ── PASO 2: Actualizar codigo en el servidor ─────────�
 echo.
 echo [2/5] Actualizando codigo en el servidor...
 
-ssh %SERVER% "bash -lc 'cd %APP_DIR% && git pull origin %GIT_BRANCH%'"
+ssh %SERVER% "bash -c 'cd %APP_DIR% && git pull origin %GIT_BRANCH%'"
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: No se pudo hacer git pull en el servidor.
     echo        Verifica que el servidor tenga acceso a GitHub.
@@ -66,11 +70,10 @@ REM ── PASO 3: Instalar dependencias ─────────────
 echo.
 echo [3/5] Instalando dependencias npm en el servidor...
 
-REM bash -lc carga .bashrc/.bash_profile -> nvm/node/npm quedan en PATH
-REM --include=dev reemplaza al obsoleto --production=false (npm v7+)
-REM --legacy-peer-deps evita fallos por conflictos de peer dependencies
-ssh %SERVER% "bash -lc 'node -v && npm -v'"
-ssh %SERVER% "bash -lc 'cd %APP_DIR% && npm install --include=dev --legacy-peer-deps'"
+REM bash -c + source de .bashrc y nvm garantiza que node/npm esten en PATH
+REM aunque SSH no cargue el perfil interactivo del usuario
+ssh %SERVER% "bash -c '%NODE_ENV_INIT% node -v && npm -v'"
+ssh %SERVER% "bash -c '%NODE_ENV_INIT% cd %APP_DIR% && npm install --include=dev --legacy-peer-deps'"
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: npm install fallo en el servidor.
     echo        Posibles causas:
@@ -87,7 +90,7 @@ REM ── PASO 4: Compilar el servidor (esbuild) ──────────
 echo.
 echo [4/5] Compilando el servidor...
 
-ssh %SERVER% "bash -lc 'cd %APP_DIR% && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist'"
+ssh %SERVER% "bash -c '%NODE_ENV_INIT% cd %APP_DIR% && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist'"
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: La compilacion del servidor fallo.
     echo        Revisa los errores de TypeScript/esbuild en el servidor.
@@ -99,7 +102,7 @@ REM ── PASO 5: Reiniciar la aplicacion ────────────�
 echo.
 echo [5/5] Reiniciando la aplicacion con PM2...
 
-ssh %SERVER% "bash -lc 'pm2 restart %PM2_APP_NAME% 2>/dev/null || pm2 restart all 2>/dev/null || sudo systemctl restart virbox 2>/dev/null || echo AVISO: reinicia el servidor manualmente'"
+ssh %SERVER% "bash -c '%NODE_ENV_INIT% pm2 restart %PM2_APP_NAME% 2>/dev/null || pm2 restart all 2>/dev/null || sudo systemctl restart virbox 2>/dev/null || echo AVISO: reinicia el servidor manualmente'"
 
 echo.
 echo ============================================================
