@@ -1,50 +1,52 @@
 #!/usr/bin/env bash
-# deploy_server.sh — Se ejecuta en el servidor via: ssh mm@... bash -s < deploy_server.sh
-# Carga el entorno del usuario (nvm, node, npm) y despliega VirBox.
-
-set -e  # Abortar si cualquier comando falla
+# deploy_server.sh - Ejecutado en el servidor via scp + ssh
 
 APP_DIR="/home/mm/VirBox"
 GIT_BRANCH="main"
 PM2_APP_NAME="virbox"
 
-# ── Cargar entorno de node (nvm / nodenv / sistema) ──────────────────────────
+echo "=== Cargando entorno Node.js ==="
+
+# 1. Intentar nvm
 export NVM_DIR="$HOME/.nvm"
 if [ -s "$NVM_DIR/nvm.sh" ]; then
-    source "$NVM_DIR/nvm.sh"
-elif [ -s "$HOME/.bashrc" ]; then
-    source "$HOME/.bashrc" 2>/dev/null || true
-elif [ -s "$HOME/.bash_profile" ]; then
-    source "$HOME/.bash_profile" 2>/dev/null || true
+    echo "  -> nvm encontrado, cargando..."
+    . "$NVM_DIR/nvm.sh"
+
+# 2. Intentar source de .bashrc
+elif [ -f "$HOME/.bashrc" ]; then
+    echo "  -> Cargando .bashrc..."
+    . "$HOME/.bashrc"
+
+# 3. Intentar source de .profile
+elif [ -f "$HOME/.profile" ]; then
+    echo "  -> Cargando .profile..."
+    . "$HOME/.profile"
 fi
 
-echo ""
-echo "── Entorno ──────────────────────────────────────"
-echo "  node: $(node -v 2>/dev/null || echo 'NO ENCONTRADO')"
-echo "  npm:  $(npm -v  2>/dev/null || echo 'NO ENCONTRADO')"
-echo "  pwd:  $APP_DIR"
+# 4. Añadir rutas comunes de node al PATH como fallback
+export PATH="/usr/local/bin:/usr/bin:/opt/node/bin:$HOME/.local/bin:$PATH"
+
+echo "  -> node: $(which node 2>/dev/null || echo NO ENCONTRADO)"
+echo "  -> npm:  $(which npm  2>/dev/null || echo NO ENCONTRADO)"
 echo ""
 
-# Verificar que node existe antes de continuar
-if ! command -v node &>/dev/null; then
-    echo "ERROR: node no encontrado. Instala Node.js en el servidor."
-    echo "  Sugerencia: https://github.com/nvm-sh/nvm"
+if ! command -v node > /dev/null 2>&1; then
+    echo "ERROR: node no encontrado en el servidor."
+    echo "  Instala Node.js con: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
     exit 1
 fi
 
-# ── git pull ──────────────────────────────────────────────────────────────────
-echo "[servidor 1/3] Actualizando codigo..."
-cd "$APP_DIR"
+echo "=== 1/3  git pull ==="
+cd "$APP_DIR" || exit 1
 git pull origin "$GIT_BRANCH"
 
-# ── npm install ───────────────────────────────────────────────────────────────
 echo ""
-echo "[servidor 2/3] Instalando dependencias..."
+echo "=== 2/3  npm install ==="
 npm install --include=dev --legacy-peer-deps
 
-# ── esbuild ───────────────────────────────────────────────────────────────────
 echo ""
-echo "[servidor 3/3] Compilando servidor..."
+echo "=== 3/3  esbuild ==="
 npx esbuild server/index.ts \
     --platform=node \
     --packages=external \
@@ -53,20 +55,12 @@ npx esbuild server/index.ts \
     --outdir=dist
 
 echo ""
-echo "  OK - Compilacion completada: dist/index.js"
-
-# ── PM2 restart ───────────────────────────────────────────────────────────────
-echo ""
-echo "[servidor] Reiniciando aplicacion..."
-if command -v pm2 &>/dev/null; then
-    pm2 restart "$PM2_APP_NAME" 2>/dev/null \
-        || pm2 restart all 2>/dev/null \
-        || echo "AVISO: pm2 no pudo reiniciar. Hazlo manualmente: pm2 restart $PM2_APP_NAME"
+echo "=== Reiniciando PM2 ==="
+if command -v pm2 > /dev/null 2>&1; then
+    pm2 restart "$PM2_APP_NAME" || pm2 restart all
 else
-    echo "AVISO: pm2 no encontrado. Reinicia la aplicacion manualmente."
+    echo "AVISO: pm2 no encontrado. Reinicia manualmente."
 fi
 
 echo ""
-echo "═══════════════════════════════════════════════════"
-echo "  SERVIDOR ACTUALIZADO CORRECTAMENTE"
-echo "═══════════════════════════════════════════════════"
+echo "=== DESPLIEGUE COMPLETADO ==="
