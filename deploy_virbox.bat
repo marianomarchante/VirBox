@@ -2,7 +2,7 @@
 REM ============================================================
 REM  deploy_virbox.bat
 REM  Despliega los cambios en el servidor VirBox
-REM  Servidor: mariano@192.168.100.27
+REM  Servidor: mm@192.168.100.190
 REM  Uso: Ejecutar desde la raiz del proyecto VirBox
 REM       deploy_virbox.bat ["mensaje de commit opcional"]
 REM ============================================================
@@ -66,9 +66,21 @@ REM ── PASO 3: Instalar dependencias ─────────────
 echo.
 echo [3/5] Instalando dependencias npm en el servidor...
 
-ssh %SERVER% "cd %APP_DIR% && npm install --production=false"
+REM Muestra la version de node/npm para facilitar depuracion
+ssh %SERVER% "node -v && npm -v"
+
+REM --include=dev reemplaza al obsoleto --production=false (npm v7+)
+REM --legacy-peer-deps evita fallos por conflictos de peer dependencies
+ssh %SERVER% "cd %APP_DIR% && npm install --include=dev --legacy-peer-deps"
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: npm install fallo en el servidor.
+    echo        Posibles causas:
+    echo          - Sin conexion a internet en el servidor
+    echo          - Permisos insuficientes en node_modules
+    echo          - Version de Node.js incompatible
+    echo        Intenta conectarte al servidor y ejecutar manualmente:
+    echo          cd %APP_DIR%
+    echo          npm install --include=dev --legacy-peer-deps
     goto :error
 )
 echo     OK - Dependencias instaladas.
