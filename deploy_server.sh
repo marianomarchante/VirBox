@@ -3,16 +3,12 @@
 
 APP_DIR="/home/mm/VirBox"
 GIT_BRANCH="main"
-PM2_APP_NAME="virbox"
 
-# Rutas de node y pm2 (instalado globalmente via npm)
-NPM_GLOBAL=$(npm -g prefix 2>/dev/null)/bin
-export PATH="/usr/bin:/usr/local/bin:$NPM_GLOBAL:$HOME/.npm-global/bin:$HOME/bin:$PATH"
+export PATH="/usr/bin:/usr/local/bin:$PATH"
 
 echo "=== Entorno ==="
 echo "  node: $(node -v)"
-echo "  npm:  $(npm -v)"
-echo "  dir:  $APP_DIR"
+echo "  docker: $(docker -v)"
 echo ""
 
 echo "=== 1/3  git pull ==="
@@ -20,25 +16,16 @@ cd "$APP_DIR"
 git pull origin "$GIT_BRANCH"
 
 echo ""
-echo "=== 2/3  npm install ==="
-npm install --include=dev --legacy-peer-deps
+echo "=== 2/3  Reconstruyendo imagen Docker ==="
+docker compose build app
 
 echo ""
-echo "=== 3/3  esbuild ==="
-npx esbuild server/index.ts \
-    --platform=node \
-    --packages=external \
-    --bundle \
-    --format=esm \
-    --outdir=dist
+echo "=== 3/3  Reiniciando contenedor ==="
+docker compose up -d app
 
 echo ""
-echo "=== Reiniciando PM2 ==="
-if command -v pm2 > /dev/null 2>&1; then
-    pm2 restart "$PM2_APP_NAME" || pm2 restart all
-else
-    echo "AVISO: pm2 no encontrado. Reinicia manualmente: pm2 restart $PM2_APP_NAME"
-fi
+echo "=== Contenedores activos ==="
+docker compose ps
 
 echo ""
 echo "=== DESPLIEGUE COMPLETADO ==="
