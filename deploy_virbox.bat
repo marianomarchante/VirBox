@@ -69,7 +69,7 @@ echo       OK
 REM ── 4. PM2 ───────────────────────────────────────────
 echo.
 echo [4/4] Estado PM2...
-ssh %SERVER% "pm2 list" >> %LOGFILE% 2>&1
+ssh %SERVER% "export PATH=/usr/bin:/usr/local/bin:$(npm -g prefix 2>/dev/null)/bin:$HOME/.npm-global/bin:$PATH && pm2 list" >> %LOGFILE% 2>&1
 
 echo.
 echo ===================================================

@@ -5,8 +5,9 @@ APP_DIR="/home/mm/VirBox"
 GIT_BRANCH="main"
 PM2_APP_NAME="virbox"
 
-# Ruta exacta de node en este servidor (Ubuntu, /usr/bin/node)
-export PATH="/usr/bin:/usr/local/bin:$PATH"
+# Rutas de node y pm2 (instalado globalmente via npm)
+NPM_GLOBAL=$(npm -g prefix 2>/dev/null)/bin
+export PATH="/usr/bin:/usr/local/bin:$NPM_GLOBAL:$HOME/.npm-global/bin:$HOME/bin:$PATH"
 
 echo "=== Entorno ==="
 echo "  node: $(node -v)"
