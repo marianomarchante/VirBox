@@ -1,9 +1,10 @@
 @echo off
 REM ============================================================
 REM  deploy_virbox.bat
-REM  Despliega los cambios del modulo de Socios en el servidor
+REM  Despliega los cambios en el servidor VirBox
 REM  Servidor: mariano@192.168.100.27
 REM  Uso: Ejecutar desde la raiz del proyecto VirBox
+REM       deploy_virbox.bat ["mensaje de commit opcional"]
 REM ============================================================
 
 setlocal enabledelayedexpansion
@@ -11,18 +12,24 @@ setlocal enabledelayedexpansion
 set SERVER=mariano@192.168.100.27
 set APP_DIR=/home/mariano/VirBox
 set GIT_BRANCH=main
-
-REM NOTA: Si el proceso pm2 tiene otro nombre, cambia este valor:
 set PM2_APP_NAME=virbox
+
+REM Mensaje de commit: usar el argumento pasado o uno generico
+if "%~1"=="" (
+    set COMMIT_MSG=chore: deploy update
+) else (
+    set COMMIT_MSG=%~1
+)
 
 echo.
 echo ============================================================
-echo   DESPLIEGUE VIRBOX - Modulo de Socios
+echo   DESPLIEGUE VIRBOX
+echo   Rama: %GIT_BRANCH%   Servidor: %SERVER%
 echo ============================================================
 echo.
 
 REM ── PASO 1: Commit y push de los cambios locales ─────────────
-echo [1/5] Preparando cambios locales...
+echo [1/5] Preparando y subiendo cambios locales...
 echo.
 
 git add -A
@@ -31,21 +38,11 @@ if %ERRORLEVEL% NEQ 0 (
     goto :error
 )
 
-git commit -m "feat: Modulo de Socios para empresas tipo Asociacion
-
-- Nuevo campo companyType en tabla companies (6 tipos)
-- Nuevas tablas: member_types, seasons, members, member_fee_payments
-- 17 nuevos endpoints REST para el modulo de Socios
-- Paginas: MemberTypes, Seasons, Members, MemberFeePayments
-- Sidebar condicional (solo visible para Asociaciones)
-- Selector de tipo de empresa en formulario de Companies"
-
+git commit -m "%COMMIT_MSG%"
 if %ERRORLEVEL% NEQ 0 (
     echo AVISO: No habia nada nuevo que commitear, continuando...
 )
 
-echo.
-echo [2/5] Subiendo cambios a GitHub...
 git push origin %GIT_BRANCH%
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: git push fallo. Comprueba la conexion y credenciales de GitHub.
@@ -53,9 +50,9 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo     OK - Cambios subidos a GitHub.
 
-REM ── PASO 2: Conectar al servidor y ejecutar actualizacion ─────
+REM ── PASO 2: Actualizar codigo en el servidor ─────────────────
 echo.
-echo [3/5] Conectando al servidor y actualizando codigo...
+echo [2/5] Actualizando codigo en el servidor...
 
 ssh %SERVER% "cd %APP_DIR% && git pull origin %GIT_BRANCH%"
 if %ERRORLEVEL% NEQ 0 (
@@ -65,9 +62,9 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo     OK - Codigo actualizado en el servidor.
 
-REM ── PASO 3: Instalar dependencias (por si hay nuevas) ─────────
+REM ── PASO 3: Instalar dependencias ────────────────────────────
 echo.
-echo [4/5] Instalando dependencias npm en el servidor...
+echo [3/5] Instalando dependencias npm en el servidor...
 
 ssh %SERVER% "cd %APP_DIR% && npm install --production=false"
 if %ERRORLEVEL% NEQ 0 (
@@ -76,42 +73,28 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo     OK - Dependencias instaladas.
 
-REM ── PASO 4: Migrar la base de datos ──────────────────────────
+REM ── PASO 4: Compilar el servidor (esbuild) ───────────────────
 echo.
-echo [5/5] Aplicando migracion de base de datos (db:push)...
-echo       Esto creara las nuevas tablas:
-echo         - member_types
-echo         - seasons
-echo         - members
-echo         - member_fee_payments
-echo       Y el campo company_type en la tabla companies.
-echo.
+echo [4/5] Compilando el servidor...
 
-ssh %SERVER% "cd %APP_DIR% && npm run db:push"
+ssh %SERVER% "cd %APP_DIR% && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist"
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: La migracion de base de datos fallo.
-    echo        Comprueba que DATABASE_URL esta configurada en el servidor.
+    echo ERROR: La compilacion del servidor fallo.
+    echo        Revisa los errores de TypeScript/esbuild en el servidor.
     goto :error
 )
-echo     OK - Base de datos migrada correctamente.
+echo     OK - Servidor compilado correctamente.
 
 REM ── PASO 5: Reiniciar la aplicacion ──────────────────────────
 echo.
-echo [6/6] Reiniciando la aplicacion...
+echo [5/5] Reiniciando la aplicacion con PM2...
 
-REM Intenta con pm2 primero, luego con systemctl
-ssh %SERVER% "pm2 restart virbox 2>/dev/null || pm2 restart all 2>/dev/null || sudo systemctl restart virbox 2>/dev/null || echo 'AVISO: No se pudo reiniciar automaticamente. Reinicia el servidor manualmente.'"
+ssh %SERVER% "pm2 restart %PM2_APP_NAME% 2>/dev/null || pm2 restart all 2>/dev/null || sudo systemctl restart virbox 2>/dev/null || echo 'AVISO: No se pudo reiniciar automaticamente. Reinicia el servidor manualmente.'"
 
 echo.
 echo ============================================================
 echo   DESPLIEGUE COMPLETADO CON EXITO
 echo ============================================================
-echo.
-echo   Cambios aplicados:
-echo   - Nuevo campo tipo de empresa en Companies
-echo   - Menu Socios visible para empresas tipo Asociacion
-echo   - Tablas de BD creadas: member_types, seasons,
-echo     members, member_fee_payments
 echo.
 echo   URL del servidor: http://192.168.100.27:5001
 echo.

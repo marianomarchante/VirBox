@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, decimal, integer, timestamp, boolean, index, jsonb, unique, date } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, decimal, integer, timestamp, boolean, index, jsonb, unique, date, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -401,6 +401,7 @@ export const members = pgTable("members", {
   birthDate: date("birth_date"), // stored as date string YYYY-MM-DD
   joinDate: date("join_date").notNull(),
   memberTypeId: varchar("member_type_id").notNull(),
+  feeAmount: numeric("fee_amount", { precision: 10, scale: 2 }).notNull().default('0.00'),
   isActive: boolean("is_active").default(true).notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

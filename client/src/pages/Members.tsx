@@ -108,6 +108,7 @@ export default function Members() {
       birthDate: null,
       joinDate: new Date().toISOString().split("T")[0],
       memberTypeId: "",
+      feeAmount: "0.00",
       isActive: true,
       notes: "",
     },
@@ -129,6 +130,7 @@ export default function Members() {
       birthDate: null,
       joinDate: new Date().toISOString().split("T")[0],
       memberTypeId: memberTypes[0]?.id ?? "",
+      feeAmount: memberTypes[0]?.feeAmount ?? "0.00",
       isActive: true,
       notes: "",
     });
@@ -146,6 +148,7 @@ export default function Members() {
       birthDate: m.birthDate ?? null,
       joinDate: m.joinDate,
       memberTypeId: m.memberTypeId,
+      feeAmount: m.feeAmount ?? "0.00",
       isActive: m.isActive,
       notes: m.notes ?? "",
     });
@@ -250,6 +253,7 @@ export default function Members() {
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Nº</th>
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Socio</th>
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Tipo</th>
+                      <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Cuota</th>
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase hidden md:table-cell">Contacto</th>
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase hidden lg:table-cell">F. Inscripción</th>
                       <th className="text-center py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Estado</th>
@@ -277,6 +281,9 @@ export default function Members() {
                         </td>
                         <td className="py-3 px-4">
                           <Badge variant="outline">{getMemberTypeName(m.memberTypeId)}</Badge>
+                        </td>
+                        <td className="py-3 px-4 text-right font-medium">
+                          {Number(m.feeAmount ?? 0).toFixed(2)} €
                         </td>
                         <td className="py-3 px-4 hidden md:table-cell">
                           <div className="text-sm text-muted-foreground space-y-0.5">
@@ -336,7 +343,16 @@ export default function Members() {
                   name="memberTypeId"
                   control={form.control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        const selectedType = memberTypes.find(t => t.id === val);
+                        if (selectedType) {
+                          form.setValue("feeAmount", selectedType.feeAmount ?? "0.00", { shouldValidate: true });
+                        }
+                      }}
+                    >
                       <SelectTrigger id="m-type">
                         <SelectValue placeholder="Seleccionar tipo..." />
                       </SelectTrigger>
@@ -350,6 +366,13 @@ export default function Members() {
                 />
                 {form.formState.errors.memberTypeId && (
                   <p className="text-xs text-destructive">{form.formState.errors.memberTypeId.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="m-fee">Cuota del socio (€) *</Label>
+                <Input id="m-fee" type="number" step="0.01" {...form.register("feeAmount")} />
+                {form.formState.errors.feeAmount && (
+                  <p className="text-xs text-destructive">{form.formState.errors.feeAmount.message}</p>
                 )}
               </div>
             </div>

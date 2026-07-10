@@ -1530,9 +1530,8 @@ export class PostgresStorage implements IStorage {
     for (const member of activeMembers) {
       if (existingMemberIds.has(member.id)) continue;
 
-      // Get the fee amount from the member type
-      const memberType = await this.getMemberType(member.memberTypeId, companyId);
-      const amount = memberType?.feeAmount ?? '0.00';
+      // Get the fee amount directly from the member's customized fee amount
+      const amount = member.feeAmount ?? '0.00';
 
       const payment = await this.createMemberFeePayment({
         companyId,
