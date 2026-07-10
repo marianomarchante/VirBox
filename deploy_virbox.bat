@@ -9,8 +9,8 @@ REM ============================================================
 
 setlocal enabledelayedexpansion
 
-set SERVER=mariano@192.168.100.27
-set APP_DIR=/home/mariano/VirBox
+set SERVER=mm@192.168.100.190
+set APP_DIR=/home/mm/VirBox
 set GIT_BRANCH=main
 set PM2_APP_NAME=virbox
 
@@ -96,7 +96,7 @@ echo ============================================================
 echo   DESPLIEGUE COMPLETADO CON EXITO
 echo ============================================================
 echo.
-echo   URL del servidor: http://192.168.100.27:5001
+echo   URL del servidor: http://192.168.100.190:5001
 echo.
 goto :end
 
