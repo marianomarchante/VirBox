@@ -1174,6 +1174,13 @@ export class PostgresStorage implements IStorage {
       await db.delete(transactions).where(eq(transactions.id, invoice.transactionId));
     }
     
+    // Delete associated delivery notes and their lines
+    const associatedNotes = await db.select({ id: deliveryNotes.id }).from(deliveryNotes).where(eq(deliveryNotes.invoiceId, id));
+    for (const note of associatedNotes) {
+      await db.delete(deliveryNoteLines).where(eq(deliveryNoteLines.deliveryNoteId, note.id));
+      await db.delete(deliveryNotes).where(eq(deliveryNotes.id, note.id));
+    }
+    
     await db.delete(invoiceLines).where(eq(invoiceLines.invoiceId, id));
     await db.delete(invoiceVatBreakdown).where(eq(invoiceVatBreakdown.invoiceId, id));
     const result = await db.delete(invoices)

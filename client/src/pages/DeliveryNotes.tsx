@@ -649,7 +649,7 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
                                   variant="ghost"
                                   className="text-destructive hover:text-destructive"
                                   onClick={() => handleDelete(note.id)}
-                                  disabled={!canWrite || note.status === 'invoiced'}
+                                  disabled={!canWrite}
                                   data-testid={`delete-delivery-note-${note.id}`}
                                 >
                                   <Trash2 className="w-4 h-4" />
