@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2, AlertTriangle, Building2 } from "lucide-react";
+import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2, AlertTriangle, Building2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +16,12 @@ import { useCompany } from "@/contexts/CompanyContext";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertClientSchema, type InsertClient } from "@shared/schema";
 import { DataTable } from "@/components/common/DataTable";
+import { ImportClientsModal } from "@/components/crm/ImportClientsModal";
 
 export default function Clients() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
@@ -165,14 +167,24 @@ export default function Clients() {
                   {clients?.length || 0} clientes registrados
                 </p>
               </div>
-              <Button 
-                onClick={() => setIsModalOpen(true)}
-                data-testid="button-add-client"
-                disabled={!canWrite}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Cliente
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsImportModalOpen(true)}
+                  disabled={!canWrite}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importar Excel/CSV
+                </Button>
+                <Button 
+                  onClick={() => setIsModalOpen(true)}
+                  data-testid="button-add-client"
+                  disabled={!canWrite}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Cliente
+                </Button>
+              </div>
             </div>
             <DataTable<any>
               data={clients}
@@ -447,6 +459,11 @@ export default function Clients() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <ImportClientsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
     </div>
   );
 }

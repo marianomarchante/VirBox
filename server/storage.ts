@@ -100,6 +100,7 @@ export interface IStorage {
   getClients(companyId: string): Promise<Client[]>;
   getClient(id: string, companyId: string): Promise<Client | undefined>;
   createClient(client: InsertClient): Promise<Client>;
+  bulkCreateClients(clients: InsertClient[]): Promise<Client[]>;
   updateClient(id: string, companyId: string, client: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: string, companyId: string): Promise<boolean>;
 
@@ -107,6 +108,7 @@ export interface IStorage {
   getSuppliers(companyId: string): Promise<Supplier[]>;
   getSupplier(id: string, companyId: string): Promise<Supplier | undefined>;
   createSupplier(supplier: InsertSupplier): Promise<Supplier>;
+  bulkCreateSuppliers(suppliers: InsertSupplier[]): Promise<Supplier[]>;
   updateSupplier(id: string, companyId: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
   deleteSupplier(id: string, companyId: string): Promise<boolean>;
 

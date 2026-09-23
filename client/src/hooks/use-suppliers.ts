@@ -74,6 +74,30 @@ export function useSuppliers() {
     },
   });
 
+  const bulkCreateSuppliers = useMutation({
+    mutationFn: async (suppliersToInsert: InsertSupplier[]) => {
+      const response = await apiRequest('POST', '/api/suppliers/bulk', suppliersToInsert);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/suppliers', { companyId: currentCompanyId }],
+        exact: false
+      });
+      toast({
+        title: "Importación completada",
+        description: `Se han importado ${data?.length || 0} proveedores correctamente.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo importar el archivo.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteSupplier = useMutation({
     mutationFn: async (id: string) => {
       const params = new URLSearchParams();
@@ -104,6 +128,7 @@ export function useSuppliers() {
     isLoading,
     error,
     createSupplier,
+    bulkCreateSuppliers,
     updateSupplier,
     deleteSupplier,
   };

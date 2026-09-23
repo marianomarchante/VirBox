@@ -51,6 +51,24 @@ export function registerCrmRoutes(app: Express) {
     }
   });
 
+  app.post('/api/clients/bulk', isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) return res.status(403).json({ message: 'Forbidden: Admin permission required' });
+      
+      const bulkSchema = z.array(insertClientSchema);
+      const validatedData = bulkSchema.parse(req.body);
+      
+      const items = validatedData.map(item => ({ ...item, companyId }));
+      const createdClients = await storage.bulkCreateClients(items);
+      
+      res.status(201).json(createdClients);
+    } catch (error) {
+      if (error instanceof z.ZodError) res.status(400).json({ message: 'Invalid clients data', errors: error.errors });
+      else { console.error('Error in bulk creation:', error); res.status(500).json({ message: 'Internal server error' }); }
+    }
+  });
+
   app.put('/api/clients/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
@@ -116,6 +134,24 @@ export function registerCrmRoutes(app: Express) {
     } catch (error) {
       if (error instanceof z.ZodError) res.status(400).json({ message: 'Invalid supplier data', errors: error.errors });
       else res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/suppliers/bulk', isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) return res.status(403).json({ message: 'Forbidden: Admin permission required' });
+      
+      const bulkSchema = z.array(insertSupplierSchema);
+      const validatedData = bulkSchema.parse(req.body);
+      
+      const items = validatedData.map(item => ({ ...item, companyId }));
+      const createdSuppliers = await storage.bulkCreateSuppliers(items);
+      
+      res.status(201).json(createdSuppliers);
+    } catch (error) {
+      if (error instanceof z.ZodError) res.status(400).json({ message: 'Invalid suppliers data', errors: error.errors });
+      else { console.error('Error in bulk creation:', error); res.status(500).json({ message: 'Internal server error' }); }
     }
   });
 

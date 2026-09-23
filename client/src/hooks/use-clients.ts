@@ -74,6 +74,30 @@ export function useClients() {
     },
   });
 
+  const bulkCreateClients = useMutation({
+    mutationFn: async (clientsToInsert: InsertClient[]) => {
+      const response = await apiRequest('POST', '/api/clients/bulk', clientsToInsert);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/clients', { companyId: currentCompanyId }],
+        exact: false
+      });
+      toast({
+        title: "Importación completada",
+        description: `Se han importado ${data?.length || 0} clientes correctamente.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo importar el archivo.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteClient = useMutation({
     mutationFn: async (id: string) => {
       const params = new URLSearchParams();
@@ -104,6 +128,7 @@ export function useClients() {
     isLoading,
     error,
     createClient,
+    bulkCreateClients,
     updateClient,
     deleteClient,
   };

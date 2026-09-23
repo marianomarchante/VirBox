@@ -451,6 +451,30 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async bulkCreateClients(items: InsertClient[]): Promise<Client[]> {
+    if (items.length === 0) return [];
+    const companyId = items[0].companyId || await this.getDefaultCompanyId();
+    
+    const existing = await db.select({ idFiscal: clients.idFiscal }).from(clients)
+      .where(and(eq(clients.companyId, companyId), isNotNull(clients.idFiscal)));
+    const existingIds = new Set(existing.map(c => c.idFiscal));
+    
+    const toInsert = items.filter(item => {
+      if (!item.idFiscal) return true; // allow clients without idFiscal
+      if (existingIds.has(item.idFiscal)) return false; // skip duplicates
+      existingIds.add(item.idFiscal); // mark as seen for subsequent items in the same batch
+      return true;
+    });
+
+    if (toInsert.length === 0) return [];
+    
+    const result = await db.insert(clients).values(
+      toInsert.map(item => ({ ...item, companyId }))
+    ).returning();
+    
+    return result;
+  }
+
   async updateClient(id: string, companyId: string, update: Partial<InsertClient>): Promise<Client | undefined> {
     const result = await db.update(clients).set(update)
       .where(and(eq(clients.id, id), eq(clients.companyId, companyId)))
@@ -484,6 +508,30 @@ export class PostgresStorage implements IStorage {
       companyId,
     }).returning();
     return result[0];
+  }
+
+  async bulkCreateSuppliers(items: InsertSupplier[]): Promise<Supplier[]> {
+    if (items.length === 0) return [];
+    const companyId = items[0].companyId || await this.getDefaultCompanyId();
+    
+    const existing = await db.select({ idFiscal: suppliers.idFiscal }).from(suppliers)
+      .where(and(eq(suppliers.companyId, companyId), isNotNull(suppliers.idFiscal)));
+    const existingIds = new Set(existing.map(s => s.idFiscal));
+    
+    const toInsert = items.filter(item => {
+      if (!item.idFiscal) return true; // allow suppliers without idFiscal
+      if (existingIds.has(item.idFiscal)) return false; // skip duplicates
+      existingIds.add(item.idFiscal); // mark as seen for subsequent items in the same batch
+      return true;
+    });
+
+    if (toInsert.length === 0) return [];
+    
+    const result = await db.insert(suppliers).values(
+      toInsert.map(item => ({ ...item, companyId }))
+    ).returning();
+    
+    return result;
   }
 
   async updateSupplier(id: string, companyId: string, update: Partial<InsertSupplier>): Promise<Supplier | undefined> {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Mail, Phone, MapPin, Eye, Edit, Trash2, AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,11 +19,13 @@ import NoCompanySelected from "@/components/shared/NoCompanySelected";
 import { insertSupplierSchema, type InsertSupplier } from "@shared/schema";
 import { DataTable } from "@/components/common/DataTable";
 import { EntityForm } from "@/components/common/EntityForm";
+import { ImportSuppliersModal } from "@/components/crm/ImportSuppliersModal";
 
 export default function Suppliers() {
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
@@ -174,14 +176,24 @@ export default function Suppliers() {
                   {suppliers?.length || 0} proveedores registrados
                 </p>
               </div>
-              <Button 
-                onClick={() => setIsModalOpen(true)}
-                data-testid="button-add-supplier"
-                disabled={!canWrite}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Proveedor
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsImportModalOpen(true)}
+                  disabled={!canWrite}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importar Excel/CSV
+                </Button>
+                <Button 
+                  onClick={() => setIsModalOpen(true)}
+                  data-testid="button-add-supplier"
+                  disabled={!canWrite}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Proveedor
+                </Button>
+              </div>
             </div>
                      <DataTable<any>
               data={suppliers}
@@ -449,6 +461,11 @@ export default function Suppliers() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <ImportSuppliersModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
     </div>
   );
 }
