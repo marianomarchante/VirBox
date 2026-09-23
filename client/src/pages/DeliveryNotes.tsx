@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, ClipboardList, FileText, Eye, Printer, AlertTriangle } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -49,6 +49,22 @@ export default function DeliveryNotes() {
   const [lines, setLines] = useState<DeliveryNoteLine[]>([]);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [validationModalOpen, setValidationModalOpen] = useState(false);
+  const [showDeleteButtons, setShowDeleteButtons] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
+  const [deleteConfirmCif, setDeleteConfirmCif] = useState('');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === '-') {
+        e.preventDefault();
+        setShowDeleteButtons(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const { deliveryNotes, createDeliveryNote, updateDeliveryNote, deleteDeliveryNote, isLoading } = useDeliveryNotes();
   const { articles } = useArticles();
@@ -193,10 +209,37 @@ export default function DeliveryNotes() {
     setLines(newLines);
   };
 
-  const handleDelete = (noteId: string) => {
-    if (window.confirm('¿Está seguro de que desea eliminar este albarán?')) {
-      deleteDeliveryNote.mutate(noteId);
+  const handleDelete = (note: DeliveryNote) => {
+    if (note.status === 'invoiced') {
+      setDeleteNoteId(note.id);
+      setDeleteConfirmCif('');
+      setDeleteConfirmOpen(true);
+    } else {
+      if (window.confirm('¿Está seguro de que desea eliminar este albarán?')) {
+        deleteDeliveryNote.mutate({ id: note.id });
+      }
     }
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteNoteId || !deleteConfirmCif) return;
+    deleteDeliveryNote.mutate(
+      { id: deleteNoteId, confirmCif: deleteConfirmCif },
+      {
+        onSuccess: () => {
+          setDeleteConfirmOpen(false);
+          setDeleteNoteId(null);
+          setDeleteConfirmCif('');
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "El código de eliminación no es correcto o no se pudo eliminar el albarán.",
+            variant: "destructive",
+          });
+        }
+      }
+    );
   };
 
   const handleGeneratePDF = async (note: DeliveryNote) => {
@@ -644,16 +687,19 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
                                 >
                                   <Printer className="w-4 h-4" />
                                 </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => handleDelete(note.id)}
-                                  disabled={!canWrite}
-                                  data-testid={`delete-delivery-note-${note.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                                {(note.status !== 'invoiced' || showDeleteButtons) && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => handleDelete(note as DeliveryNote)}
+                                    disabled={!canWrite}
+                                    title="Eliminar albarán"
+                                    data-testid={`delete-delivery-note-${note.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -894,6 +940,48 @@ Información adicional: En cumplimiento del artículo 10 de la Ley 34/2002 (LSSI
             <div className="flex justify-end">
               <Button onClick={() => setValidationModalOpen(false)}>
                 Entendido
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Confirmar Eliminación de Albarán Facturado</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Esta acción eliminará el albarán permanentemente.
+            </p>
+            <p className="text-sm font-medium">
+              Código de eliminación:
+            </p>
+            <Input
+              value={deleteConfirmCif}
+              onChange={(e) => setDeleteConfirmCif(e.target.value)}
+              placeholder="Introduzca el código"
+              data-testid="input-delete-confirm-code"
+            />
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setDeleteNoteId(null);
+                  setDeleteConfirmCif('');
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={!deleteConfirmCif || deleteDeliveryNote.isPending}
+                data-testid="button-confirm-delete-delivery-note"
+              >
+                {deleteDeliveryNote.isPending ? 'Eliminando...' : 'Eliminar Albarán'}
               </Button>
             </div>
           </div>

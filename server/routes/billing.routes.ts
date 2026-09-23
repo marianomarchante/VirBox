@@ -174,8 +174,22 @@ export function registerBillingRoutes(app: Express) {
   app.delete('/api/delivery-notes/:id', isAuthenticated, async (req: any, res) => {
     const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
     if (!hasPermission) return res.status(403).json({ message: 'Forbidden: Admin permission required' });
+    
+    const note = await storage.getDeliveryNote(req.params.id, companyId);
+    if (!note) return res.status(404).json({ message: 'Delivery note not found' });
+    
+    if (note.status === 'invoiced') {
+      const confirmCif = req.query.confirmCif as string;
+      if (!confirmCif) return res.status(400).json({ message: 'Se requiere confirmar el CIF de la empresa para albaranes facturados' });
+      
+      const company = await storage.getCompany(companyId);
+      if (!company || company.taxId?.toUpperCase() !== confirmCif.toUpperCase()) {
+        return res.status(400).json({ message: 'El código de eliminación no es correcto' });
+      }
+    }
+
     const success = await storage.deleteDeliveryNote(req.params.id, companyId);
-    if (!success) return res.status(404).json({ message: 'Delivery note not found' });
+    if (!success) return res.status(404).json({ message: 'Error al eliminar el albarán' });
     res.status(204).send();
   });
 

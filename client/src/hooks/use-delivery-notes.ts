@@ -75,9 +75,10 @@ export function useDeliveryNotes() {
   });
 
   const deleteDeliveryNote = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, confirmCif }: { id: string; confirmCif?: string }) => {
       const params = new URLSearchParams();
       if (currentCompanyId) params.append('companyId', currentCompanyId);
+      if (confirmCif) params.append('confirmCif', confirmCif);
       await apiRequest('DELETE', `/api/delivery-notes/${id}?${params.toString()}`);
     },
     onSuccess: () => {
