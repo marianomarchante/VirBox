@@ -74,6 +74,30 @@ export function useArticles() {
     },
   });
 
+  const bulkCreateArticles = useMutation({
+    mutationFn: async (articlesToInsert: InsertArticle[]) => {
+      const response = await apiRequest('POST', '/api/articles/bulk', articlesToInsert);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/articles', { companyId: currentCompanyId }],
+        exact: false
+      });
+      toast({
+        title: "Importación completada",
+        description: `Se han importado ${data?.length || 0} artículos correctamente.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo importar el archivo.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteArticle = useMutation({
     mutationFn: async (id: string) => {
       const params = new URLSearchParams();
@@ -104,6 +128,7 @@ export function useArticles() {
     isLoading,
     error,
     createArticle,
+    bulkCreateArticles,
     updateArticle,
     deleteArticle,
   };

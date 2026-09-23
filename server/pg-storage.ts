@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, sql, ilike, or, inArray, desc, max } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, ilike, or, inArray, desc, max, isNotNull } from 'drizzle-orm';
 import { db } from './db';
 import {
   users,
@@ -812,6 +812,31 @@ export class PostgresStorage implements IStorage {
       companyId,
     }).returning();
     return result[0];
+  }
+
+  async bulkCreateArticles(items: InsertArticle[]): Promise<Article[]> {
+    if (items.length === 0) return [];
+    const companyId = items[0].companyId || await this.getDefaultCompanyId();
+    
+    // Get existing codes to ignore duplicates
+    const existing = await db.select({ code: articles.code }).from(articles)
+      .where(and(eq(articles.companyId, companyId), isNotNull(articles.code)));
+    const existingCodes = new Set(existing.map(a => a.code));
+    
+    const toInsert = items.filter(item => {
+      if (!item.code) return true; // allow articles without code
+      if (existingCodes.has(item.code)) return false; // skip duplicates
+      existingCodes.add(item.code); // mark as seen for subsequent items in the same batch
+      return true;
+    });
+
+    if (toInsert.length === 0) return [];
+    
+    const result = await db.insert(articles).values(
+      toInsert.map(item => ({ ...item, companyId }))
+    ).returning();
+    
+    return result;
   }
 
   async updateArticle(id: string, companyId: string, update: Partial<InsertArticle>): Promise<Article | undefined> {

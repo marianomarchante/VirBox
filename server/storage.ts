@@ -167,6 +167,7 @@ export interface IStorage {
   getArticles(companyId: string): Promise<Article[]>;
   getArticle(id: string, companyId: string): Promise<Article | undefined>;
   createArticle(article: InsertArticle): Promise<Article>;
+  bulkCreateArticles(articles: InsertArticle[]): Promise<Article[]>;
   updateArticle(id: string, companyId: string, article: Partial<InsertArticle>): Promise<Article | undefined>;
   deleteArticle(id: string, companyId: string): Promise<boolean>;
 

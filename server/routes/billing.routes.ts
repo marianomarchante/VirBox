@@ -46,6 +46,24 @@ export function registerBillingRoutes(app: Express) {
     }
   });
 
+  app.post('/api/articles/bulk', isAuthenticated, async (req: any, res) => {
+    try {
+      const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');
+      if (!hasPermission) return res.status(403).json({ message: 'Forbidden: Admin permission required' });
+      
+      const bulkSchema = z.array(insertArticleSchema);
+      const validatedData = bulkSchema.parse(req.body);
+      
+      const items = validatedData.map(item => ({ ...item, companyId }));
+      const createdArticles = await storage.bulkCreateArticles(items);
+      
+      res.status(201).json(createdArticles);
+    } catch (error) {
+      if (error instanceof z.ZodError) res.status(400).json({ message: 'Invalid articles data', errors: error.errors });
+      else { console.error('Error in bulk creation:', error); res.status(500).json({ message: 'Internal server error' }); }
+    }
+  });
+
   app.put('/api/articles/:id', isAuthenticated, async (req: any, res) => {
     try {
       const { companyId, hasPermission } = await getCompanyIdWithPermission(req, 'administracion');

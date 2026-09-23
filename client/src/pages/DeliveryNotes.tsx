@@ -291,53 +291,116 @@ export default function DeliveryNotes() {
       const tableData = (noteData.lines || []).map((line: any) => {
         const qty = parseFloat(line.quantity) || 0;
         const price = parseFloat(line.unitPrice) || 0;
+        const vatRate = parseFloat(line.vatRate) || 0;
         const subtotal = qty * price;
+        const total = subtotal * (1 + vatRate / 100);
         return [
           line.description || '',
           qty.toFixed(2),
           price.toFixed(2) + ' €',
-          subtotal.toFixed(2) + ' €'
+          `${vatRate}%`,
+          subtotal.toFixed(2) + ' €',
+          total.toFixed(2) + ' €'
         ];
       });
       
       autoTable(doc, {
         startY: 85,
-        head: [['Descripción', 'Cantidad', 'Precio Unitario', 'Subtotal']],
+        head: [['Descripción', 'Cantidad', 'Precio Ud.', 'IVA', 'Subtotal', 'Total']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [66, 139, 202], fontSize: 9 },
         styles: { fontSize: 9 },
         columnStyles: {
-          0: { cellWidth: 90 },
-          1: { cellWidth: 25, halign: 'right' as const },
-          2: { cellWidth: 35, halign: 'right' as const },
-          3: { cellWidth: 30, halign: 'right' as const },
+          0: { cellWidth: 70 },
+          1: { cellWidth: 20, halign: 'right' as const },
+          2: { cellWidth: 25, halign: 'right' as const },
+          3: { cellWidth: 15, halign: 'right' as const },
+          4: { cellWidth: 25, halign: 'right' as const },
+          5: { cellWidth: 25, halign: 'right' as const },
         },
       });
       
-      // Total
-      const totalAmount = (noteData.lines || []).reduce((sum: number, line: any) => {
+      // Total and VAT Breakdown
+      let totalBase = 0;
+      let totalVat = 0;
+      let totalAmount = 0;
+      
+      const vatBreakdown: Record<string, { base: number, vat: number }> = {};
+      
+      (noteData.lines || []).forEach((line: any) => {
         const qty = parseFloat(line.quantity) || 0;
         const price = parseFloat(line.unitPrice) || 0;
-        return sum + (qty * price);
-      }, 0);
+        const vatRate = parseFloat(line.vatRate) || 0;
+        const subtotal = qty * price;
+        const vat = subtotal * (vatRate / 100);
+        
+        const rateKey = vatRate.toFixed(2);
+        if (!vatBreakdown[rateKey]) {
+          vatBreakdown[rateKey] = { base: 0, vat: 0 };
+        }
+        vatBreakdown[rateKey].base += subtotal;
+        vatBreakdown[rateKey].vat += vat;
+        
+        totalBase += subtotal;
+        totalVat += vat;
+        totalAmount += subtotal + vat;
+      });
       
       const afterLinesY = (doc as any).lastAutoTable.finalY + 10;
+      
+      // VAT Breakdown table on the left
+      const breakdownData = Object.entries(vatBreakdown).map(([rate, amounts]) => [
+        parseFloat(rate).toString() + '%',
+        amounts.base.toFixed(2) + ' €',
+        amounts.vat.toFixed(2) + ' €'
+      ]);
+
+      if (breakdownData.length > 0) {
+        autoTable(doc, {
+          startY: afterLinesY - 2,
+          head: [['Tipo IVA', 'Base Imponible', 'Cuota IVA']],
+          body: breakdownData,
+          theme: 'plain',
+          headStyles: { fontSize: 8, textColor: [80, 80, 80], fontStyle: 'bold' },
+          styles: { fontSize: 8, cellPadding: 1 },
+          margin: { left: 15 },
+          tableWidth: 80,
+          columnStyles: {
+            0: { halign: 'center' as const, cellWidth: 20 },
+            1: { halign: 'right' as const, cellWidth: 30 },
+            2: { halign: 'right' as const, cellWidth: 30 },
+          }
+        });
+      }
+      
+      // Overall totals on the right
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Base Imponible:', 130, afterLinesY + 5);
+      doc.text(`${totalBase.toFixed(2)} €`, pageWidth - 15, afterLinesY + 5, { align: 'right' });
+      
+      doc.text('Total IVA:', 130, afterLinesY + 11);
+      doc.text(`${totalVat.toFixed(2)} €`, pageWidth - 15, afterLinesY + 11, { align: 'right' });
+      
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
-      doc.text('TOTAL:', 130, afterLinesY);
-      doc.text(`${totalAmount.toFixed(2)} €`, pageWidth - 15, afterLinesY, { align: 'right' });
+      doc.text('TOTAL CON IVA:', 130, afterLinesY + 19);
+      doc.text(`${totalAmount.toFixed(2)} €`, pageWidth - 15, afterLinesY + 19, { align: 'right' });
+      
+      // Determine Y coordinate for Notes
+      const afterTotalsY = Math.max((doc as any).lastAutoTable?.finalY || afterLinesY, afterLinesY + 19);
       
       // Notes
-      let notesEndY = afterLinesY + 10;
+      let notesEndY = afterTotalsY + 10;
       if (note.notes) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text('OBSERVACIONES', 15, afterLinesY + 15);
+        doc.text('OBSERVACIONES', 15, afterTotalsY + 15);
         doc.setFont('helvetica', 'normal');
         const notesText = doc.splitTextToSize(note.notes, pageWidth - 30);
-        doc.text(notesText, 15, afterLinesY + 21);
-        notesEndY = afterLinesY + 21 + (notesText.length * 5);
+        doc.text(notesText, 15, afterTotalsY + 21);
+        notesEndY = afterTotalsY + 21 + (notesText.length * 5);
       }
       
       // Signature area - position after notes to avoid overlap

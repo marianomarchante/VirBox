@@ -14,8 +14,10 @@ import { useArticles } from "@/hooks/use-articles";
 import { useCompanyPermission } from "@/hooks/use-company-permission";
 import { useCompany } from "@/contexts/CompanyContext";
 import NoCompanySelected from "@/components/shared/NoCompanySelected";
+import { ImportArticlesModal } from "@/components/inventory/ImportArticlesModal";
 import { insertArticleSchema, type InsertArticle } from "@shared/schema";
 import { z } from "zod";
+import { Upload } from "lucide-react";
 
 const VAT_RATES = [
   { value: "21.00", label: "21% (General)" },
@@ -44,6 +46,7 @@ const formSchema = insertArticleSchema.extend({
 export default function Articles() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -178,6 +181,14 @@ export default function Articles() {
                     className="w-full sm:w-64"
                     data-testid="input-search-articles"
                   />
+                  <Button 
+                    variant="outline"
+                    onClick={() => setIsImportModalOpen(true)}
+                    disabled={!canWrite}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Importar Excel/CSV
+                  </Button>
                   <Button 
                     onClick={() => setIsModalOpen(true)}
                     data-testid="button-add-article"
@@ -467,6 +478,11 @@ export default function Articles() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <ImportArticlesModal 
+        isOpen={isImportModalOpen} 
+        onClose={() => setIsImportModalOpen(false)} 
+      />
     </div>
   );
 }
