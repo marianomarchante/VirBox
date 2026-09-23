@@ -13,6 +13,7 @@ echo ""
 
 echo "=== 1/3  git pull ==="
 cd "$APP_DIR"
+git reset --hard
 git pull origin "$GIT_BRANCH"
 
 echo ""
